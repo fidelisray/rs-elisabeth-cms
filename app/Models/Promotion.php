@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Traits\ConvertsImagesToWebp;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Promotion extends Model
 {
+    use HasFactory;
     use \Illuminate\Database\Eloquent\SoftDeletes;
     use ConvertsImagesToWebp;
 
@@ -68,3 +70,4 @@ class Promotion extends Model
         });
     }
 }
+

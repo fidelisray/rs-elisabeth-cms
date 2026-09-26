@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use App\Traits\ConvertsImagesToWebp;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class RoomFacility extends Model
 {
+    use HasFactory;
     use \Illuminate\Database\Eloquent\SoftDeletes;
     use ConvertsImagesToWebp;
 
@@ -84,3 +86,4 @@ class RoomFacility extends Model
         });
     }
 }
+

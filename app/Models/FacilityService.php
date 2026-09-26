@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class FacilityService extends Model
 {
+    use HasFactory;
     use \Illuminate\Database\Eloquent\SoftDeletes;
     use \App\Traits\ConvertsImagesToWebp;
 
@@ -78,3 +80,4 @@ class FacilityService extends Model
         return ['image_path'];
     }
 }
+
