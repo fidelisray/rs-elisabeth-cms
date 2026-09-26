@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # ---------------------------------------------------------
+  # 1. CMS APPLICATION (PHP-FPM)
+  # ---------------------------------------------------------
+  cms_app:
+    build:
+      context: .
+      target: fpm_app     # Mengeksekusi STAGE 1 dari Dockerfile
+    image: rse_cms_app:latest
+    container_name: rse_cms_app
+    restart: always
+    env_file:
+      - .env
+    environment:
+      # Override DB_HOST agar connect ke container cms_db (bukan localhost)
+      - DB_HOST=cms_db
+
+    networks:
+      - cms_network
+    depends_on:
+      - cms_db
+
+  # ---------------------------------------------------------
+  # 2. NGINX (Web Server)
+  # ---------------------------------------------------------
+  cms_nginx:
+    build:
+      context: .
+      target: web_server  # Mengeksekusi STAGE 2 dari Dockerfile
+    image: rse_cms_nginx:latest
+    container_name: rse_cms_nginx
+    restart: always
+    ports:
+      - "2302:80"         # Mapping port 2302 di server mengarah ke port 80 di container Nginx
+    networks:
+      - cms_network
+    depends_on:
+      - cms_app
+
+  # ---------------------------------------------------------
+  # 3. DATABASE POSTGRESQL (Opsional)
+  # ---------------------------------------------------------
+  cms_db:
+    image: postgres:15-alpine
+    container_name: rse_cms_db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - cms_db_data:/var/lib/postgresql/data
+    networks:
+      - cms_network
+
+networks:
+  cms_network:
+    driver: bridge
+
+volumes:
+  cms_db_data:
