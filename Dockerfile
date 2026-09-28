@@ -1,9 +1,28 @@
 # ==============================================================================
+# STAGE 0: Node.js Builder — Build Frontend Assets (Vite + TailwindCSS)
+# ==============================================================================
+FROM node:22-alpine AS node_builder
+
+WORKDIR /app
+
+# Copy manifest files dulu untuk memanfaatkan Docker layer caching.
+# Layer ini hanya rebuild jika package.json atau package-lock.json berubah.
+COPY package*.json ./
+RUN npm ci --frozen-lockfile
+
+# Salin sisa source code & build assets
+COPY . .
+RUN npm run build
+
+# ==============================================================================
 # STAGE 1: PHP-FPM (Application Server)
 # ==============================================================================
-FROM php:8.2-fpm-alpine AS fpm_app
+FROM php:8.4-fpm-alpine AS fpm_app
 
-# 1. Install Alpine dependencies
+LABEL maintainer="RS Elisabeth" \
+      description="PHP-FPM Application Image for RS Elisabeth CMS"
+
+# 1. Install Alpine system dependencies
 RUN apk add --no-cache \
     git \
     curl \
@@ -17,48 +36,61 @@ RUN apk add --no-cache \
     zlib-dev \
     libjpeg-turbo-dev \
     freetype-dev \
+    oniguruma-dev \
     bash
 
 # 2. Configure & Install PHP Extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd intl zip
 
-# 3. Install Composer
+# 3. Install Composer dari official image
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# 4. Set Workdir & Copy Source Code
+# 4. Set working directory
 WORKDIR /var/www/html
+
+# 5. Copy manifest Composer dulu untuk memanfaatkan layer caching.
+#    Layer ini hanya rebuild jika composer.json atau composer.lock berubah.
+COPY composer.json composer.lock ./
+
+# 6. Install PHP dependencies tanpa menjalankan scripts artisan dulu
+#    (artisan belum tersedia karena source belum di-copy)
+RUN composer install --optimize-autoloader --no-dev --no-scripts --no-interaction
+
+# 7. Salin seluruh source code aplikasi
+#    File yang ada di .dockerignore (vendor, node_modules, .env, dll) TIDAK akan disalin
 COPY . .
 
-# 5. Install Dependencies (Production Ready)
-# Ini akan meng-generate folder vendor dan me-publish asset (misal: filament CSS/JS ke folder public)
-RUN composer install --optimize-autoloader --no-dev
+# 8. Salin hasil build Vite dari Stage 0 (public/build/)
+COPY --from=node_builder /app/public/build /var/www/html/public/build
 
-# 6. Set Permissions untuk folder krusial
+# 9. Re-generate autoloader & jalankan artisan post-install scripts
+#    APP_KEY dummy diperlukan agar artisan bisa bootstrap framework saat build.
+#    Key ASLI akan di-inject melalui env_file saat runtime — key ini TIDAK dipakai production.
+ENV APP_KEY="base64:ZG9ja2VyYnVpbGRrZXkxMjM0NTY3ODkwYWJjZGVmZ2g="
+RUN composer dump-autoload --optimize \
+    && php artisan package:discover --ansi \
+    && php artisan filament:upgrade
+# Hapus dummy key — APP_KEY real diset via env_file di docker-compose
+ENV APP_KEY=""
+
+# 10. Set permissions untuk folder-folder krusial Laravel
+#     Buat juga public_shared/ (staging area untuk shared volume dengan Nginx)
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/storage \
-    && chmod -R 775 /var/www/html/bootstrap/cache
+    && chmod -R 775 /var/www/html/bootstrap/cache \
+    && mkdir -p /var/www/html/public_shared \
+    && chown www-data:www-data /var/www/html/public_shared
 
-# 7. Start PHP-FPM
+# 11. Salin & set permission entrypoint (harus dilakukan sebelum USER www-data)
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# 12. Gunakan non-root user untuk keamanan
+USER www-data
+
+# PHP-FPM listen di port 9000
 EXPOSE 9000
+
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["php-fpm"]
-
-
-# ==============================================================================
-# STAGE 2: NGINX (Web Server)
-# ==============================================================================
-FROM nginx:alpine AS web_server
-
-# 1. Set Workdir
-WORKDIR /var/www/html
-
-# 2. Copy konfigurasi kustom Nginx
-COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
-
-# 3. COPY folder "public" dari STAGE 1 (fpm_app)
-# TRICK DEVOPS: Nginx hanya butuh folder public untuk menyajikan CSS, JS, dan Gambar (Web Assets).
-# Dengan mengambil dari stage fpm_app, asset bawaan Filament yang di-generate via Composer
-# akan secara otomatis terbawa tanpa masalah perizinan volume!
-COPY --from=fpm_app /var/www/html/public /var/www/html/public
-
-EXPOSE 80

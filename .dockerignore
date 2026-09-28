@@ -1,0 +1,72 @@
+# ============================================================
+# .dockerignore — RS Elisabeth CMS
+# Mencegah file sensitif & tidak perlu masuk ke dalam image
+# ============================================================
+
+# --- Credentials & Environment (KRITIS: JANGAN PERNAH MASUK IMAGE) ---
+.env
+.env.*
+!.env.example
+auth.json
+
+# --- Dependency Directories (di-install ulang saat build) ---
+/vendor
+/node_modules
+
+# --- Version Control ---
+.git
+.gitignore
+.gitattributes
+.github
+
+# --- Docker files (tidak perlu di dalam image) ---
+docker-compose*.yml
+Dockerfile
+
+# --- Build Artifacts (dihasilkan ulang oleh node_builder stage) ---
+/public/hot
+/public/build
+
+# --- Storage & Logs (bersifat ephemeral / mount via volume) ---
+/storage/logs/*
+/storage/pail
+!/storage/logs/.gitignore
+
+# --- Editor & IDE Files ---
+.vscode
+.idea
+.nova
+.zed
+.editorconfig
+.styleci.yml
+.phpactor.json
+.phpstorm.meta.php
+_ide_helper.php
+_ide_helper_models.php
+
+# --- Test & CI Files ---
+/tests
+/coverage
+phpunit.xml
+.phpunit.result.cache
+.phpunit.cache
+
+# --- Documentation & Project Notes ---
+*.md
+!README.md
+20250727_laporan_analisis_ui
+commit-msg.txt
+commit_msg.txt
+
+# --- OS Artifacts ---
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+.pnpm-debug.log
+
+# --- Laravel Dev Tools ---
+Homestead.json
+Homestead.yaml

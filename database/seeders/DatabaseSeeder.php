@@ -25,11 +25,15 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
         ]);
 
-        News::factory(10)->create();
-        Promotion::factory(5)->create();
-        Article::factory(15)->create();
-        FacilityService::factory(8)->create();
-        RoomFacility::factory(12)->create();
-        BannerPromotion::factory(3)->create();
+        // Data palsu (Faker) hanya di-generate jika kita berada di environment 'local'.
+        // Di mode production (--no-dev Docker), Faker tidak diinstall demi keamanan & performa.
+        if (app()->environment('local')) {
+            News::factory(10)->create();
+            Promotion::factory(5)->create();
+            Article::factory(15)->create();
+            FacilityService::factory(8)->create();
+            RoomFacility::factory(12)->create();
+            BannerPromotion::factory(3)->create();
+        }
     }
 }

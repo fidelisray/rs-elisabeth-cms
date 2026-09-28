@@ -7,47 +7,81 @@ services:
   cms_app:
     build:
       context: .
-      target: fpm_app # Mengeksekusi STAGE 1 dari Dockerfile
-    image: rs-elisabeth-cms-app:latest
+      target: fpm_app
+    image: fidelisray/rs-elisabeth-cms-app:latest
     container_name: rses_cms_app
-    restart: always
+    restart: unless-stopped
     env_file:
       - .env
     environment:
-      # Override DB_HOST agar connect ke container rses_cms_db (bukan localhost)
+      # Override critical settings untuk production
+      # Nilai ini mengoverride apapun yang ada di .env
       - DB_HOST=rses_cms_db
-
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - LOG_LEVEL=error
     networks:
       - rses_cms_network
     depends_on:
-      - rses_cms_db
+      rses_cms_db:
+        condition: service_healthy
+    volumes:
+      # 1. Staging area: entrypoint akan meng-copy isi /public ke sini,
+      #    kemudian Nginx akan membaca dari volume yang sama.
+      #    PENTING: jangan di-mount langsung ke /public (akan mengosongkan folder!)
+      - public_assets:/var/www/html/public_shared
+      # 2. Persist folder storage (logs, framework cache, etc.)
+      - storage_data:/var/www/html/storage
+    healthcheck:
+      # Container dinyatakan "healthy" setelah entrypoint selesai sepenuhnya
+      # (migrate, cache, asset sync). Sentinel file dibuat di akhir entrypoint.sh.
+      test: ["CMD-SHELL", "test -f /tmp/app_healthy || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 120s  # Beri waktu cukup untuk migrasi awal (fresh deploy)
 
   # ---------------------------------------------------------
   # 2. NGINX (Web Server)
   # ---------------------------------------------------------
   cms_nginx:
-    build:
-      context: .
-      target: web_server # Mengeksekusi STAGE 2 dari Dockerfile
-    image: rs-elisabeth-cms-nginx:latest
+    image: nginx:alpine
     container_name: rses_cms_nginx
-    restart: always
+    restart: unless-stopped
     ports:
-      - "2302:80" # Mapping port 2302 di server mengarah ke port 80 di container Nginx
+      - "2302:80"
     networks:
       - rses_cms_network
     depends_on:
-      - cms_app
+      cms_app:
+        # Nginx baru start setelah cms_app benar-benar healthy (entrypoint selesai).
+        # Ini memastikan public_assets sudah terisi sebelum Nginx mulai menyajikan file.
+        condition: service_healthy
+    volumes:
+      # 1. Konfigurasi Nginx dari host
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      # 2. Baca public assets yang sudah di-sync oleh cms_app
+      - public_assets:/var/www/html/public:ro
+    healthcheck:
+      test:
+        ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
   # ---------------------------------------------------------
-  # 3. DATABASE POSTGRESQL (Opsional)
+  # 3. DATABASE POSTGRESQL
   # ---------------------------------------------------------
   rses_cms_db:
     image: postgres:15-alpine
-    container_name: rse_rses_cms_db
-    restart: always
-    ports:
-      - "5432:5432"
+    container_name: rses_cms_db
+    restart: unless-stopped
+    # SECURITY: Port 5432 TIDAK di-expose ke host di production.
+    # cms_app bisa connect via nama service 'rses_cms_db' dalam Docker network.
+    # Uncomment baris di bawah HANYA untuk debugging lokal:
+    # ports:
+    #   - "5432:5432"
     environment:
       POSTGRES_DB: ${DB_DATABASE}
       POSTGRES_USER: ${DB_USERNAME}
@@ -56,10 +90,18 @@ services:
       - rses_cms_db_data:/var/lib/postgresql/data
     networks:
       - rses_cms_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
 networks:
   rses_cms_network:
     driver: bridge
 
 volumes:
-  rses_cms_db_data:
+  rses_cms_db_data:    # PostgreSQL data persistence
+  public_assets:       # Shared public folder antara cms_app dan cms_nginx
+  storage_data:        # Laravel storage persistence (logs, framework cache, dll)
