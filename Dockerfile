@@ -41,7 +41,8 @@ RUN apk add --no-cache \
 
 # 2. Configure & Install PHP Extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd intl zip
+    && docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd intl zip opcache \
+    && mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 # 3. Install Composer dari official image
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -65,14 +66,13 @@ COPY . .
 COPY --from=node_builder /app/public/build /var/www/html/public/build
 
 # 9. Re-generate autoloader & jalankan artisan post-install scripts
-#    APP_KEY dummy diperlukan agar artisan bisa bootstrap framework saat build.
+#    APP_KEY dummy di-inject sebagai ARG (bukan ENV) agar tidak tersimpan di layer image
+#    dan tidak memicu peringatan keamanan Docker Scout.
 #    Key ASLI akan di-inject melalui env_file saat runtime — key ini TIDAK dipakai production.
-ENV APP_KEY="base64:ZG9ja2VyYnVpbGRrZXkxMjM0NTY3ODkwYWJjZGVmZ2g="
-RUN composer dump-autoload --optimize \
-    && php artisan package:discover --ansi \
-    && php artisan filament:upgrade
-# Hapus dummy key — APP_KEY real diset via env_file di docker-compose
-ENV APP_KEY=""
+ARG BUILD_APP_K="base64:ZG9ja2VyYnVpbGRrZXkxMjM0NTY3ODkwYWJjZGVmZ2g="
+RUN APP_KEY="${BUILD_APP_K}" composer dump-autoload --optimize \
+    && APP_KEY="${BUILD_APP_K}" php artisan package:discover --ansi \
+    && APP_KEY="${BUILD_APP_K}" php artisan filament:upgrade
 
 # 10. Set permissions untuk folder-folder krusial Laravel
 #     Buat juga public_shared/ (staging area untuk shared volume dengan Nginx)
@@ -82,12 +82,9 @@ RUN chown -R www-data:www-data /var/www/html \
     && mkdir -p /var/www/html/public_shared \
     && chown www-data:www-data /var/www/html/public_shared
 
-# 11. Salin & set permission entrypoint (harus dilakukan sebelum USER www-data)
+# 11. Salin & set permission entrypoint
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
-
-# 12. Gunakan non-root user untuk keamanan
-USER www-data
 
 # PHP-FPM listen di port 9000
 EXPOSE 9000

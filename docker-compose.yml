@@ -8,7 +8,7 @@ services:
     build:
       context: .
       target: fpm_app
-    image: fidelisray/rs-elisabeth-cms-app:latest
+    image: 172.17.12.17:5051/fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
     container_name: rses_cms_app
     restart: unless-stopped
     env_file:
@@ -39,7 +39,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 10
-      start_period: 120s  # Beri waktu cukup untuk migrasi awal (fresh deploy)
+      start_period: 120s # Beri waktu cukup untuk migrasi awal (fresh deploy)
 
   # ---------------------------------------------------------
   # 2. NGINX (Web Server)
@@ -102,6 +102,6 @@ networks:
     driver: bridge
 
 volumes:
-  rses_cms_db_data:    # PostgreSQL data persistence
-  public_assets:       # Shared public folder antara cms_app dan cms_nginx
-  storage_data:        # Laravel storage persistence (logs, framework cache, dll)
+  rses_cms_db_data: # PostgreSQL data persistence
+  public_assets: # Shared public folder antara cms_app dan cms_nginx
+  storage_data: # Laravel storage persistence (logs, framework cache, dll)
