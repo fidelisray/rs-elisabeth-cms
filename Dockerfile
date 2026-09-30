@@ -37,10 +37,11 @@ RUN apk add --no-cache \
     libjpeg-turbo-dev \
     freetype-dev \
     oniguruma-dev \
+    libwebp-dev \
     bash
 
 # 2. Configure & Install PHP Extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd intl zip opcache \
     && mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
