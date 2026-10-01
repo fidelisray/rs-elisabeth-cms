@@ -154,7 +154,8 @@ trait ConvertsImagesToWebp
             //    pada dashboard MinIO, bukan di sini (MinIO tidak mendukung per-object ACL).
             Storage::disk($disk)->put(
                 $webpStoragePath,
-                (string) $encoded
+                (string) $encoded,
+                ['ContentType' => 'image/webp']
             );
 
             return $webpStoragePath;
