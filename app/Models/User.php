@@ -8,11 +8,12 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -53,11 +54,11 @@ class User extends Authenticatable implements FilamentUser
 
     /**
      * Menentukan apakah user ini boleh mengakses panel Filament Admin.
-     * Hanya user dengan role 'super_admin' atau 'staff' yang diizinkan.
+     * Mengizinkan semua user yang memiliki minimal 1 role/peran.
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return in_array($this->role, ['super_admin', 'staff']);
+        return $this->roles()->exists();
     }
 
     /**
@@ -65,14 +66,14 @@ class User extends Authenticatable implements FilamentUser
      */
     public function isSuperAdmin(): bool
     {
-        return $this->role === 'super_admin';
+        return $this->hasRole('super_admin');
     }
 
     /**
-     * Mengecek apakah user adalah Staf biasa.
+     * Mengecek apakah user adalah Staf biasa (Humas).
      */
     public function isStaff(): bool
     {
-        return $this->role === 'staff';
+        return $this->hasRole('humas');
     }
 }

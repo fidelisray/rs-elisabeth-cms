@@ -25,13 +25,11 @@ class UserForm
                     ->unique(ignoreRecord: true)
                     ->columnSpanFull(),
 
-                Select::make('role')
+                Select::make('roles')
+                    ->relationship('roles', 'name')
+                    ->getOptionLabelFromRecordUsing(fn ($record) => str($record->name)->headline())
+                    ->preload()
                     ->label('Role / Jabatan')
-                    ->options([
-                        'super_admin' => 'Super Admin',
-                        'staff'       => 'Staf',
-                    ])
-                    ->default('staff')
                     ->required(),
 
                 // Password hanya muncul saat Create, bukan Edit
@@ -39,10 +37,18 @@ class UserForm
                 TextInput::make('password')
                     ->label('Password')
                     ->password()
-                    ->dehydrateStateUsing(fn ($state) => \Illuminate\Support\Facades\Hash::make($state))
-                    ->dehydrated(fn ($state) => filled($state))
-                    ->required(fn (string $operation): bool => $operation === 'create')
-                    ->helperText('Kosongkan jika tidak ingin mengubah password. Untuk user baru, password default adalah "123456".')
+                    ->dehydrated(fn (?string $state, string $operation): bool => filled($state) || $operation === 'create')
+                    ->dehydrateStateUsing(function (?string $state, string $operation) {
+                        if (filled($state)) {
+                            return \Illuminate\Support\Facades\Hash::make($state);
+                        }
+                        if ($operation === 'create') {
+                            return \Illuminate\Support\Facades\Hash::make('123456');
+                        }
+                        return null;
+                    })
+                    ->required(false)
+                    ->helperText('Kosongkan jika tidak ingin mengubah password. Untuk user baru, password default otomatis menjadi "123456".')
                     ->columnSpanFull(),
             ]);
     }

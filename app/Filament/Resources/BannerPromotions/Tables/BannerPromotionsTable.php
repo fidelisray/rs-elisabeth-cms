@@ -7,7 +7,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ToggleColumn;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
@@ -42,9 +42,6 @@ class BannerPromotionsTable
                     ->label('Dibuat')
                     ->dateTime('d M Y, H:i'),
 
-                ToggleColumn::make('is_active')
-                    ->label('Aktif'),
-
                 TextColumn::make('updated_by')
                     ->label('Diperbarui Oleh')
                     ->searchable(),
@@ -52,6 +49,10 @@ class BannerPromotionsTable
                 TextColumn::make('updated_at')
                     ->label('Diperbarui')
                     ->dateTime('d M Y, H:i'),
+
+                IconColumn::make('is_active')
+                    ->boolean()
+                    ->label('Aktif'),
             ])
             ->filters([
                 // TernaryFilter::make('is_active')

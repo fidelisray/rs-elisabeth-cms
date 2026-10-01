@@ -47,6 +47,9 @@ class AdminPanelProvider extends PanelProvider
                 FeedbackStatsWidget::class,
                 LatestFeedbackWidget::class,
             ])
+            ->plugins([
+                \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make()
+            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

@@ -27,17 +27,17 @@ class UsersTable
                     ->searchable()
                     ->sortable(),
 
-                TextColumn::make('role')
+                TextColumn::make('roles.name')
                     ->label('Role')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'super_admin' => 'danger',
-                        'staff'       => 'info',
+                        'humas'       => 'info',
                         default       => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'super_admin' => 'Super Admin',
-                        'staff'       => 'Staf',
+                        'humas'       => 'Humas',
                         default       => $state,
                     }),
 
