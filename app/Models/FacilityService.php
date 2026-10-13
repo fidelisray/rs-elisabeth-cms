@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Observers\WebFrontendWebhookObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
+#[ObservedBy([WebFrontendWebhookObserver::class])]
 class FacilityService extends Model
 {
     use HasFactory;

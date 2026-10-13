@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Observers\WebFrontendWebhookObserver;
 use App\Traits\ConvertsImagesToWebp;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
+#[ObservedBy([WebFrontendWebhookObserver::class])]
 class RoomFacility extends Model
 {
     use HasFactory;

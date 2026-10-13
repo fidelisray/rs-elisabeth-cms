@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Observers\WebFrontendWebhookObserver;
 use App\Traits\ConvertsImagesToWebp;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+#[ObservedBy([WebFrontendWebhookObserver::class])]
 class Promotion extends Model
 {
     use HasFactory;

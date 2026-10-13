@@ -2,8 +2,9 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
 use App\Services\FeedbackService;
+use App\Services\WebFrontendWebhookService;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -14,7 +15,11 @@ class AppServiceProvider extends ServiceProvider
     {
         //
         $this->app->singleton(FeedbackService::class, function ($app) {
-            return new FeedbackService();
+            return new FeedbackService;
+        });
+
+        $this->app->singleton(WebFrontendWebhookService::class, function ($app) {
+            return new WebFrontendWebhookService;
         });
     }
 

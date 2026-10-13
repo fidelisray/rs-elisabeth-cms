@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Observers\WebFrontendWebhookObserver;
 use App\Traits\ConvertsImagesToWebp;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
+#[ObservedBy([WebFrontendWebhookObserver::class])]
 class BannerPromotion extends Model
 {
     use HasFactory;
