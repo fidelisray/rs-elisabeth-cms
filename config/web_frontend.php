@@ -13,9 +13,11 @@ return [
 
     'webhook_url' => env('WEB_FRONTEND_WEBHOOK_URL'),
 
-    'cons_id' => env('WEB_FRONTEND_WEBHOOK_CONSID', env('CMS_API_CONSID_WEB', 'WEB-FRONTEND')),
+    // Kredensial webhook WAJIB disediakan terpisah dari kredensial outbound CMS_API_*.
+    // Identitas di sini adalah identitas CMS sebagai pengirim (arah CMS -> Web).
+    'cons_id' => env('WEB_FRONTEND_WEBHOOK_CONSID'),
 
-    'secret_key' => env('WEB_FRONTEND_WEBHOOK_SECRET', env('CMS_API_SECRET_WEB', '')),
+    'secret_key' => env('WEB_FRONTEND_WEBHOOK_SECRET'),
 
     'timeout' => (int) env('WEB_FRONTEND_WEBHOOK_TIMEOUT', 5),
 ];

@@ -42,7 +42,7 @@ class WebFrontendWebhookObserver
         if ($module) {
             $event = $model->wasRecentlyCreated ? 'content.created' : 'content.updated';
             $slug = $model->slug ?? null;
-            dispatch(new SendCacheInvalidationWebhookJob($module, $event, $slug));
+            SendCacheInvalidationWebhookJob::dispatch($module, $event, $slug)->afterCommit();
         }
     }
 
@@ -54,7 +54,7 @@ class WebFrontendWebhookObserver
         $module = $this->getModule($model);
         if ($module) {
             $slug = $model->slug ?? null;
-            dispatch(new SendCacheInvalidationWebhookJob($module, 'content.deleted', $slug));
+            SendCacheInvalidationWebhookJob::dispatch($module, 'content.deleted', $slug)->afterCommit();
         }
     }
 
@@ -66,7 +66,7 @@ class WebFrontendWebhookObserver
         $module = $this->getModule($model);
         if ($module) {
             $slug = $model->slug ?? null;
-            dispatch(new SendCacheInvalidationWebhookJob($module, 'content.updated', $slug));
+            SendCacheInvalidationWebhookJob::dispatch($module, 'content.updated', $slug)->afterCommit();
         }
     }
 

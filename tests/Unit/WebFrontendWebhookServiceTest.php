@@ -27,7 +27,7 @@ class WebFrontendWebhookServiceTest extends TestCase
     {
         $timestamp = '1791863766';
         $consId = 'WEB-FRONTEND';
-        $rawBody = '{"module":"news","event":"content.updated","slug":"test-berita","timestamp":1791863766}';
+        $rawBody = '{"module":"news","event":"content.updated","slug":"test-berita"}';
         $secretKey = 'test-secret-key-12345';
 
         $expectedMessage = $timestamp.$consId.$rawBody;
@@ -38,7 +38,7 @@ class WebFrontendWebhookServiceTest extends TestCase
         $this->assertEquals($expectedSignature, $actualSignature);
     }
 
-    public function test_dispatch_returns_false_if_config_is_missing(): void
+    public function test_dispatch_returns_false_when_config_is_missing(): void
     {
         Config::set('web_frontend.webhook_url', null);
 
@@ -75,7 +75,7 @@ class WebFrontendWebhookServiceTest extends TestCase
             $hasValidPayload = $body['module'] === 'news'
                 && $body['event'] === 'content.updated'
                 && $body['slug'] === 'berita-terbaru'
-                && isset($body['timestamp']);
+                && !isset($body['timestamp']);
 
             // Validasi rumus signature
             $timestamp = $request->header('X-Timestamp')[0];
@@ -88,15 +88,15 @@ class WebFrontendWebhookServiceTest extends TestCase
         });
     }
 
-    public function test_dispatch_returns_false_on_http_error(): void
+    public function test_dispatch_throws_on_http_error(): void
     {
         Http::fake([
             '*' => Http::response(['error' => 'Forbidden'], 403),
         ]);
 
-        $result = $this->service->dispatch('articles', 'content.updated', 'artikel-test');
+        $this->expectException(\RuntimeException::class);
 
-        $this->assertFalse($result);
+        $this->service->dispatch('articles', 'content.updated', 'artikel-test');
     }
 
     public function test_dispatch_handles_exceptions_gracefully(): void
@@ -105,8 +105,8 @@ class WebFrontendWebhookServiceTest extends TestCase
             throw new \Exception('Network connection timeout');
         });
 
-        $result = $this->service->dispatch('promotions', 'content.updated', 'promo-test');
+        $this->expectException(\Exception::class);
 
-        $this->assertFalse($result);
+        $this->service->dispatch('promotions', 'content.updated', 'promo-test');
     }
 }

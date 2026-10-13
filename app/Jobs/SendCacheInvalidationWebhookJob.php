@@ -31,7 +31,6 @@ class SendCacheInvalidationWebhookJob implements ShouldQueue
         public string $event = 'content.updated',
         public ?string $slug = null
     ) {
-        $this->afterCommit = true;
     }
 
     /**
@@ -40,5 +39,19 @@ class SendCacheInvalidationWebhookJob implements ShouldQueue
     public function handle(WebFrontendWebhookService $service): void
     {
         $service->dispatch($this->module, $this->event, $this->slug);
+    }
+
+    /**
+     * Tangani kegagalan final (setelah seluruh percobaan retry habis).
+     * Memberi jejak audit yang jelas di log & failed_jobs.
+     */
+    public function failed(\Throwable $exception): void
+    {
+        \Illuminate\Support\Facades\Log::error('Web Frontend Webhook - Job gagal setelah retry habis.', [
+            'module'    => $this->module,
+            'event'     => $this->event,
+            'slug'      => $this->slug,
+            'exception' => $exception->getMessage(),
+        ]);
     }
 }

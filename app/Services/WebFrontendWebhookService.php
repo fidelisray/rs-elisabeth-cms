@@ -13,7 +13,11 @@ class WebFrontendWebhookService
      * @param  string  $module  Nama modul (news, articles, promotions, facilities, room_facilities, banner_promotions, all)
      * @param  string  $event  Tipe event (content.updated, content.created, content.deleted)
      * @param  string|null  $slug  Slug entitas yang diubah/dihapus (opsional)
-     * @return bool True jika berhasil direspon 200 OK oleh Web Frontend
+     * @return bool True jika berhasil direspon 200 OK oleh Web Frontend.
+     *              Melempar RuntimeException bila konfigurasi tidak lengkap atau
+     *              request gagal, agar mekanisme retry queue dapat bekerja.
+     *
+     * @throws \RuntimeException
      */
     public function dispatch(string $module, string $event = 'content.updated', ?string $slug = null): bool
     {
@@ -24,15 +28,19 @@ class WebFrontendWebhookService
         if (empty($url) || empty($secretKey)) {
             Log::warning('Web Frontend Webhook - URL atau Secret Key belum dikonfigurasi.');
 
+            // Konfigurasi tidak lengkap = no-op yang aman. Tidak dilempar karena
+            // retry tidak akan memperbaikinya, dan kondisi ini wajar terjadi pada
+            // environment non-production / test yang belum mengisi kredensial webhook.
             return false;
         }
 
         $timestamp = (string) time();
+        // Catatan: timestamp dikirim HANYA lewat header X-Timestamp (bukan di body),
+        // untuk menghindari duplikasi sumber nilai yang berpotensi tidak konsisten.
         $payload = [
             'module' => $module,
             'event' => $event,
             'slug' => $slug,
-            'timestamp' => (int) $timestamp,
         ];
 
         $rawBody = json_encode($payload);
@@ -62,10 +70,14 @@ class WebFrontendWebhookService
 
             Log::error("Web Frontend Webhook - Gagal dengan status {$response->status()}", [
                 'module' => $module,
+                'event' => $event,
+                'slug' => $slug,
                 'body' => $response->body(),
             ]);
 
-            return false;
+            // Lempar exception agar mekanisme retry queue (tries/backoff) terpicu
+            // untuk kegagalan HTTP non-2xx, bukan hanya kegagalan jaringan.
+            throw new \RuntimeException("Webhook gagal dengan status HTTP {$response->status()} untuk modul '{$module}'.");
         } catch (\Exception $e) {
             Log::error('Web Frontend Webhook - Exception saat mengirim webhook: '.$e->getMessage(), [
                 'module' => $module,
@@ -73,7 +85,8 @@ class WebFrontendWebhookService
                 'slug' => $slug,
             ]);
 
-            return false;
+            // Lempar ulang agar job mencatat kegagalan & menjalankan retry.
+            throw $e;
         }
     }
 
