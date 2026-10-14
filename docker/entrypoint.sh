@@ -7,6 +7,12 @@
 # ==============================================================================
 set -e
 
+# Jika container dijalankan bukan untuk php-fpm (contoh: cms_worker atau artisan command),
+# langsung jalankan perintah tanpa mengulang bootstrap lengkap
+if [ "$1" != "php-fpm" ]; then
+    exec "$@"
+fi
+
 echo "================================================================"
 echo " RS Elisabeth CMS — Container Bootstrap"
 echo "================================================================"
@@ -43,6 +49,9 @@ php artisan storage:setup-minio || true
 #    semua asset tersedia lengkap di shared volume.
 echo "[9/9] Syncing public assets to shared volume for Nginx..."
 cp -rp /var/www/html/public/. /var/www/html/public_shared/
+
+# Pastikan permission storage & bootstrap/cache tetap dimiliki oleh www-data
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Sentinel file: menandai bahwa bootstrap sudah selesai (dipakai healthcheck)
 touch /tmp/app_healthy
