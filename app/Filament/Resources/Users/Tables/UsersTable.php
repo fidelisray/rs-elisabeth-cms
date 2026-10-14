@@ -33,11 +33,13 @@ class UsersTable
                     ->color(fn (string $state): string => match ($state) {
                         'super_admin' => 'danger',
                         'humas'       => 'info',
+                        'Staff IT'    => 'warning',
                         default       => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'super_admin' => 'Super Admin',
                         'humas'       => 'Humas',
+                        'Staff IT'    => 'Staff IT',
                         default       => $state,
                     }),
 

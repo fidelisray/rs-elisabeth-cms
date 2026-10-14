@@ -45,16 +45,22 @@ class InvalidateWebFrontendCacheCommand extends Command
             ]
         );
 
-        $success = $service->dispatch($module, $event, $slug);
+        try {
+            $success = $service->dispatch($module, $event, $slug);
 
-        if ($success) {
-            $this->info('✓ Berhasil! Web Frontend menerima sinyal invalidasi dan merespon 200 OK.');
+            if ($success) {
+                $this->info('✓ Berhasil! Web Frontend menerima sinyal invalidasi dan merespon 200 OK.');
 
-            return self::SUCCESS;
+                return self::SUCCESS;
+            }
+
+            $this->error('✗ Webhook tidak dikirim (URL atau Secret Key belum dikonfigurasi).');
+
+            return self::FAILURE;
+        } catch (\Throwable $e) {
+            $this->error('✗ Gagal mengirim webhook ke Web Frontend: '.$e->getMessage());
+
+            return self::FAILURE;
         }
-
-        $this->error('✗ Gagal mengirim webhook ke Web Frontend. Cek log aplikasi untuk detail respons.');
-
-        return self::FAILURE;
     }
 }

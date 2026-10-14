@@ -43,7 +43,12 @@ RUN apk add --no-cache \
 # 2. Configure & Install PHP Extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd intl zip opcache \
-    && mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+    && mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+    && { \
+        echo "upload_max_filesize = 64M"; \
+        echo "post_max_size = 64M"; \
+        echo "memory_limit = 256M"; \
+    } > "$PHP_INI_DIR/conf.d/uploads.ini"
 
 # 3. Install Composer dari official image
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer

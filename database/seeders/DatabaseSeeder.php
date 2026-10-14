@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             AdminUserSeeder::class,
+            RoleAndPermissionSeeder::class,
         ]);
 
         // Data palsu (Faker) hanya di-generate jika kita berada di environment 'local'.

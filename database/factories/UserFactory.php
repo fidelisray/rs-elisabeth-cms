@@ -25,11 +25,13 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
+            'name'                 => fake()->name(),
+            'email'                => fake()->unique()->safeEmail(),
+            'email_verified_at'    => now(),
+            'password'             => static::$password ??= Hash::make('123456'),
+            'role'                 => 'staff',
+            'must_change_password' => true,
+            'remember_token'       => Str::random(10),
         ];
     }
 
@@ -40,6 +42,48 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Akun Super Admin.
+     */
+    public function superAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'name'                 => 'Super Admin',
+            'email'                => 'admin@rs-elisabeth.com',
+            'password'             => Hash::make('admin@123456'),
+            'role'                 => 'super_admin',
+            'must_change_password' => false,
+        ]);
+    }
+
+    /**
+     * Akun Staf Marketing.
+     */
+    public function marketing(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'name'                 => 'Staf Marketing',
+            'email'                => 'marketing@rs-elisabeth.com',
+            'password'             => Hash::make('123456'),
+            'role'                 => 'staff',
+            'must_change_password' => true,
+        ]);
+    }
+
+    /**
+     * Akun Staf IT.
+     */
+    public function it(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'name'                 => 'Staff IT',
+            'email'                => 'it@rs-elisabeth.com',
+            'password'             => Hash::make('123456'),
+            'role'                 => 'staff',
+            'must_change_password' => true,
         ]);
     }
 }
