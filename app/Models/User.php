@@ -13,7 +13,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -46,8 +46,8 @@ class User extends Authenticatable implements FilamentUser
     protected function casts(): array
     {
         return [
-            'email_verified_at'    => 'datetime',
-            'password'             => 'hashed',
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
             'must_change_password' => 'boolean',
         ];
     }
@@ -70,10 +70,10 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
-     * Mengecek apakah user adalah Staf biasa (Humas).
+     * Mengecek apakah user adalah Staf biasa (Marketing).
      */
     public function isStaff(): bool
     {
-        return $this->hasRole('humas');
+        return $this->hasRole('marketing');
     }
 }

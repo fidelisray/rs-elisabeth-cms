@@ -2,14 +2,14 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
+use App\Models\Article;
+use App\Models\BannerPromotion;
+use App\Models\FacilityService;
 use App\Models\News;
 use App\Models\Promotion;
-use App\Models\Article;
-use App\Models\FacilityService;
 use App\Models\RoomFacility;
-use App\Models\BannerPromotion;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -21,10 +21,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([
-            AdminUserSeeder::class,
-            RoleAndPermissionSeeder::class,
-        ]);
+        // 1. Buat dulu akun default (AdminUserSeeder tidak memasang role apa pun).
+        $this->call(AdminUserSeeder::class);
+
+        // 2. Buat role/permission, LALU pasang role ke akun yang sudah ada.
+        //    Urutan ini menjamin user sudah tersedia saat role di-assign.
+        $this->call(RoleAndPermissionSeeder::class);
 
         // Data palsu (Faker) hanya di-generate jika kita berada di environment 'local'.
         // Di mode production (--no-dev Docker), Faker tidak diinstall demi keamanan & performa.

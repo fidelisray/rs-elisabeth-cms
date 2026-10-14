@@ -10,13 +10,14 @@ class NewsFactory extends Factory
     public function definition(): array
     {
         $title = $this->faker->sentence(6);
+
         return [
             'title' => $title,
             'slug' => Str::slug($title),
-            'author' => 'Tim Humas RS',
+            'author' => 'Tim Marketing RS',
             'shorts' => $this->faker->text(200),
             'category' => $this->faker->randomElement(['Pengumuman', 'Kesehatan', 'Event', 'Teknologi Medis']),
-            'content' => '<p>' . implode('</p><p>', $this->faker->paragraphs(4)) . '</p>',
+            'content' => '<p>'.implode('</p><p>', $this->faker->paragraphs(4)).'</p>',
             'image_path' => null,
             'is_published' => $this->faker->boolean(80),
         ];

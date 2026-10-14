@@ -1,10 +1,4 @@
 #!/bin/sh
-# ==============================================================================
-# docker/entrypoint.sh — RS Elisabeth CMS Bootstrap Script
-#
-# Script ini dijalankan SETIAP KALI container start (sebelum php-fpm).
-# Tugas: cache, migrasi database, symlink storage, dan sync assets ke Nginx.
-# ==============================================================================
 set -e
 
 # Jika container dijalankan bukan untuk php-fpm (contoh: cms_worker atau artisan command),
@@ -36,6 +30,15 @@ php artisan icons:cache
 # 2. Jalankan migrasi database (--force wajib untuk non-interactive/production)
 echo "[6/9] Running database migrations..."
 php artisan migrate --force
+
+# 2b. Seed database (idempoten & non-destructive).
+#     Seeder memakai firstOrCreate/findOrCreate sehingga aman dijalankan ulang
+#     setiap kali container start. Ini menjamin akun admin, role, dan permission
+#     selalu tersedia, termasuk pada deploy pertama ke database kosong.
+#     Data konten (news, article, dll) TIDAK akan terhapus karena seeder bersifat
+#     add-only dan tidak memakai migrate:fresh.
+echo "[6b/9] Seeding database (idempotent)..."
+php artisan db:seed --force
 
 # 3. Buat symlink storage (ignore error jika sudah ada atau disk=s3)
 echo "[7/9] Creating storage symlink..."

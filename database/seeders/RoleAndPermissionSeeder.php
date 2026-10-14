@@ -2,100 +2,280 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\User;
-use Spatie\Permission\Models\Role;
+use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RoleAndPermissionSeeder extends Seeder
 {
+    /**
+     * Daftar aksi permission standar yang di-generate oleh Filament Shield.
+     * Nilai ini harus tetap selaras dengan `policies.methods` di
+     * config/filament-shield.php.
+     */
+    protected const RESOURCE_ACTIONS = [
+        'ViewAny',
+        'View',
+        'Create',
+        'Update',
+        'Delete',
+        'DeleteAny',
+        'Restore',
+        'ForceDelete',
+        'ForceDeleteAny',
+        'RestoreAny',
+        'Replicate',
+        'Reorder',
+    ];
+
+    /**
+     * Daftar subject konten yang bisa dikelola oleh role marketing.
+     * Harus selaras dengan nama model (class basename) di app/Models.
+     */
+    protected const CONTENT_SUBJECTS = [
+        'Article',
+        'News',
+        'Promotion',
+        'BannerPromotion',
+        'FacilityService',
+        'RoomFacility',
+    ];
+
+    /**
+     * Daftar subject administrasi (hanya boleh diakses oleh super_admin
+     * dan Staff IT). Tidak termasuk di role marketing.
+     */
+    protected const ADMIN_SUBJECTS = [
+        'User',
+        'Role',
+    ];
+
+    /**
+     * Gabungan seluruh subject (dipakai untuk super_admin & pembentukan
+     * permission secara lengkap).
+     */
+    protected const ALL_SUBJECTS = [
+        'Article',
+        'News',
+        'Promotion',
+        'BannerPromotion',
+        'FacilityService',
+        'RoomFacility',
+        'User',
+        'Role',
+    ];
+
+    /**
+     * Nama widget yang dipakai untuk permission widget.
+     */
+    protected const WIDGET_SUBJECTS = [
+        'FeedbackStatsWidget',
+        'LatestFeedbackWidget',
+    ];
+
+    /**
+     * Konstanta nama role & subject agar tidak ada typo/duplikasi magic string.
+     */
+    protected const ROLE_SUPER_ADMIN = 'super_admin';
+
+    protected const ROLE_MARKETING = 'marketing';
+
+    protected const ROLE_STAFF_IT = 'Staff IT';
+
+    /**
+     * Nama role lama (legacy) yang masih mungkin ada pada database yang
+     * sebelumnya memakai nama "humas". Role ini akan dimigrasi ke "marketing".
+     */
+    protected const LEGACY_ROLE_MARKETING = 'humas';
+
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        // 1. Buat peran super_admin dan berikan SEMUA akses
-        $superAdmin = Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
-        $superAdmin->givePermissionTo(Permission::all());
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        // 2. Buat peran humas dan berikan akses terbatas (bisa View, Create, Update, TIDAK BISA Delete)
-        $humas = Role::firstOrCreate(['name' => 'humas', 'guard_name' => 'web']);
-        
-        $humasPermissions = Permission::whereIn('name', [
-            'ViewAny:Article', 'View:Article', 'Create:Article', 'Update:Article',
-            'ViewAny:News', 'View:News', 'Create:News', 'Update:News',
-            'ViewAny:Promotion', 'View:Promotion', 'Create:Promotion', 'Update:Promotion',
-            'ViewAny:BannerPromotion', 'View:BannerPromotion', 'Create:BannerPromotion', 'Update:BannerPromotion',
-            'ViewAny:FacilityService', 'View:FacilityService', 'Create:FacilityService', 'Update:FacilityService',
-            'ViewAny:RoomFacility', 'View:RoomFacility', 'Create:RoomFacility', 'Update:RoomFacility',
-            
-            // Akses Widget
-            'View:FeedbackStatsWidget',
-            'View:LatestFeedbackWidget',
+        $this->seedPermissions();
 
-            // Fallback nama snake_case jika ada
-            'view_any_article', 'view_article', 'create_article', 'update_article',
-            'view_any_news', 'view_news', 'create_news', 'update_news',
-            'view_any_promotion', 'view_promotion', 'create_promotion', 'update_promotion',
-            'view_any_banner::promotion', 'view_banner::promotion', 'create_banner::promotion', 'update_banner::promotion',
-            'view_any_facility::service', 'view_facility::service', 'create_facility::service', 'update_facility::service',
-            'view_any_room::facility', 'view_room::facility', 'create_room::facility', 'update_room::facility',
-            'widget_AccountWidget',
-            'widget_FilamentInfoWidget',
-            'widget_FeedbackStatsWidget',
-            'widget_LatestFeedbackWidget'
-        ])->get();
-        
-        $humas->syncPermissions($humasPermissions);
+        $superAdminRole = $this->seedSuperAdminRole();
+        $marketingRole = $this->seedMarketingRole();
+        $staffItRole = $this->seedStaffItRole();
 
-        // 3. Buat peran Staff IT (Akses View modul + Kelola User & Role)
-        $staffIt = Role::firstOrCreate(['name' => 'Staff IT', 'guard_name' => 'web']);
-        $staffItPermissions = Permission::whereIn('name', [
-            'ViewAny:Article', 'View:Article',
-            'ViewAny:BannerPromotion', 'View:BannerPromotion',
-            'ViewAny:FacilityService', 'View:FacilityService',
-            'ViewAny:News', 'View:News',
-            'ViewAny:Promotion', 'View:Promotion',
-            'ViewAny:RoomFacility', 'View:RoomFacility',
-            'ViewAny:User', 'View:User', 'Create:User', 'Update:User', 'Delete:User', 'DeleteAny:User', 'Restore:User', 'ForceDelete:User', 'ForceDeleteAny:User', 'RestoreAny:User', 'Replicate:User', 'Reorder:User',
-            'ViewAny:Role', 'View:Role', 'Create:Role', 'Update:Role', 'Delete:Role', 'DeleteAny:Role', 'Restore:Role', 'ForceDelete:Role', 'ForceDeleteAny:Role', 'RestoreAny:Role', 'Replicate:Role', 'Reorder:Role',
-            'View:FeedbackStatsWidget',
-            'View:LatestFeedbackWidget',
-        ])->get();
-        $staffIt->syncPermissions($staffItPermissions);
+        $this->migrateLegacyMarketingRole($marketingRole);
+        $this->assignRolesToUsers($superAdminRole, $marketingRole, $staffItRole);
+    }
 
-        // 4. Assign Spatie role ke akun masing-masing
-        $admin = User::where('email', 'admin@rs-elisabeth.com')->first();
-        if ($admin) {
-            $admin->assignRole('super_admin');
-        }
-
-        $marketing = User::where('email', 'marketing@rs-elisabeth.com')->first();
-        if ($marketing) {
-            $marketing->assignRole('humas');
-        }
-
-        $it = User::where('email', 'it@rs-elisabeth.com')->first();
-        if ($it) {
-            $it->assignRole('Staff IT');
-        }
-
-        // 5. Migrasi user super_admin lama yang belum memiliki role Spatie
-        $oldSuperAdmins = User::where('role', 'super_admin')->get();
-        foreach ($oldSuperAdmins as $user) {
-            if (! $user->hasRole('super_admin')) {
-                $user->assignRole('super_admin');
+    /**
+     * Pastikan seluruh permission yang dibutuhkan tersedia di database.
+     *
+     * Ini membuat seeder tidak bergantung pada `php artisan shield:generate`
+     * dijalankan terlebih dahulu. Idempoten: memakai findOrCreate.
+     */
+    protected function seedPermissions(): void
+    {
+        foreach (self::ALL_SUBJECTS as $subject) {
+            foreach (self::RESOURCE_ACTIONS as $action) {
+                Permission::findOrCreate("{$action}:{$subject}", 'web');
             }
         }
 
-        // 6. Migrasi user staff umum lainnya (selain marketing & it)
+        foreach (self::WIDGET_SUBJECTS as $subject) {
+            Permission::findOrCreate("View:{$subject}", 'web');
+        }
+    }
+
+    /**
+     * Buat role super_admin dan berikan SEMUA permission.
+     */
+    protected function seedSuperAdminRole(): Role
+    {
+        $role = Role::findOrCreate(self::ROLE_SUPER_ADMIN, 'web');
+        $role->syncPermissions(Permission::all());
+
+        return $role;
+    }
+
+    /**
+     * Buat role marketing dengan akses terbatas:
+     * View/Create/Update konten, TIDAK BISA Delete.
+     */
+    protected function seedMarketingRole(): Role
+    {
+        $allowed = ['ViewAny', 'View', 'Create', 'Update'];
+        $names = [];
+
+        // Marketing hanya mengelola konten, TIDAK termasuk User & Role.
+        foreach (self::CONTENT_SUBJECTS as $subject) {
+            foreach ($allowed as $action) {
+                $names[] = "{$action}:{$subject}";
+            }
+        }
+
+        foreach (self::WIDGET_SUBJECTS as $subject) {
+            $names[] = "View:{$subject}";
+        }
+
+        $permissions = Permission::whereIn('name', $names)->get();
+
+        $role = Role::findOrCreate(self::ROLE_MARKETING, 'web');
+        $role->syncPermissions($permissions);
+
+        return $role;
+    }
+
+    /**
+     * Buat role Staff IT: akses View semua modul + kelola User & Role.
+     */
+    protected function seedStaffItRole(): Role
+    {
+        $viewOnly = ['ViewAny', 'View'];
+        $names = [];
+
+        // View semua resource (termasuk User & Role).
+        foreach (self::ALL_SUBJECTS as $subject) {
+            foreach ($viewOnly as $action) {
+                $names[] = "{$action}:{$subject}";
+            }
+        }
+
+        // Kelola penuh User & Role.
+        foreach (self::ADMIN_SUBJECTS as $subject) {
+            foreach (self::RESOURCE_ACTIONS as $action) {
+                $names[] = "{$action}:{$subject}";
+            }
+        }
+
+        foreach (self::WIDGET_SUBJECTS as $subject) {
+            $names[] = "View:{$subject}";
+        }
+
+        $permissions = Permission::whereIn('name', $names)->get();
+
+        $role = Role::findOrCreate(self::ROLE_STAFF_IT, 'web');
+        $role->syncPermissions($permissions);
+
+        return $role;
+    }
+
+    /**
+     * Migrasi role legacy "humas" menjadi "marketing" (perubahan penamaan).
+     *
+     * Aman & idempoten:
+     * - Memindahkan semua user yang masih memegang role "humas" ke "marketing".
+     * - Menyalin permission role "humas" ke "marketing" hanya jika role
+     *   "marketing" belum punya permission (untuk preserve custom permission
+     *   yang mungkin sudah dibuat admin sebelumnya).
+     * - Menghapus role "humas" setelah migrasi selesai.
+     */
+    protected function migrateLegacyMarketingRole(Role $marketingRole): void
+    {
+        $legacyRole = Role::where('name', self::LEGACY_ROLE_MARKETING)->first();
+
+        if (! $legacyRole) {
+            return;
+        }
+
+        // 1. Pindahkan user dari role lama ke role baru (jika belum memilikinya).
+        $users = User::whereHas('roles', fn ($q) => $q->where('name', self::LEGACY_ROLE_MARKETING))->get();
+        foreach ($users as $user) {
+            $user->assignRole($marketingRole);
+        }
+
+        // 2. Preserve custom permission lama jika marketing belum punya permission.
+        if ($marketingRole->permissions()->count() === 0) {
+            $marketingRole->syncPermissions($legacyRole->permissions);
+        }
+
+        // 3. Hapus role legacy setelah seluruh user & permission terpindah.
+        $legacyRole->delete();
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    /**
+     * Pasangkan role Spatie ke masing-masing akun default.
+     *
+     * Memakai `assignRole` (aditif) sehingga TIDAK pernah melepas role lain
+     * yang mungkin sudah diberikan secara manual oleh admin.
+     */
+    protected function assignRolesToUsers(Role $superAdminRole, Role $marketingRole, Role $staffItRole): void
+    {
+        $admin = User::where('email', 'admin@rs-elisabeth.com')->first();
+        if ($admin && ! $admin->hasRole($superAdminRole)) {
+            $admin->assignRole($superAdminRole);
+        }
+
+        $marketing = User::where('email', 'marketing@rs-elisabeth.com')->first();
+        if ($marketing && ! $marketing->hasRole($marketingRole)) {
+            $marketing->assignRole($marketingRole);
+        }
+
+        $it = User::where('email', 'it@rs-elisabeth.com')->first();
+        if ($it && ! $it->hasRole($staffItRole)) {
+            $it->assignRole($staffItRole);
+        }
+
+        // Migrasi user super_admin lama (kolom role = super_admin) yang belum
+        // memiliki role Spatie.
+        $oldSuperAdmins = User::where('role', 'super_admin')->get();
+        foreach ($oldSuperAdmins as $user) {
+            if (! $user->hasRole(self::ROLE_SUPER_ADMIN)) {
+                $user->assignRole($superAdminRole);
+            }
+        }
+
+        // Migrasi user staff umum lainnya (selain marketing & it & humas lama).
         $otherStaffs = User::where('role', 'staff')
             ->whereNotIn('email', ['marketing@rs-elisabeth.com', 'it@rs-elisabeth.com', 'humas@rs-elisabeth.com'])
             ->get();
         foreach ($otherStaffs as $user) {
             if (! $user->roles()->exists()) {
-                $user->assignRole('humas');
+                $user->assignRole($marketingRole);
             }
         }
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 }

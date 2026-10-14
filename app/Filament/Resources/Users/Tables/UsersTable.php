@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Users\Tables;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -32,15 +31,15 @@ class UsersTable
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'super_admin' => 'danger',
-                        'humas'       => 'info',
-                        'Staff IT'    => 'warning',
-                        default       => 'gray',
+                        'marketing' => 'info',
+                        'Staff IT' => 'warning',
+                        default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'super_admin' => 'Super Admin',
-                        'humas'       => 'Humas',
-                        'Staff IT'    => 'Staff IT',
-                        default       => $state,
+                        'marketing' => 'Marketing',
+                        'Staff IT' => 'Staff IT',
+                        default => $state,
                     }),
 
                 IconColumn::make('must_change_password')
@@ -71,7 +70,7 @@ class UsersTable
                     ->modalDescription(fn ($record) => "Apakah Anda yakin ingin mereset password {$record->name} ke password default \"123456\"?")
                     ->action(function ($record) {
                         $record->update([
-                            'password'             => Hash::make('123456'),
+                            'password' => Hash::make('123456'),
                             'must_change_password' => true,
                         ]);
 
@@ -85,4 +84,3 @@ class UsersTable
             ->toolbarActions([]);
     }
 }
-
