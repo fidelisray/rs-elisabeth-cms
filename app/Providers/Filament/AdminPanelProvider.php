@@ -2,6 +2,11 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\CustomProfile;
+use App\Filament\Widgets\FeedbackStatsWidget;
+use App\Filament\Widgets\LatestFeedbackWidget;
+use App\Http\Middleware\CheckDefaultPassword;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -12,15 +17,12 @@ use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
-use App\Filament\Widgets\FeedbackStatsWidget;
-use App\Filament\Widgets\LatestFeedbackWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use App\Http\Middleware\CheckDefaultPassword;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -31,10 +33,12 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->profile(\App\Filament\Pages\Auth\CustomProfile::class, isSimple: false) // Aktifkan halaman profil (ganti password) dengan CustomProfile
+            ->profile(CustomProfile::class, isSimple: false) // Aktifkan halaman profil (ganti password) dengan CustomProfile
             ->colors([
                 'primary' => Color::Amber,
             ])
+            // Icon web (favicon) pada tab browser untuk seluruh halaman panel admin.
+            ->favicon(asset('images/web-icon.webp'))
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
@@ -48,7 +52,7 @@ class AdminPanelProvider extends PanelProvider
                 LatestFeedbackWidget::class,
             ])
             ->plugins([
-                \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make()
+                FilamentShieldPlugin::make(),
             ])
             ->middleware([
                 EncryptCookies::class,

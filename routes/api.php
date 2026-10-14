@@ -1,5 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\Cms\ArticleApiController;
+use App\Http\Controllers\Api\Cms\BannerPromotionApiController;
+use App\Http\Controllers\Api\Cms\FacilityServiceApiController;
+use App\Http\Controllers\Api\Cms\NewsApiController;
+use App\Http\Controllers\Api\Cms\PromotionApiController;
+use App\Http\Controllers\Api\Cms\RoomFacilityApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -10,22 +16,22 @@ Route::get('/user', function (Request $request) {
 Route::prefix('v1/cms')
     ->middleware('verifyCmsHmac')
     ->group(function () {
-        Route::get('/news', [\App\Http\Controllers\Api\Cms\NewsApiController::class, 'index']);
-        Route::get('/news/{slug}', [\App\Http\Controllers\Api\Cms\NewsApiController::class, 'show']);
+        Route::get('/news', [NewsApiController::class, 'index']);
+        Route::get('/news/{slug}', [NewsApiController::class, 'show']);
 
-        Route::get('/articles', [\App\Http\Controllers\Api\Cms\ArticleApiController::class, 'index']);
-        Route::get('/articles/{id}', [\App\Http\Controllers\Api\Cms\ArticleApiController::class, 'show']);
+        Route::get('/articles', [ArticleApiController::class, 'index']);
+        Route::get('/articles/{identifier}', [ArticleApiController::class, 'show']);
 
-        Route::get('/promotions', [\App\Http\Controllers\Api\Cms\PromotionApiController::class, 'index']);
-        Route::get('/promotions/{id}', [\App\Http\Controllers\Api\Cms\PromotionApiController::class, 'show']);
+        Route::get('/promotions', [PromotionApiController::class, 'index']);
+        Route::get('/promotions/{identifier}', [PromotionApiController::class, 'show']);
 
-        Route::get('/facilities', [\App\Http\Controllers\Api\Cms\FacilityServiceApiController::class, 'index']);
-        Route::get('/facilities/{slug}', [\App\Http\Controllers\Api\Cms\FacilityServiceApiController::class, 'show']);
+        Route::get('/facilities', [FacilityServiceApiController::class, 'index']);
+        Route::get('/facilities/{slug}', [FacilityServiceApiController::class, 'show']);
 
         // Room Facilities (Ruang Perawatan)
-        Route::get('/room-facilities', [\App\Http\Controllers\Api\Cms\RoomFacilityApiController::class, 'index']);
-        Route::get('/room-facilities/{slug}', [\App\Http\Controllers\Api\Cms\RoomFacilityApiController::class, 'show']);
+        Route::get('/room-facilities', [RoomFacilityApiController::class, 'index']);
+        Route::get('/room-facilities/{slug}', [RoomFacilityApiController::class, 'show']);
 
         // Banner Promotions (Carousel Halaman Utama)
-        Route::get('/banner-promotions', [\App\Http\Controllers\Api\Cms\BannerPromotionApiController::class, 'index']);
+        Route::get('/banner-promotions', [BannerPromotionApiController::class, 'index']);
     });
