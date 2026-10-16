@@ -50,7 +50,7 @@ class BannerPromotionForm
                         FileUpload::make('image_path')
                             ->label('Gambar')
                             ->helperText('Upload gambar banner dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB')
-                            ->disk('s3')
+                            ->disk(config('filesystems.media_disk'))
                             ->directory('banners')
                             ->image()
                             ->imageEditor()

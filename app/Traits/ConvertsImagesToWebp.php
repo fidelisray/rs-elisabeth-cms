@@ -42,13 +42,13 @@ trait ConvertsImagesToWebp
     protected int $webpQuality = 82;
 
     /**
-     * Ambil nama disk aktif dari konfigurasi FILESYSTEM_DISK di .env.
-     * Dengan ini, trait bekerja secara otomatis di lingkungan lokal (public)
-     * maupun production (s3/MinIO) tanpa perlu mengubah kode apapun.
+     * Disk media tunggal (config filesystems.media_disk). Sama dengan disk yang
+     * dipakai form upload Filament dan URL gambar di API, sehingga file yang
+     * diunggah, dikonversi, dan ditampilkan selalu berada di disk yang sama.
      */
     protected function getStorageDisk(): string
     {
-        return config('filesystems.default', 's3');
+        return config('filesystems.media_disk', 's3');
     }
 
     /**
@@ -77,6 +77,7 @@ trait ConvertsImagesToWebp
         $disk = $this->getStorageDisk();
         $needsUpdate = false;
         $updates = [];
+        $originals = [];
 
         foreach ($this->getWebpFields() as $field) {
             $currentPath = $this->getRawOriginal($field) ?? $this->getAttribute($field);
@@ -103,18 +104,41 @@ trait ConvertsImagesToWebp
 
             $webpPath = $this->convertToWebp($disk, $currentPath);
 
+            // Konversi gagal (null) atau tidak menghasilkan path baru: file asli
+            // dibiarkan apa adanya dan kolom database tidak diubah.
             if ($webpPath && $webpPath !== $currentPath) {
-                // Hapus file asli (.jpg/.png) dari storage setelah konversi berhasil
-                Storage::disk($disk)->delete($currentPath);
-
                 $updates[$field] = $webpPath;
+                $originals[$field] = $currentPath;
                 $needsUpdate = true;
             }
         }
 
-        // Update kolom path di database (tanpa memicu event saved() lagi)
-        if ($needsUpdate) {
+        if (! $needsUpdate) {
+            return;
+        }
+
+        // URUTAN AMAN: file .webp sudah tertulis -> update database -> BARU hapus
+        // file asli. Jika update database gagal, file asli tetap ada dan .webp
+        // yang baru dibuat dibersihkan, sehingga tidak ada record yang menunjuk
+        // ke file yang hilang.
+        try {
             $this->updateQuietly($updates);
+        } catch (\Throwable $e) {
+            foreach ($updates as $newPath) {
+                Storage::disk($disk)->delete($newPath);
+            }
+
+            Log::error('ConvertsImagesToWebp: Gagal memperbarui database, file asli dipertahankan.', [
+                'model' => static::class,
+                'disk' => $disk,
+                'error' => $e->getMessage(),
+            ]);
+
+            return;
+        }
+
+        foreach ($originals as $oldPath) {
+            Storage::disk($disk)->delete($oldPath);
         }
     }
 

@@ -20,7 +20,7 @@ abstract class BaseCmsResource extends JsonResource
         }
 
         /** @var FilesystemAdapter $disk */
-        $disk = Storage::disk(config('filesystems.default', 's3'));
+        $disk = Storage::disk(config('filesystems.media_disk', 's3'));
 
         return $disk->url($path);
     }

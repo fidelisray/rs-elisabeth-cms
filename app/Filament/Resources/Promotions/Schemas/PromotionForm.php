@@ -71,7 +71,7 @@ class PromotionForm
                         FileUpload::make('image_path')
                             ->label('Poster')
                             ->required()
-                            ->disk('s3')
+                            ->disk(config('filesystems.media_disk'))
                             ->directory('promotions')
                             ->image()
                             ->imageEditor()

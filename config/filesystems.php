@@ -17,6 +17,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Media Disk
+    |--------------------------------------------------------------------------
+    |
+    | Satu-satunya disk untuk seluruh media konten (upload Filament, konversi
+    | WebP, dan URL gambar di API). Semua kode harus memakai config ini, bukan
+    | literal nama disk, agar upload dan URL tidak pernah menunjuk disk berbeda.
+    | Berlaku sama di semua environment.
+    |
+    */
+
+    'media_disk' => env('MEDIA_DISK', 's3'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |

@@ -77,7 +77,7 @@ class ArticleForm
                         FileUpload::make('image_path')
                             // ->label('Thumbnail Artikel')
                             ->required()
-                            ->disk('s3')
+                            ->disk(config('filesystems.media_disk'))
                             ->directory('articles')
                             ->image()
                             ->imageEditor()
