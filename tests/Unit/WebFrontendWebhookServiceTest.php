@@ -75,7 +75,7 @@ class WebFrontendWebhookServiceTest extends TestCase
             $hasValidPayload = $body['module'] === 'news'
                 && $body['event'] === 'content.updated'
                 && $body['slug'] === 'berita-terbaru'
-                && !isset($body['timestamp']);
+                && ! isset($body['timestamp']);
 
             // Validasi rumus signature
             $timestamp = $request->header('X-Timestamp')[0];

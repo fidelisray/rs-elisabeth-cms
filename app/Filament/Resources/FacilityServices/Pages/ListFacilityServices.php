@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\FacilityServices\Pages;
 
 use App\Filament\Resources\FacilityServices\FacilityServiceResource;
+use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
 class ListFacilityServices extends ListRecords
@@ -12,7 +13,7 @@ class ListFacilityServices extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            \Filament\Actions\CreateAction::make(),
+            CreateAction::make(),
         ];
     }
 }

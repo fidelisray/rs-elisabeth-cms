@@ -49,7 +49,7 @@ class NewsTable
                 TextColumn::make('author')
                     ->label('Penulis')
                     ->searchable(),
-                
+
                 TextColumn::make('created_at')
                     ->label('Dibuat Pada')
                     ->dateTime('d M Y, H:i')

@@ -2,9 +2,10 @@
 
 namespace App\Http\Resources\Api\Cms;
 
+use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\Request;
 
 abstract class BaseCmsResource extends JsonResource
 {
@@ -18,7 +19,7 @@ abstract class BaseCmsResource extends JsonResource
             return null;
         }
 
-        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        /** @var FilesystemAdapter $disk */
         $disk = Storage::disk(config('filesystems.default', 's3'));
 
         return $disk->url($path);
@@ -30,9 +31,9 @@ abstract class BaseCmsResource extends JsonResource
     public function with(Request $request): array
     {
         return [
-            'success'     => true,
+            'success' => true,
             'status_code' => 200,
-            'message'     => 'Data retrieved successfully.',
+            'message' => 'Data retrieved successfully.',
         ];
     }
 }

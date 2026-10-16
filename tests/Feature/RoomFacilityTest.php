@@ -20,9 +20,9 @@ class RoomFacilityTest extends TestCase
     public function test_room_auto_fills_created_by_with_system_when_no_user(): void
     {
         $room = RoomFacility::create([
-            'name'        => 'Test Room',
-            'slug'        => 'test-room-1',
-            'category'    => 'standard',
+            'name' => 'Test Room',
+            'slug' => 'test-room-1',
+            'category' => 'standard',
             'description' => 'Desc',
         ]);
 
@@ -43,7 +43,7 @@ class RoomFacilityTest extends TestCase
     public function test_room_clears_cache_on_saved_and_deleted(): void
     {
         Cache::put('rs_web_cms_api_room_facilities', 'data-lama');
-        
+
         $room = RoomFacility::create(['name' => 'Name', 'slug' => 'name-2', 'category' => 'standard', 'description' => 'Desc']);
         $this->assertFalse(Cache::has('rs_web_cms_api_room_facilities'));
 
@@ -55,11 +55,11 @@ class RoomFacilityTest extends TestCase
     public function test_room_is_active_cast_works_correctly(): void
     {
         $room = RoomFacility::create([
-            'name'        => 'Name',
-            'slug'        => 'name-3',
-            'category'    => 'premium',
+            'name' => 'Name',
+            'slug' => 'name-3',
+            'category' => 'premium',
             'description' => 'Desc',
-            'is_active'   => true,
+            'is_active' => true,
         ]);
 
         $this->assertDatabaseHas('room_facilities', ['id' => $room->id, 'is_active' => 1]);

@@ -7,14 +7,17 @@ use App\Traits\ConvertsImagesToWebp;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 #[ObservedBy([WebFrontendWebhookObserver::class])]
 class RoomFacility extends Model
 {
-    use HasFactory;
-    use \Illuminate\Database\Eloquent\SoftDeletes;
     use ConvertsImagesToWebp;
+    use HasFactory;
+    use SoftDeletes;
 
     /**
      * Kolom-kolom yang menyimpan path gambar dan akan dikonversi ke WebP.
@@ -48,10 +51,10 @@ class RoomFacility extends Model
      * Cast JSON columns to array and boolean column to bool.
      */
     protected $casts = [
-        'amenities'           => 'array',
-        'highlight_tags'      => 'array',
-        'is_active'           => 'boolean',
-        'sort_order'          => 'integer',
+        'amenities' => 'array',
+        'highlight_tags' => 'array',
+        'is_active' => 'boolean',
+        'sort_order' => 'integer',
     ];
 
     /**
@@ -65,28 +68,27 @@ class RoomFacility extends Model
             if (empty($model->slug)) {
                 $model->slug = Str::slug($model->name);
             }
-            $model->created_by = \Illuminate\Support\Facades\Auth::user()?->email ?? 'system';
+            $model->created_by = Auth::user()?->email ?? 'system';
         });
 
         static::updating(function (self $model) {
             if (empty($model->slug)) {
                 $model->slug = Str::slug($model->name);
             }
-            $model->updated_by = \Illuminate\Support\Facades\Auth::user()?->email ?? 'system';
+            $model->updated_by = Auth::user()?->email ?? 'system';
         });
 
         static::deleting(function (self $model) {
-            $model->deleted_by = \Illuminate\Support\Facades\Auth::user()?->email ?? 'system';
+            $model->deleted_by = Auth::user()?->email ?? 'system';
             $model->saveQuietly();
         });
 
         static::saved(function ($model) {
-            \Illuminate\Support\Facades\Cache::forget('rs_web_cms_api_room_facilities');
+            Cache::forget('rs_web_cms_api_room_facilities');
         });
 
         static::deleted(function ($model) {
-            \Illuminate\Support\Facades\Cache::forget('rs_web_cms_api_room_facilities');
+            Cache::forget('rs_web_cms_api_room_facilities');
         });
     }
 }
-

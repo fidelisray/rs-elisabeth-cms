@@ -2,10 +2,11 @@
 
 namespace App\Http\Resources\Api\Cms;
 
+use App\Models\News;
 use Illuminate\Http\Request;
 
 /**
- * @mixin \App\Models\News
+ * @mixin News
  */
 class NewsResource extends BaseCmsResource
 {
@@ -15,17 +16,17 @@ class NewsResource extends BaseCmsResource
     public function toArray(Request $request): array
     {
         return [
-            'id'           => $this->id,
-            'title'        => $this->title,
-            'slug'         => $this->slug,
-            'category'     => $this->category,
-            'author'       => $this->author,
-            'excerpt'      => $this->shorts,
-            'content'      => $this->content,
-            'image_path'   => $this->image_path,
-            'image_url'    => $this->generateImageUrl($this->image_path),
+            'id' => $this->id,
+            'title' => $this->title,
+            'slug' => $this->slug,
+            'category' => $this->category,
+            'author' => $this->author,
+            'excerpt' => $this->shorts,
+            'content' => $this->content,
+            'image_path' => $this->image_path,
+            'image_url' => $this->generateImageUrl($this->image_path),
             'is_published' => $this->is_published,
-            'created_at'   => $this->created_at,
+            'created_at' => $this->created_at,
         ];
     }
 }

@@ -5,12 +5,13 @@ namespace App\Filament\Resources\BannerPromotions\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Cache;
 
 class BannerPromotionsTable
 {
@@ -20,7 +21,7 @@ class BannerPromotionsTable
             ->reorderable('sort_order')
             ->defaultSort('sort_order', 'asc')
             ->afterReordering(function (): void {
-                \Illuminate\Support\Facades\Cache::forget('local_cms_banner_promotions_');
+                Cache::forget('local_cms_banner_promotions_');
             })
             ->columns([
                 ImageColumn::make('image_path')

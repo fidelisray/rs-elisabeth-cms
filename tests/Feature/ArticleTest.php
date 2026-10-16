@@ -28,7 +28,7 @@ class ArticleTest extends TestCase
     {
         // 1. Arrange & Act: Buat artikel tanpa login (simulasi system)
         $article = Article::create([
-            'judul'   => 'Artikel Kesehatan Jantung',
+            'judul' => 'Artikel Kesehatan Jantung',
             'content' => 'Konten panjang artikel.',
         ]);
 
@@ -43,7 +43,7 @@ class ArticleTest extends TestCase
     {
         // 1. Arrange
         $article = Article::create([
-            'judul'   => 'Artikel Soft Delete',
+            'judul' => 'Artikel Soft Delete',
             'content' => 'Konten artikel.',
         ]);
         $articleId = $article->id;
@@ -99,8 +99,8 @@ class ArticleTest extends TestCase
     {
         // 1. Arrange & Act: Set is_active = true (boolean)
         $article = Article::create([
-            'judul'     => 'Artikel Aktif',
-            'content'   => 'Konten.',
+            'judul' => 'Artikel Aktif',
+            'content' => 'Konten.',
             'is_active' => true,
         ]);
 

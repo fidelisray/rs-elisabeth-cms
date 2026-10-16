@@ -5,15 +5,19 @@ namespace App\Models;
 use App\Observers\WebFrontendWebhookObserver;
 use App\Traits\ConvertsImagesToWebp;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 #[ObservedBy([WebFrontendWebhookObserver::class])]
 class Article extends Model
 {
-    use HasFactory;
-    use \Illuminate\Database\Eloquent\SoftDeletes;
     use ConvertsImagesToWebp;
+    use HasFactory;
+    use SoftDeletes;
 
     /**
      * Kolom-kolom yang menyimpan path gambar dan akan dikonversi ke WebP.
@@ -42,9 +46,9 @@ class Article extends Model
      * Interact with the article's is_active status.
      * Maps 'yes'/'no' string to boolean for Filament Toggle.
      */
-    protected function isActive(): \Illuminate\Database\Eloquent\Casts\Attribute
+    protected function isActive(): Attribute
     {
-        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+        return Attribute::make(
             get: fn (?string $value) => $value === 'yes',
             set: fn (?bool $value) => $value ? 'yes' : 'no',
         );
@@ -58,27 +62,26 @@ class Article extends Model
         parent::boot();
 
         static::creating(function ($model) {
-            $model->created_by = \Illuminate\Support\Facades\Auth::user()?->email ?? 'system';
+            $model->created_by = Auth::user()?->email ?? 'system';
         });
 
         static::updating(function ($model) {
-            $model->updated_by = \Illuminate\Support\Facades\Auth::user()?->email ?? 'system';
+            $model->updated_by = Auth::user()?->email ?? 'system';
         });
 
         static::deleting(function ($model) {
-            $model->deleted_by = \Illuminate\Support\Facades\Auth::user()?->email ?? 'system';
+            $model->deleted_by = Auth::user()?->email ?? 'system';
             $model->saveQuietly();
         });
 
         // Hapus cache API ketika data diubah atau ditambah
         static::saved(function ($model) {
-            \Illuminate\Support\Facades\Cache::put('rs_web_cms_api_articles_version', time());
+            Cache::put('rs_web_cms_api_articles_version', time());
         });
 
         // Hapus cache API ketika data dihapus
         static::deleted(function ($model) {
-            \Illuminate\Support\Facades\Cache::put('rs_web_cms_api_articles_version', time());
+            Cache::put('rs_web_cms_api_articles_version', time());
         });
     }
 }
-

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
@@ -31,19 +32,21 @@ class GenerateCmsSecretCommand extends Command
         $key = Str::random(64);
 
         if ($this->option('show')) {
-            $this->line('<comment>Generated CMS Secret Key:</comment> ' . $key);
+            $this->line('<comment>Generated CMS Secret Key:</comment> '.$key);
+
             return Command::SUCCESS;
         }
 
         // 2. Set the key in the .env file
         if (! $this->setEnvKey($key)) {
             $this->error('Failed to update the .env file. Please update it manually.');
-            $this->line('CMS_API_SECRET_WEB=' . $key);
+            $this->line('CMS_API_SECRET_WEB='.$key);
+
             return Command::FAILURE;
         }
 
         $this->info('CMS API Secret Key successfully generated and set in your .env file!');
-        $this->line('<comment>New Key:</comment> ' . $key);
+        $this->line('<comment>New Key:</comment> '.$key);
 
         return Command::SUCCESS;
     }
@@ -53,7 +56,7 @@ class GenerateCmsSecretCommand extends Command
      */
     protected function setEnvKey(string $key): bool
     {
-        /** @var \Illuminate\Foundation\Application $app */
+        /** @var Application $app */
         $app = $this->laravel;
         $envPath = $app->environmentFilePath();
 
@@ -67,12 +70,12 @@ class GenerateCmsSecretCommand extends Command
         if (str_contains($envContent, 'CMS_API_SECRET_WEB=')) {
             $envContent = preg_replace(
                 '/^CMS_API_SECRET_WEB=.*$/m',
-                'CMS_API_SECRET_WEB=' . $key,
+                'CMS_API_SECRET_WEB='.$key,
                 $envContent
             );
         } else {
             // Jika belum ada, tambahkan di baris paling bawah
-            $envContent .= PHP_EOL . 'CMS_API_SECRET_WEB=' . $key . PHP_EOL;
+            $envContent .= PHP_EOL.'CMS_API_SECRET_WEB='.$key.PHP_EOL;
         }
 
         return File::put($envPath, $envContent) !== false;

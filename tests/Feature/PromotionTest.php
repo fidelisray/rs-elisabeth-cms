@@ -20,7 +20,7 @@ class PromotionTest extends TestCase
     public function test_promotion_auto_fills_created_by_with_system_when_no_user(): void
     {
         $promo = Promotion::create([
-            'title'       => 'Test Promo',
+            'title' => 'Test Promo',
             'description' => 'Desc',
         ]);
 
@@ -41,7 +41,7 @@ class PromotionTest extends TestCase
     public function test_promotion_clears_cache_on_saved_and_deleted(): void
     {
         Cache::put('rs_web_cms_api_promotions_version', 'data-lama');
-        
+
         $promo = Promotion::create(['title' => 'Title', 'description' => 'Desc']);
         $this->assertNotEquals('data-lama', Cache::get('rs_web_cms_api_promotions_version'));
 
@@ -53,9 +53,9 @@ class PromotionTest extends TestCase
     public function test_promotion_is_active_cast_works_correctly(): void
     {
         $promo = Promotion::create([
-            'title'       => 'Title',
+            'title' => 'Title',
             'description' => 'Desc',
-            'is_active'   => true,
+            'is_active' => true,
         ]);
 
         $this->assertDatabaseHas('promotions', ['id' => $promo->id, 'is_active' => 1]);

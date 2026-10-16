@@ -25,7 +25,7 @@ class VerifyCmsHmacSignature
 
         // 2. Cek apakah Cons-ID terdaftar di config
         $clients = config('cms_api.clients', []);
-        if (!array_key_exists($consId, $clients) || empty($clients[$consId])) {
+        if (! array_key_exists($consId, $clients) || empty($clients[$consId])) {
             return $this->unauthorizedResponse('Unknown Client ID.');
         }
 
@@ -35,20 +35,20 @@ class VerifyCmsHmacSignature
         $toleranceMinutes = config('cms_api.tolerance_minutes', 5);
         $serverTime = time();
         $clientTime = (int) $timestamp;
-        
+
         $diffMinutes = abs($serverTime - $clientTime) / 60;
-        
+
         if ($diffMinutes > $toleranceMinutes) {
             return $this->unauthorizedResponse('Timestamp expired or drifted beyond tolerance.');
         }
 
         // 4. Hitung dan verifikasi Signature
         // Format: base64_encode(hash_hmac('sha256', {timestamp} . {consId}, {secretKey}, true))
-        $expectedSignatureRaw = hash_hmac('sha256', $timestamp . $consId, $secretKey, true);
+        $expectedSignatureRaw = hash_hmac('sha256', $timestamp.$consId, $secretKey, true);
         $expectedSignature = base64_encode($expectedSignatureRaw);
 
         // Gunakan hash_equals untuk mencegah Timing Attack
-        if (!hash_equals($expectedSignature, $signature)) {
+        if (! hash_equals($expectedSignature, $signature)) {
             return $this->unauthorizedResponse('Invalid signature.');
         }
 
@@ -61,10 +61,10 @@ class VerifyCmsHmacSignature
     private function unauthorizedResponse(string $message): Response
     {
         return response()->json([
-            'success'     => false,
+            'success' => false,
             'status_code' => 401,
-            'message'     => 'Unauthorized access.',
-            'errors'      => $message,
+            'message' => 'Unauthorized access.',
+            'errors' => $message,
         ], Response::HTTP_UNAUTHORIZED);
     }
 }

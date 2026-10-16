@@ -6,7 +6,10 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Str;
 
 class BannerPromotionForm
 {
@@ -25,12 +28,12 @@ class BannerPromotionForm
                             ->maxLength(255)
                             ->required()
                             ->live(onBlur: true)
-                            ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, ?string $operation, ?string $state) {
+                            ->afterStateUpdated(function (Set $set, Get $get, ?string $operation, ?string $state) {
                                 if (($operation === 'create' || empty($get('slug'))) && filled($state)) {
-                                    $set('slug', \Illuminate\Support\Str::slug($state));
+                                    $set('slug', Str::slug($state));
                                 }
                             }),
-                        
+
                         TextInput::make('slug')
                             ->label('Identifier')
                             ->placeholder('Klik pada form dan teks akan terisi otomatis')
@@ -38,7 +41,7 @@ class BannerPromotionForm
                             ->maxLength(255)
                             ->unique(ignoreRecord: true)
                             ->helperText('Dapat diedit jika diperlukan'),
-                            
+
                     ]),
 
                 Section::make('Gambar Banner')

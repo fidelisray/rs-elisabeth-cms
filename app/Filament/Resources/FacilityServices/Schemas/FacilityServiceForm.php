@@ -4,14 +4,13 @@ namespace App\Filament\Resources\FacilityServices\Schemas;
 
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
-use Filament\Schemas\Components\Grid;
 use Filament\Forms\Components\RichEditor;
-use Filament\Schemas\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
@@ -51,7 +50,7 @@ class FacilityServiceForm
                                 'Layanan Spesialis' => 'Layanan Spesialis',
                                 'Layanan Intensif' => 'Layanan Intensif',
                                 'Diagnostik' => 'Diagnostik',
-                                'Unggulan' => 'Unggulan'
+                                'Unggulan' => 'Unggulan',
                             ])
                             ->required()
                             ->columnSpanFull(),
@@ -85,7 +84,7 @@ class FacilityServiceForm
                             ->image()
                             ->imageEditor()
                             ->imageEditorAspectRatioOptions([
-                                '16:9'
+                                '16:9',
                             ])
                             // ->imageEditorAspectRatioOptions([
                             //     '1:1',
@@ -101,7 +100,7 @@ class FacilityServiceForm
                             ->required()
                             ->columnSpanFull(),
                     ]),
-                
+
                 Section::make('Call to Action (CTA)')
                     ->columnSpanFull()
                     ->columns(2)
@@ -110,30 +109,30 @@ class FacilityServiceForm
                             ->label('Label Tombol WhatsApp')
                             ->placeholder('misal: Konsultasi Gizi')
                             ->maxLength(255),
-                            
+
                         TextInput::make('wa_number')
                             ->label('Nomor WhatsApp')
                             ->prefix('https://wa.me/')
                             ->placeholder('misal: 6285600600870')
                             ->maxLength(15)
                             ->live(onBlur: true)
-                            ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set, ?string $state) {
+                            ->afterStateUpdated(function (Set $set, ?string $state) {
                                 if (filled($state)) {
                                     // Auto-format "08..." to "628..." seamlessly
                                     $cleanNumber = preg_replace('/[^0-9]/', '', $state);
                                     if (str_starts_with($cleanNumber, '0')) {
-                                        $cleanNumber = '62' . substr($cleanNumber, 1);
+                                        $cleanNumber = '62'.substr($cleanNumber, 1);
                                     }
                                     $set('wa_number', $cleanNumber);
                                 }
                             }),
-                            
+
                         TextInput::make('wa_prefilled_message')
                             ->label('Pesan Otomatis (Prefilled)')
                             ->placeholder('misal: Halo, saya ingin mendaftar Konsultasi Gizi')
                             ->maxLength(255)
                             ->columnSpanFull(),
-                            
+
                         Toggle::make('has_appointment_cta')
                             ->label('Tampilkan Tombol "Buat Janji"?')
                             ->default(false)
@@ -146,7 +145,7 @@ class FacilityServiceForm
                     ->description('Atur apakah fasilitas ini akan ditampilkan pada halaman website')
                     ->columns(2)
                     ->schema([
-                        \Filament\Forms\Components\Hidden::make('sort_order')
+                        Hidden::make('sort_order')
                             ->default(0),
 
                         Toggle::make('is_active')

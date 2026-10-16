@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class SendCacheInvalidationWebhookJob implements ShouldQueue
 {
@@ -30,8 +31,7 @@ class SendCacheInvalidationWebhookJob implements ShouldQueue
         public string $module,
         public string $event = 'content.updated',
         public ?string $slug = null
-    ) {
-    }
+    ) {}
 
     /**
      * Execute the job.
@@ -47,10 +47,10 @@ class SendCacheInvalidationWebhookJob implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
-        \Illuminate\Support\Facades\Log::error('Web Frontend Webhook - Job gagal setelah retry habis.', [
-            'module'    => $this->module,
-            'event'     => $this->event,
-            'slug'      => $this->slug,
+        Log::error('Web Frontend Webhook - Job gagal setelah retry habis.', [
+            'module' => $this->module,
+            'event' => $this->event,
+            'slug' => $this->slug,
             'exception' => $exception->getMessage(),
         ]);
     }

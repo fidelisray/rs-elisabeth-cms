@@ -2,8 +2,8 @@
 
 namespace App\Filament\Pages\Auth;
 
-use Filament\Schemas\Schema;
 use Filament\Auth\Pages\EditProfile as BaseEditProfile;
+use Filament\Schemas\Schema;
 
 class CustomProfile extends BaseEditProfile
 {
@@ -24,7 +24,7 @@ class CustomProfile extends BaseEditProfile
     protected function mutateFormDataBeforeSave(array $data): array
     {
         // Jika user mengisi/mengganti password baru, ubah status wajib ganti password menjadi false
-        if (!empty($data['password'])) {
+        if (! empty($data['password'])) {
             $data['must_change_password'] = false;
         }
 

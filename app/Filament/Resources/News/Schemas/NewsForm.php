@@ -3,14 +3,16 @@
 namespace App\Filament\Resources\News\Schemas;
 
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
-use Illuminate\Support\Str;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Str;
 
 class NewsForm
 {
@@ -28,9 +30,9 @@ class NewsForm
                             ->required()
                             ->maxLength(255)
                             ->live(onBlur: true)
-                            ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, ?string $operation, ?string $state) {
+                            ->afterStateUpdated(function (Set $set, Get $get, ?string $operation, ?string $state) {
                                 if (($operation === 'create' || empty($get('slug'))) && filled($state)) {
-                                    $set('slug', \Illuminate\Support\Str::slug($state));
+                                    $set('slug', Str::slug($state));
                                 }
                             }),
 
@@ -93,7 +95,7 @@ class NewsForm
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                             ->helperText('Upload gambar berita dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB'),
                     ]),
-                
+
                 Section::make('Publish')
                     ->columnSpanFull()
                     ->description('Atur apakah Berita ini akan ditampilkan pada halaman website')

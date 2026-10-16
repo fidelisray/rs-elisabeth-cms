@@ -44,7 +44,7 @@ class PromotionsTable
                 IconColumn::make('is_active')
                     ->label('Aktif')
                     ->boolean(),
-                
+
                 TextColumn::make('updated_at')
                     ->label('Diperbarui')
                     ->dateTime('d M Y, H:i')

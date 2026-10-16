@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\BannerPromotion;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
@@ -55,7 +56,7 @@ class BannerPromotionTest extends TestCase
     public function test_banner_uses_soft_delete(): void
     {
         // 1. Arrange
-        $banner   = BannerPromotion::create(['title' => 'Banner Soft Delete', 'image_path' => 'banners/softdelete.jpg']);
+        $banner = BannerPromotion::create(['title' => 'Banner Soft Delete', 'image_path' => 'banners/softdelete.jpg']);
         $bannerId = $banner->id;
 
         // 2. Act
@@ -116,7 +117,7 @@ class BannerPromotionTest extends TestCase
      */
     public function test_banner_creation_fails_without_title(): void
     {
-        $this->expectException(\Illuminate\Database\QueryException::class);
+        $this->expectException(QueryException::class);
 
         BannerPromotion::create(['image_path' => 'path/to/image.jpg']);
     }

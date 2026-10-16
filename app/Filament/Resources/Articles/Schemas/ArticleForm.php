@@ -3,14 +3,16 @@
 namespace App\Filament\Resources\Articles\Schemas;
 
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
-use Illuminate\Support\Str;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Str;
 
 class ArticleForm
 {
@@ -28,12 +30,12 @@ class ArticleForm
                             ->required()
                             ->maxLength(255)
                             ->live(onBlur: true)
-                            ->afterStateUpdated(function (\Filament\Schemas\Components\Utilities\Set $set, \Filament\Schemas\Components\Utilities\Get $get, ?string $operation, ?string $state) {
+                            ->afterStateUpdated(function (Set $set, Get $get, ?string $operation, ?string $state) {
                                 if (($operation === 'create' || empty($get('slug'))) && filled($state)) {
-                                    $set('slug', \Illuminate\Support\Str::slug($state));
+                                    $set('slug', Str::slug($state));
                                 }
                             }),
-                        
+
                         TextInput::make('slug')
                             ->label('Identifier')
                             ->placeholder('Klik pada form dan teks akan terisi otomatis')
@@ -50,13 +52,12 @@ class ArticleForm
                                 // 'Berita' => 'Berita',
                             ])
                             ->required(),
-                            
+
                         TextInput::make('author')
                             ->label('Author')
                             ->required()
                             ->maxLength(50)
                             ->columnSpanFull(),
-
 
                         Textarea::make('shorts')
                             ->label('Ringkasan Artikel')
@@ -91,10 +92,10 @@ class ArticleForm
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                             ->helperText('Upload thumbnail artikel dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB'),
                     ]),
-                
+
                 Section::make('Publish')
                     ->columnSpanFull()
-                    ->description('Atur apakah artikel ini akan ditampilkan pada halaman website')  
+                    ->description('Atur apakah artikel ini akan ditampilkan pada halaman website')
                     ->schema([
                         Toggle::make('is_active')
                             ->label('Aktif dan Tampilkan di halaman website')
@@ -102,8 +103,7 @@ class ArticleForm
                             ->helperText('Non-aktifkan untuk menyembunyikan artikel ini dari halaman website tanpa menghapus datanya')
                             ->columnSpanFull(),
                     ]),
-                
-                
+
             ]);
     }
 }

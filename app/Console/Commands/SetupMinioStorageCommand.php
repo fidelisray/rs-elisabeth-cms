@@ -36,11 +36,11 @@ class SetupMinioStorageCommand extends Command
      */
     public function handle(): int
     {
-        $bucket   = config('filesystems.disks.s3.bucket');
+        $bucket = config('filesystems.disks.s3.bucket');
         $endpoint = config('filesystems.disks.s3.endpoint');
-        $region   = config('filesystems.disks.s3.region', 'us-east-1');
-        $key      = config('filesystems.disks.s3.key');
-        $secret   = config('filesystems.disks.s3.secret');
+        $region = config('filesystems.disks.s3.region', 'us-east-1');
+        $key = config('filesystems.disks.s3.key');
+        $secret = config('filesystems.disks.s3.secret');
 
         // Validasi: pastikan semua konfigurasi tersedia sebelum memulai
         if (empty($bucket) || empty($endpoint) || empty($key) || empty($secret)) {
@@ -55,12 +55,12 @@ class SetupMinioStorageCommand extends Command
         // Buat S3Client secara langsung menggunakan AWS SDK untuk akses fitur-fitur
         // tingkat lanjut (seperti setBucketPolicy) yang tidak tersedia via Laravel Storage facade.
         $s3 = new S3Client([
-            'version'                 => 'latest',
-            'region'                  => $region,
-            'endpoint'                => $endpoint,
+            'version' => 'latest',
+            'region' => $region,
+            'endpoint' => $endpoint,
             'use_path_style_endpoint' => true,
-            'credentials'             => [
-                'key'    => $key,
+            'credentials' => [
+                'key' => $key,
                 'secret' => $secret,
             ],
         ]);
@@ -75,7 +75,7 @@ class SetupMinioStorageCommand extends Command
                 $this->info("✓ Bucket '{$bucket}' sudah ada.");
             }
         } catch (\Throwable $e) {
-            $this->error("Gagal memeriksa/membuat bucket: " . $e->getMessage());
+            $this->error('Gagal memeriksa/membuat bucket: '.$e->getMessage());
 
             return Command::FAILURE;
         }
@@ -85,14 +85,14 @@ class SetupMinioStorageCommand extends Command
         // operasi "GetObject" (baca/unduh file) dari bucket ini.
         // Ini adalah standar keamanan yang tepat untuk hosting media publik.
         $publicReadPolicy = json_encode([
-            'Version'   => '2012-10-17',
+            'Version' => '2012-10-17',
             'Statement' => [
                 [
-                    'Sid'       => 'PublicReadGetObject',
-                    'Effect'    => 'Allow',
+                    'Sid' => 'PublicReadGetObject',
+                    'Effect' => 'Allow',
                     'Principal' => '*',
-                    'Action'    => 's3:GetObject',
-                    'Resource'  => "arn:aws:s3:::{$bucket}/*",
+                    'Action' => 's3:GetObject',
+                    'Resource' => "arn:aws:s3:::{$bucket}/*",
                 ],
             ],
         ]);
@@ -103,7 +103,7 @@ class SetupMinioStorageCommand extends Command
                 'Policy' => $publicReadPolicy,
             ]);
 
-            $this->info("✓ Bucket Policy berhasil diatur menjadi public-read.");
+            $this->info('✓ Bucket Policy berhasil diatur menjadi public-read.');
             $this->newLine();
             $this->info('==========================================================');
             $this->info(' Setup MinIO selesai! Semua file yang diupload ke bucket');
@@ -113,7 +113,7 @@ class SetupMinioStorageCommand extends Command
             return Command::SUCCESS;
 
         } catch (\Throwable $e) {
-            $this->error("Gagal mengatur Bucket Policy: " . $e->getMessage());
+            $this->error('Gagal mengatur Bucket Policy: '.$e->getMessage());
 
             return Command::FAILURE;
         }

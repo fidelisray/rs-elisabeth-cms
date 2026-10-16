@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('author', 50)->nullable();
             $table->string('is_active', 10)->nullable()->default('no');
             $table->integer('views')->nullable()->default(0);
-            
+
             // Audit Trails & Timestamps
             $table->timestamps(); // created_at, updated_at
             $table->softDeletes(); // deleted_at

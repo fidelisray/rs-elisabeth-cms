@@ -8,6 +8,7 @@ namespace App\Http\Controllers;
  *      title="RS Elisabeth CMS API",
  *      description="API documentation for RS Elisabeth CMS endpoints.",
  * )
+ *
  * @OA\SecurityScheme(
  *      securityScheme="HmacAuth",
  *      type="apiKey",

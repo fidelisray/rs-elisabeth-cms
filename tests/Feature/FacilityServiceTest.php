@@ -20,7 +20,7 @@ class FacilityServiceTest extends TestCase
     public function test_facility_auto_fills_created_by_with_system_when_no_user(): void
     {
         $fac = FacilityService::create([
-            'name'        => 'Test Facility',
+            'name' => 'Test Facility',
             'description' => 'Desc',
         ]);
 
@@ -41,7 +41,7 @@ class FacilityServiceTest extends TestCase
     public function test_facility_clears_cache_on_saved_and_deleted(): void
     {
         Cache::put('rs_web_cms_api_facility_services', 'data-lama');
-        
+
         $fac = FacilityService::create(['name' => 'Name', 'description' => 'Desc']);
         $this->assertFalse(Cache::has('rs_web_cms_api_facility_services'));
 
@@ -53,9 +53,9 @@ class FacilityServiceTest extends TestCase
     public function test_facility_is_active_cast_works_correctly(): void
     {
         $fac = FacilityService::create([
-            'name'        => 'Name',
+            'name' => 'Name',
             'description' => 'Desc',
-            'is_active'   => true,
+            'is_active' => true,
         ]);
 
         $this->assertDatabaseHas('facility_services', ['id' => $fac->id, 'is_active' => 1]);

@@ -10,6 +10,7 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Cache;
 
 class FacilityServiceTable
 {
@@ -43,7 +44,7 @@ class FacilityServiceTable
                     ->label('Dibuat')
                     ->dateTime('d M Y, H:i')
                     ->sortable(),
-                
+
                 TextColumn::make('updated_at')
                     ->label('Diperbarui')
                     ->dateTime('d M Y, H:i')
@@ -62,7 +63,7 @@ class FacilityServiceTable
             ->reorderable('sort_order')
             ->defaultSort('sort_order', 'asc')
             ->afterReordering(function (): void {
-                \Illuminate\Support\Facades\Cache::forget('local_cms_facility_services_');
+                Cache::forget('local_cms_facility_services_');
             })
             ->filters([
                 TernaryFilter::make('is_active')

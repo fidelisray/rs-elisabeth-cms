@@ -9,7 +9,7 @@ use Tests\Traits\GeneratesHmacHeaders;
 
 class FacilityServiceApiTest extends TestCase
 {
-    use RefreshDatabase, GeneratesHmacHeaders;
+    use GeneratesHmacHeaders, RefreshDatabase;
 
     public function test_api_returns_401_without_hmac_headers(): void
     {

@@ -57,9 +57,9 @@ class BannerPromotionResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListBannerPromotions::route('/'),
+            'index' => ListBannerPromotions::route('/'),
             'create' => CreateBannerPromotion::route('/create'),
-            'edit'   => EditBannerPromotion::route('/{record}/edit'),
+            'edit' => EditBannerPromotion::route('/{record}/edit'),
         ];
     }
 }

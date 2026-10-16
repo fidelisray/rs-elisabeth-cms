@@ -46,9 +46,9 @@ class FacilityServiceResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListFacilityServices::route('/'),
+            'index' => ListFacilityServices::route('/'),
             'create' => CreateFacilityService::route('/create'),
-            'edit'   => EditFacilityService::route('/{record}/edit'),
+            'edit' => EditFacilityService::route('/{record}/edit'),
         ];
     }
 }

@@ -2,10 +2,11 @@
 
 namespace App\Http\Resources\Api\Cms;
 
+use App\Models\FacilityService;
 use Illuminate\Http\Request;
 
 /**
- * @mixin \App\Models\FacilityService
+ * @mixin FacilityService
  */
 class FacilityServiceResource extends BaseCmsResource
 {
@@ -15,19 +16,19 @@ class FacilityServiceResource extends BaseCmsResource
     public function toArray(Request $request): array
     {
         return [
-            'id'                  => $this->id,
-            'name'                => $this->name,
-            'slug'                => $this->slug,
-            'category'            => $this->category,
-            'description'         => $this->description,
-            'short_description'   => $this->short_description,
-            'image_path'          => $this->image_path,
-            'image_url'           => $this->generateImageUrl($this->image_path),
-            'highlights'          => $this->highlights,
-            'wa_link_text'        => $this->wa_link_text,
-            'wa_number'           => $this->wa_number,
-            'wa_prefilled_message'=> $this->wa_prefilled_message,
-            'wa_action_url'       => $this->wa_number ? "https://wa.me/{$this->wa_number}?text=" . urlencode((string)$this->wa_prefilled_message) : null,
+            'id' => $this->id,
+            'name' => $this->name,
+            'slug' => $this->slug,
+            'category' => $this->category,
+            'description' => $this->description,
+            'short_description' => $this->short_description,
+            'image_path' => $this->image_path,
+            'image_url' => $this->generateImageUrl($this->image_path),
+            'highlights' => $this->highlights,
+            'wa_link_text' => $this->wa_link_text,
+            'wa_number' => $this->wa_number,
+            'wa_prefilled_message' => $this->wa_prefilled_message,
+            'wa_action_url' => $this->wa_number ? "https://wa.me/{$this->wa_number}?text=".urlencode((string) $this->wa_prefilled_message) : null,
             'has_appointment_cta' => $this->has_appointment_cta,
         ];
     }

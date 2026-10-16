@@ -3,18 +3,21 @@
 namespace App\Models;
 
 use App\Observers\WebFrontendWebhookObserver;
+use App\Traits\ConvertsImagesToWebp;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 #[ObservedBy([WebFrontendWebhookObserver::class])]
 class FacilityService extends Model
 {
+    use ConvertsImagesToWebp;
     use HasFactory;
-    use \Illuminate\Database\Eloquent\SoftDeletes;
-    use \App\Traits\ConvertsImagesToWebp;
+    use SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -36,10 +39,10 @@ class FacilityService extends Model
     ];
 
     protected $casts = [
-        'highlights'          => 'array',
+        'highlights' => 'array',
         'has_appointment_cta' => 'boolean',
-        'sort_order'          => 'integer',
-        'is_active'           => 'boolean',
+        'sort_order' => 'integer',
+        'is_active' => 'boolean',
     ];
 
     /**
@@ -53,18 +56,18 @@ class FacilityService extends Model
             if (empty($model->slug)) {
                 $model->slug = Str::slug($model->name);
             }
-            $model->created_by = \Illuminate\Support\Facades\Auth::user()?->email ?? 'system';
+            $model->created_by = Auth::user()?->email ?? 'system';
         });
 
         static::updating(function (self $model) {
             if (empty($model->slug)) {
                 $model->slug = Str::slug($model->name);
             }
-            $model->updated_by = \Illuminate\Support\Facades\Auth::user()?->email ?? 'system';
+            $model->updated_by = Auth::user()?->email ?? 'system';
         });
 
         static::deleting(function (self $model) {
-            $model->deleted_by = \Illuminate\Support\Facades\Auth::user()?->email ?? 'system';
+            $model->deleted_by = Auth::user()?->email ?? 'system';
             $model->saveQuietly();
         });
 
@@ -83,4 +86,3 @@ class FacilityService extends Model
         return ['image_path'];
     }
 }
-

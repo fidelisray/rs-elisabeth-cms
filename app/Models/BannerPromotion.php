@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\Cache;
 #[ObservedBy([WebFrontendWebhookObserver::class])]
 class BannerPromotion extends Model
 {
+    use ConvertsImagesToWebp, SoftDeletes;
     use HasFactory;
-    use SoftDeletes, ConvertsImagesToWebp;
 
     /**
      * Kolom-kolom yang menyimpan path gambar dan akan dikonversi ke WebP.
@@ -24,7 +24,6 @@ class BannerPromotion extends Model
     {
         return ['image_path'];
     }
-
 
     protected $fillable = [
         'title',
@@ -38,7 +37,7 @@ class BannerPromotion extends Model
     ];
 
     protected $casts = [
-        'is_active'  => 'boolean',
+        'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];
 
@@ -77,4 +76,3 @@ class BannerPromotion extends Model
         });
     }
 }
-

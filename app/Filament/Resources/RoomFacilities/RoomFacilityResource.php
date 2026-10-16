@@ -58,9 +58,9 @@ class RoomFacilityResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => ListRoomFacilities::route('/'),
+            'index' => ListRoomFacilities::route('/'),
             'create' => CreateRoomFacility::route('/create'),
-            'edit'   => EditRoomFacility::route('/{record}/edit'),
+            'edit' => EditRoomFacility::route('/{record}/edit'),
         ];
     }
 }

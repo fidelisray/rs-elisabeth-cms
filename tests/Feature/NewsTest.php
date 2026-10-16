@@ -20,8 +20,8 @@ class NewsTest extends TestCase
     public function test_news_auto_fills_created_by_with_system_when_no_user(): void
     {
         $news = News::create([
-            'title'   => 'Test Title',
-            'slug'    => 'test-title',
+            'title' => 'Test Title',
+            'slug' => 'test-title',
             'content' => 'Test Content',
         ]);
 
@@ -42,7 +42,7 @@ class NewsTest extends TestCase
     public function test_news_clears_cache_on_saved_and_deleted(): void
     {
         Cache::put('rs_web_cms_api_news_version', 'data-lama');
-        
+
         $news = News::create(['title' => 'Title', 'slug' => 'title', 'content' => 'Content']);
         $this->assertNotEquals('data-lama', Cache::get('rs_web_cms_api_news_version'));
 
@@ -54,9 +54,9 @@ class NewsTest extends TestCase
     public function test_news_is_published_cast_works_correctly(): void
     {
         $news = News::create([
-            'title'        => 'Title',
-            'slug'         => 'title-2',
-            'content'      => 'Content',
+            'title' => 'Title',
+            'slug' => 'title-2',
+            'content' => 'Content',
             'is_published' => true,
         ]);
 

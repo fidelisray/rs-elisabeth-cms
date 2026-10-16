@@ -7,13 +7,16 @@ use App\Traits\ConvertsImagesToWebp;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 #[ObservedBy([WebFrontendWebhookObserver::class])]
 class Promotion extends Model
 {
-    use HasFactory;
-    use \Illuminate\Database\Eloquent\SoftDeletes;
     use ConvertsImagesToWebp;
+    use HasFactory;
+    use SoftDeletes;
 
     /**
      * Kolom-kolom yang menyimpan path gambar dan akan dikonversi ke WebP.
@@ -52,25 +55,24 @@ class Promotion extends Model
     protected static function booted(): void
     {
         static::creating(function ($model) {
-            $model->created_by = \Illuminate\Support\Facades\Auth::user()?->email ?? 'system';
+            $model->created_by = Auth::user()?->email ?? 'system';
         });
 
         static::updating(function ($model) {
-            $model->updated_by = \Illuminate\Support\Facades\Auth::user()?->email ?? 'system';
+            $model->updated_by = Auth::user()?->email ?? 'system';
         });
 
         static::deleting(function ($model) {
-            $model->deleted_by = \Illuminate\Support\Facades\Auth::user()?->email ?? 'system';
+            $model->deleted_by = Auth::user()?->email ?? 'system';
             $model->saveQuietly();
         });
 
         static::saved(function ($model) {
-            \Illuminate\Support\Facades\Cache::put('rs_web_cms_api_promotions_version', time());
+            Cache::put('rs_web_cms_api_promotions_version', time());
         });
 
         static::deleted(function ($model) {
-            \Illuminate\Support\Facades\Cache::put('rs_web_cms_api_promotions_version', time());
+            Cache::put('rs_web_cms_api_promotions_version', time());
         });
     }
 }
-

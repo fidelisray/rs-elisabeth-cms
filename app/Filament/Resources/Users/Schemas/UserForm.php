@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Users\Schemas;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Hash;
 
 class UserForm
 {
@@ -40,11 +41,12 @@ class UserForm
                     ->dehydrated(fn (?string $state, string $operation): bool => filled($state) || $operation === 'create')
                     ->dehydrateStateUsing(function (?string $state, string $operation) {
                         if (filled($state)) {
-                            return \Illuminate\Support\Facades\Hash::make($state);
+                            return Hash::make($state);
                         }
                         if ($operation === 'create') {
-                            return \Illuminate\Support\Facades\Hash::make('123456');
+                            return Hash::make('123456');
                         }
+
                         return null;
                     })
                     ->required(false)
@@ -53,4 +55,3 @@ class UserForm
             ]);
     }
 }
-

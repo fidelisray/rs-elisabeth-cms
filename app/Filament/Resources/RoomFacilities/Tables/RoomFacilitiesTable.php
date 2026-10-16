@@ -11,6 +11,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Cache;
 
 class RoomFacilitiesTable
 {
@@ -39,14 +40,14 @@ class RoomFacilitiesTable
                     ->label('Kategori')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'premium'  => 'warning',
+                        'premium' => 'warning',
                         'standard' => 'info',
-                        default    => 'gray',
+                        default => 'gray',
                     })
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'premium'  => '🏆 Premium',
+                        'premium' => '🏆 Premium',
                         'standard' => '🛏️ Standard',
-                        default    => $state,
+                        default => $state,
                     })
                     ->sortable(),
 
@@ -81,13 +82,13 @@ class RoomFacilitiesTable
             ->reorderable('sort_order')
             ->defaultSort('sort_order', 'asc')
             ->afterReordering(function (): void {
-                \Illuminate\Support\Facades\Cache::forget('local_cms_room_facilities_');
+                Cache::forget('local_cms_room_facilities_');
             })
             ->filters([
                 SelectFilter::make('category')
                     ->label('Kategori')
                     ->options([
-                        'premium'  => '🏆 Premium',
+                        'premium' => '🏆 Premium',
                         'standard' => '🛏️ Standard',
                     ]),
 

@@ -9,7 +9,7 @@ use Tests\Traits\GeneratesHmacHeaders;
 
 class BannerPromotionApiTest extends TestCase
 {
-    use RefreshDatabase, GeneratesHmacHeaders;
+    use GeneratesHmacHeaders, RefreshDatabase;
 
     public function test_api_returns_401_without_hmac_headers(): void
     {
@@ -23,7 +23,7 @@ class BannerPromotionApiTest extends TestCase
             'title' => 'Test Banner',
             'image_path' => 'banners/test.jpg',
             'is_active' => true,
-            'sort_order' => 1
+            'sort_order' => 1,
         ]);
 
         $response = $this->withHmac()->getJson('/api/v1/cms/banner-promotions');

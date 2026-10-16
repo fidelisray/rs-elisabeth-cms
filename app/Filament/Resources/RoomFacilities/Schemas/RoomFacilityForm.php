@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\RoomFacilities\Schemas;
 
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -48,13 +49,12 @@ class RoomFacilityForm
                             ->label('Kategori Ruangan')
                             ->placeholder('Pilih Kategori Ruangan')
                             ->options([
-                                'premium'  => 'Premium (President Suite, Suites, Executive)',
+                                'premium' => 'Premium (President Suite, Suites, Executive)',
                                 'standard' => 'Standard (VIP, Kelas I, II, III)',
                             ])
                             ->required()
                             ->helperText('Menentukan di section mana ruangan ini akan ditampilkan'),
                     ]),
-
 
                 Section::make('Deskripsi Ruangan')
                     ->columnSpanFull()
@@ -75,7 +75,7 @@ class RoomFacilityForm
                             ->rows(5)
                             ->columnSpanFull(),
                     ]),
-                
+
                 Section::make('Foto Ruangan')
                     ->columnSpanFull()
                     ->description('Upload foto ruangan dengan format landscape (16:9)')
@@ -187,7 +187,7 @@ class RoomFacilityForm
                                             'fa-solid fa-thumbs-up' => 'Sangat Direkomendasikan',
                                             'fa-solid fa-shield-heart' => 'Keamanan Ekstra',
                                             'fa-solid fa-hands-holding-child' => 'Ramah Anak & Keluarga',
-                                        ]
+                                        ],
                                     ])
                                     ->searchable()
                                     ->required(),
@@ -248,7 +248,7 @@ class RoomFacilityForm
                     ->description('Atur apakah ruangan ini akan ditampilkan pada halaman website')
                     ->columns(2)
                     ->schema([
-                        \Filament\Forms\Components\Hidden::make('sort_order')
+                        Hidden::make('sort_order')
                             ->default(0),
 
                         Toggle::make('is_active')

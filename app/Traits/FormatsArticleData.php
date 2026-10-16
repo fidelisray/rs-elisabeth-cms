@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 trait FormatsArticleData
@@ -10,16 +11,16 @@ trait FormatsArticleData
      * Format raw API data for articles/news into a standardized collection.
      * Extracts images from HTML, creates slugs, and standardizes fields.
      */
-    protected function formatApiData(array $apiData): \Illuminate\Support\Collection
+    protected function formatApiData(array $apiData): Collection
     {
-        return collect($apiData)->map(function($item) {
-            
+        return collect($apiData)->map(function ($item) {
+
             /*
             // ----- MASTER API LAMA (JANGAN DIHAPUS, UNCOMMENT JIKA INGIN KEMBALI) -----
             // Extract the first image source from the HTML description (if available)
             preg_match('/<img.+src=[\'"](?P<src>.+?)[\'"].*>/i', $item['deskripsi'] ?? '', $image);
             $thumbnail = $image['src'] ?? asset('images/hero.jpg');
-            
+
             return [
                 'id' => $item['id'] ?? 0,
                 'title' => $item['judul'] ?? 'Tanpa Judul',
@@ -33,20 +34,20 @@ trait FormatsArticleData
 
             // ----- NEW CMS API & FALLBACK LOGIC -----
             // (Menggunakan asset() agar dinamis terhadap host seperti RoomFacilities)
-            if (!empty($item['image_path'])) {
-                $thumbnail = asset('storage/' . $item['image_path']);
-            } elseif (!empty($item['image_url'])) { 
+            if (! empty($item['image_path'])) {
+                $thumbnail = asset('storage/'.$item['image_path']);
+            } elseif (! empty($item['image_url'])) {
                 $thumbnail = $item['image_url'];
             } else {
                 // Legacy RS API logic
                 preg_match('/<img.+src=[\'"](?P<src>.+?)[\'"].*>/i', $item['deskripsi'] ?? $item['content'] ?? '', $image);
                 $thumbnail = $image['src'] ?? asset('images/hero.jpg');
             }
-            
+
             return [
                 'id' => $item['id'] ?? 0,
                 'title' => $item['judul'] ?? $item['title'] ?? 'Tanpa Judul',
-                'slug' => $item['slug'] ?? Str::slug($item['judul'] ?? $item['title'] ?? 'item-' . ($item['id'] ?? rand())),
+                'slug' => $item['slug'] ?? Str::slug($item['judul'] ?? $item['title'] ?? 'item-'.($item['id'] ?? rand())),
                 'image' => $thumbnail,
                 'date' => $item['created_at'] ?? now()->toDateString(),
                 'category' => $this->getCategoryLabel($item['category'] ?? null),
@@ -64,10 +65,10 @@ trait FormatsArticleData
     {
         return match ($category) {
             'hospital_info' => 'Info Rumah Sakit',
-            'announcement'  => 'Pengumuman',
-            'event'         => 'Acara',
-            'health_news'   => 'Berita Kesehatan',
-            default         => 'Berita Umum',
+            'announcement' => 'Pengumuman',
+            'event' => 'Acara',
+            'health_news' => 'Berita Kesehatan',
+            default => 'Berita Umum',
         };
     }
 }
