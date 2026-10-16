@@ -1,14 +1,14 @@
 <?php
 
-use App\Console\Commands\RefreshGlossaryCache;
 use App\Http\Middleware\VerifyCmsHmacSignature;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -24,47 +24,61 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // Pastikan semua error pada request API (/api/*) selalu dikembalikan
-        // dalam format JSON yang konsisten, bukan halaman HTML error bawaan Laravel.
+        // Semua error pada request API (/api/*) dikembalikan sebagai JSON dengan
+        // format konsisten dan STATUS ASLINYA (404, 405, 401, 403, 429, 422, ...),
+        // bukan dipaksa menjadi 500. Hanya error yang tidak terduga yang menjadi 500.
         $exceptions->render(function (Throwable $e, Request $request) {
-            if ($request->is('api/*')) {
-                if ($e instanceof ModelNotFoundException) {
-                    return response()->json([
-                        'success' => false,
-                        'status_code' => 404,
-                        'message' => 'Resource not found.',
-                        'errors' => null,
-                    ], 404);
-                }
-
-                if ($e instanceof NotFoundHttpException) {
-                    return response()->json([
-                        'success' => false,
-                        'status_code' => 404,
-                        'message' => 'Endpoint not found.',
-                        'errors' => null,
-                    ], 404);
-                }
-
-                if ($e instanceof ValidationException) {
-                    return response()->json([
-                        'success' => false,
-                        'status_code' => 422,
-                        'message' => 'The given data was invalid.',
-                        'errors' => $e->errors(),
-                    ], 422);
-                }
-
-                // Catch-all handler for 500 Internal Server Error
-                return response()->json([
-                    'success' => false,
-                    'status_code' => 500,
-                    'message' => 'Internal server error.',
-                    'errors' => env('APP_DEBUG') ? $e->getMessage() : 'An unexpected error occurred.',
-                ], 500);
+            if (! $request->is('api/*')) {
+                return null;
             }
+
+            $envelope = fn (int $status, string $message, mixed $errors = null) => response()->json([
+                'success' => false,
+                'status_code' => $status,
+                'message' => $message,
+                'errors' => $errors,
+            ], $status);
+
+            if ($e instanceof ModelNotFoundException) {
+                return $envelope(404, 'Resource not found.');
+            }
+
+            if ($e instanceof ValidationException) {
+                return $envelope(422, 'The given data was invalid.', $e->errors());
+            }
+
+            if ($e instanceof AuthenticationException) {
+                return $envelope(401, 'Unauthenticated.');
+            }
+
+            if ($e instanceof HttpExceptionInterface) {
+                $status = $e->getStatusCode();
+
+                $message = match (true) {
+                    $status === 404 => 'Endpoint not found.',
+                    $status === 405 => 'Method not allowed.',
+                    $status === 403 => 'Forbidden.',
+                    $status === 429 => 'Too many requests.',
+                    default => $e->getMessage() !== '' ? $e->getMessage() : 'Request failed.',
+                };
+
+                $response = $envelope($status, $message);
+
+                // Pertahankan header penting (mis. Allow pada 405, Retry-After pada 429).
+                foreach ($e->getHeaders() as $name => $value) {
+                    $response->headers->set($name, $value);
+                }
+
+                return $response;
+            }
+
+            // Error tidak terduga: detail hanya ditampilkan saat debug aktif.
+            // config() dipakai (bukan env()) agar tetap benar setelah config:cache.
+            return $envelope(
+                500,
+                'Internal server error.',
+                config('app.debug') ? $e->getMessage() : 'An unexpected error occurred.'
+            );
         });
     })
-    ->withCommands([
-        RefreshGlossaryCache::class,
-    ])->create();
+    ->create();
