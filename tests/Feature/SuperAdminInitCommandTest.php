@@ -7,6 +7,7 @@ use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -43,15 +44,10 @@ class SuperAdminInitCommandTest extends TestCase
     {
         $this->seedRolesOnly();
 
-        $output = '';
-        $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])
-            ->expectsOutputToContain('Password awal')
-            ->assertExitCode(0);
-
-        // Cetak ulang via buffer: jalankan lewat Artisan::call untuk membaca output.
-        User::where('email', 'admin@rs-elisabeth.com')->delete();
         Artisan::call('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com']);
         $output = Artisan::output();
+
+        $this->assertStringContainsString('hanya ditampilkan SEKALI', $output);
 
         preg_match('/PASSWORD=(\S+)/', $output, $m);
         $this->assertNotEmpty($m[1] ?? null, 'Password harus tercetak di output.');
@@ -68,7 +64,10 @@ class SuperAdminInitCommandTest extends TestCase
         Artisan::call('app:super-admin:init', ['--email' => 'a@rs-elisabeth.com']);
         preg_match('/PASSWORD=(\S+)/', Artisan::output(), $first);
 
-        User::where('email', 'a@rs-elisabeth.com')->delete();
+        // Akun super_admin tidak boleh dihapus (K-3). Instalasi baru disimulasikan dengan
+        // mengosongkan tabel lewat query massal, yang memang tidak diproteksi penjaga.
+        DB::table('model_has_roles')->delete();
+        DB::table('users')->delete();
 
         Artisan::call('app:super-admin:init', ['--email' => 'a@rs-elisabeth.com']);
         preg_match('/PASSWORD=(\S+)/', Artisan::output(), $second);

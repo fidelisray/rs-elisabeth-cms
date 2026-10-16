@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RoleAndPermissionSeeder extends Seeder
@@ -189,23 +189,18 @@ class RoleAndPermissionSeeder extends Seeder
     }
 
     /**
-     * Buat role Staff IT: akses View semua modul + kelola User & Role.
+     * Buat role Staff IT: akses View modul konten saja (tanpa User & Role).
      */
     protected function seedStaffItRole(): Role
     {
         $viewOnly = ['ViewAny', 'View'];
         $names = [];
 
-        // View semua resource (termasuk User & Role).
-        foreach (self::ALL_SUBJECTS as $subject) {
+        // Staff IT hanya MELIHAT modul konten. Manajemen User dan Role adalah
+        // wewenang super_admin saja (K-1, K-2), jadi ADMIN_SUBJECTS tidak
+        // pernah diberikan kepada Staff IT.
+        foreach (self::CONTENT_SUBJECTS as $subject) {
             foreach ($viewOnly as $action) {
-                $names[] = "{$action}:{$subject}";
-            }
-        }
-
-        // Kelola penuh User & Role.
-        foreach (self::ADMIN_SUBJECTS as $subject) {
-            foreach (self::RESOURCE_ACTIONS as $action) {
                 $names[] = "{$action}:{$subject}";
             }
         }

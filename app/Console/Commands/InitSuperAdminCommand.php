@@ -2,12 +2,12 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Spatie\Permission\Models\Role;
 
 /**
  * Membuat akun super_admin PERTAMA dengan password acak (K-6, K-18).

@@ -3,13 +3,13 @@
 namespace Tests\Feature;
 
 use App\Filament\Pages\Auth\ForcePasswordChange;
+use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
 use Livewire\Livewire;
-use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 /**

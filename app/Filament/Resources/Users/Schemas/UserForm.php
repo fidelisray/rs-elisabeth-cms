@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
+use App\Models\Role;
 use App\Models\User;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -36,7 +37,13 @@ class UserForm
                     ->columnSpanFull(),
 
                 Select::make('roles')
-                    ->relationship('roles', 'name')
+                    // super_admin tidak pernah bisa dipilih di form (K-3): akun itu hanya
+                    // dibuat oleh pp:super-admin:init, dan hanya ada satu.
+                    ->relationship(
+                        'roles',
+                        'name',
+                        modifyQueryUsing: fn ($query) => $query->where('name', '!=', Role::SUPER_ADMIN),
+                    )
                     ->getOptionLabelFromRecordUsing(fn ($record) => str($record->name)->headline())
                     ->preload()
                     ->label('Role / Jabatan')

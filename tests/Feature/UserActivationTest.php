@@ -3,10 +3,10 @@
 namespace Tests\Feature;
 
 use App\Exceptions\UserAccessException;
+use App\Models\Role;
 use App\Models\User;
 use Filament\Panel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class UserActivationTest extends TestCase

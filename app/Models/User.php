@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Exceptions\UserAccessException;
+use App\Models\Pivots\UserRolePivot;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -14,7 +16,12 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable;
+    use HasFactory, Notifiable;
+
+    use HasRoles {
+        // roles() milik trait ditimpa di bawah agar memakai pivot penjaga.
+        roles as protected spatieRoles;
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -76,6 +83,23 @@ class User extends Authenticatable implements FilamentUser
                 throw new UserAccessException('Akun super_admin tidak boleh dinonaktifkan.');
             }
         });
+
+        // K-3: akun super_admin tidak boleh dihapus (hanya ada satu dan tidak tergantikan).
+        static::deleting(function (User $user) {
+            if ($user->isSuperAdmin()) {
+                throw new UserAccessException('Akun super_admin tidak boleh dihapus.');
+            }
+        });
+    }
+
+    /**
+     * Relasi role dengan pivot penjaga (UserRolePivot) agar aturan satu
+     * super_admin berlaku untuk assignRole, syncRoles, removeRole, dan
+     * Select relationship Filament.
+     */
+    public function roles(): MorphToMany
+    {
+        return $this->spatieRoles()->using(UserRolePivot::class);
     }
 
     /**

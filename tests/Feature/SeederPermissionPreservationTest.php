@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Role;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 /**
