@@ -2,8 +2,10 @@
 
 namespace App\Filament\Resources\Promotions\Schemas;
 
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -59,10 +61,29 @@ class PromotionForm
 
                         DatePicker::make('start_date')
                             ->label('Tanggal Promo Dimulai')
-                            ->required(),
+                            ->helperText('Boleh dikosongkan: promo langsung berlaku sejak diaktifkan.'),
+
                         DatePicker::make('end_date')
                             ->label('Tanggal Promo Berakhir')
-                            ->required(),
+                            ->afterOrEqual('start_date')
+                            ->live()
+                            ->helperText('Boleh dikosongkan. Promo berakhir pada tanggal ini (hari terakhir masih tampil).'),
+
+                        Placeholder::make('end_date_warning')
+                            ->hiddenLabel()
+                            ->content('Tanggal berakhir kosong: promo ini akan tampil terus di website sampai Anda menonaktifkannya secara manual dengan toggle "Aktif".')
+                            ->visible(fn (Get $get): bool => blank($get('end_date')))
+                            ->columnSpanFull(),
+
+                        // Konfirmasi wajib saat tanggal berakhir kosong. Bukan kolom database
+                        // (dehydrated false); divalidasi di server, bukan hanya di browser.
+                        Checkbox::make('confirm_no_end_date')
+                            ->label('Saya memahami promo ini akan tampil terus sampai saya menonaktifkannya secara manual lewat toggle Aktif.')
+                            ->visible(fn (Get $get): bool => blank($get('end_date')))
+                            ->accepted(fn (Get $get): bool => blank($get('end_date')))
+                            ->validationMessages(['accepted' => 'Centang konfirmasi ini bila tanggal berakhir dikosongkan.'])
+                            ->dehydrated(false)
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Poster Promosi')

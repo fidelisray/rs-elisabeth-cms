@@ -24,9 +24,14 @@ class PromotionApiController extends Controller
         $page = request('page', 1);
         $version = Cache::rememberForever('rs_web_cms_api_promotions_version', fn () => time());
 
-        $promotions = Cache::remember("rs_web_cms_api_promotions_v{$version}_page_{$page}", now()->addHours(2), function () {
+        // Tanggal hari ini ikut di cache key: tanpa itu, promo yang berakhir atau baru
+        // mulai pada pergantian hari tetap salah tampil sampai TTL cache habis, karena
+        // pergantian tanggal tidak memicu event model apa pun.
+        $today = Promotion::today();
+
+        $promotions = Cache::remember("rs_web_cms_api_promotions_v{$version}_{$today}_page_{$page}", now()->addHours(2), function () use ($today) {
             return Promotion::query()
-                ->where('is_active', true)
+                ->activeOn($today)
                 ->latest()
                 ->paginate(12);
         });
@@ -46,7 +51,9 @@ class PromotionApiController extends Controller
     #[OA\Response(response: 404, description: 'Resource Not Found')]
     public function show($identifier): JsonResponse
     {
-        $query = Promotion::query()->where('is_active', true);
+        // Filter tanggal yang sama dengan daftar, supaya promo yang sudah lewat atau belum mulai
+        // tidak bisa diakses langsung lewat ID maupun slug.
+        $query = Promotion::query()->activeOn();
 
         // Smart identifier: angka = lookup by ID, selain itu = lookup by slug.
         if (is_numeric($identifier)) {
