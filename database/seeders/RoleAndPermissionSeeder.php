@@ -268,8 +268,9 @@ class RoleAndPermissionSeeder extends Seeder
      */
     protected function assignRolesToUsers(Role $superAdminRole, Role $marketingRole, Role $staffItRole): void
     {
+        // super_admin sengaja TIDAK ada di sini: akun dan rolenya dibuat oleh
+        // php artisan app:super-admin:init agar hanya ada satu super_admin (K-3).
         $assignments = [
-            'admin@rs-elisabeth.com' => $superAdminRole,
             'marketing@rs-elisabeth.com' => $marketingRole,
             'it@rs-elisabeth.com' => $staffItRole,
         ];

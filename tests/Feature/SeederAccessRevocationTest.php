@@ -23,9 +23,20 @@ class SeederAccessRevocationTest extends TestCase
         $this->seed(DatabaseSeeder::class);
     }
 
+    /**
+     * super_admin dibuat lewat command (K-6), bukan seeder.
+     */
+    private function initSuperAdmin(): User
+    {
+        $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])->assertExitCode(0);
+
+        return User::where('email', 'admin@rs-elisabeth.com')->first();
+    }
+
     public function test_fresh_seed_assigns_default_roles_to_new_accounts(): void
     {
         $this->seedAll();
+        $this->initSuperAdmin();
 
         $this->assertTrue(User::where('email', 'admin@rs-elisabeth.com')->first()->hasRole('super_admin'));
         $this->assertTrue(User::where('email', 'marketing@rs-elisabeth.com')->first()->hasRole('marketing'));
@@ -76,6 +87,7 @@ class SeederAccessRevocationTest extends TestCase
     public function test_seeder_never_grants_super_admin_to_legacy_super_admin_column(): void
     {
         $this->seedAll();
+        $this->initSuperAdmin();
 
         // Dua user lama berkolom role=super_admin, tanpa role Spatie.
         $legacyA = User::factory()->create(['role' => 'super_admin', 'email' => 'lama.a@rs-elisabeth.com']);
@@ -126,6 +138,7 @@ class SeederAccessRevocationTest extends TestCase
     public function test_legacy_migration_never_grants_super_admin(): void
     {
         $this->seedAll();
+        $this->initSuperAdmin();
 
         $legacy = User::factory()->create(['role' => 'super_admin', 'email' => 'lama@rs-elisabeth.com']);
 

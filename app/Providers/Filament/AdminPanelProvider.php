@@ -5,7 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\Pages\Auth\CustomProfile;
 use App\Filament\Widgets\FeedbackStatsWidget;
 use App\Filament\Widgets\LatestFeedbackWidget;
-use App\Http\Middleware\CheckDefaultPassword;
+use App\Http\Middleware\EnforcePasswordChange;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -67,7 +67,9 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-                CheckDefaultPassword::class,
-            ]);
+                // Blokir penuh di server untuk user yang wajib ganti password (K-8).
+                // Persistent: juga berlaku pada request Livewire, bukan hanya muat halaman.
+                EnforcePasswordChange::class,
+            ], isPersistent: true);
     }
 }

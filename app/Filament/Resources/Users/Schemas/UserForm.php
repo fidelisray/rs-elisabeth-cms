@@ -59,7 +59,7 @@ class UserForm
                         return null;
                     })
                     ->required(false)
-                    ->helperText('Kosongkan jika tidak ingin mengubah password. Untuk user baru, password default otomatis menjadi "123456".')
+                    ->helperText('Kosongkan jika tidak ingin mengubah password. Untuk user baru, password sementara otomatis "123456". Pengguna wajib menggantinya saat login pertama.')
                     ->columnSpanFull(),
             ]);
     }

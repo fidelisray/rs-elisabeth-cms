@@ -64,7 +64,7 @@ class UsersTable
                     ->sortable(),
 
                 IconColumn::make('must_change_password')
-                    ->label('Password Default?')
+                    ->label('Wajib Ganti Password?')
                     ->boolean()
                     ->trueIcon('heroicon-o-exclamation-circle')
                     ->falseIcon('heroicon-o-check-circle')
@@ -122,6 +122,9 @@ class UsersTable
                     ->label('Reset Password')
                     ->icon('heroicon-o-key')
                     ->color('warning')
+                    // Reset ke password default hanya untuk staf. Password super_admin
+                    // tidak pernah direset ke nilai yang diketahui publik (K-6).
+                    ->visible(fn ($record): bool => ! $record->isSuperAdmin())
                     ->requiresConfirmation()
                     ->modalHeading('Reset Password User')
                     ->modalDescription(fn ($record) => "Apakah Anda yakin ingin mereset password {$record->name} ke password default \"123456\"?")
@@ -134,7 +137,7 @@ class UsersTable
                         Notification::make()
                             ->success()
                             ->title('Password Berhasil Direset')
-                            ->body("Password {$record->name} telah direset ke \"123456\".")
+                            ->body("Password {$record->name} telah direset ke password sementara. Pengguna wajib menggantinya saat login berikutnya.")
                             ->send();
                     }),
             ])

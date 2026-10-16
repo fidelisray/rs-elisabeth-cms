@@ -102,7 +102,8 @@ class UserActivationTest extends TestCase
 
     public function test_active_session_is_rejected_after_deactivation(): void
     {
-        $user = $this->userWithRole('marketing');
+        // User yang sudah mengganti password awalnya (tidak terkena blokir ganti password).
+        $user = $this->userWithRole('marketing', ['must_change_password' => false]);
 
         // Sesi aktif: panel dapat diakses.
         $this->actingAs($user)->get('/admin')->assertOk();

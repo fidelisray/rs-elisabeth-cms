@@ -20,7 +20,7 @@ class AdminUserSeeder extends Seeder
     /**
      * Run the database seeds.
      *
-     * Seeder ini HANYA membuat akun default dan BERSIFAT NON-DESTRUCTIVE:
+     * Seeder ini HANYA membuat akun marketing dan Staff IT, dan BERSIFAT NON-DESTRUCTIVE:
      * - Memakai `firstOrCreate` sehingga TIDAK pernah menimpa password/atribut
      *   akun yang sudah ada (aman dijalankan ulang setiap deploy).
      * - Penetapan role dilakukan di RoleAndPermissionSeeder, hanya untuk akun baru.
@@ -32,15 +32,10 @@ class AdminUserSeeder extends Seeder
     {
         self::$createdEmails = [];
 
-        // 1. Akun Super Admin utama.
-        //    must_change_password = false karena Super Admin sudah langsung
-        //    menetapkan password-nya sendiri sejak awal.
-        $this->firstOrCreateAccount('admin@rs-elisabeth.com', [
-            'name' => 'Super Admin',
-            'password' => Hash::make('admin@123456'),
-            'role' => 'super_admin',
-            'must_change_password' => false,
-        ]);
+        // 1. Akun super_admin TIDAK dibuat di sini. Password tetap di kode
+        //    dianggap bocor (K-6). Akun dibuat sekali lewat:
+        //      php artisan app:super-admin:init
+        //    yang membuat password acak dan menampilkannya satu kali.
 
         // 2. Akun Staf Marketing (menggantikan akun humas@rs-elisabeth.com).
         //    Migrasi hanya dilakukan jika marketing belum ada, dan TANPA
