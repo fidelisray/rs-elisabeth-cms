@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\FacilityServices\Tables;
 
+use App\Support\ApiCacheInvalidator;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -10,7 +11,6 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Cache;
 
 class FacilityServiceTable
 {
@@ -63,7 +63,7 @@ class FacilityServiceTable
             ->reorderable('sort_order')
             ->defaultSort('sort_order', 'asc')
             ->afterReordering(function (): void {
-                Cache::forget('local_cms_facility_services_');
+                ApiCacheInvalidator::forModule('facilities');
             })
             ->filters([
                 TernaryFilter::make('is_active')

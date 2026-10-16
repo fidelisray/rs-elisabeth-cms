@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\RoomFacilities\Tables;
 
+use App\Support\ApiCacheInvalidator;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -11,7 +12,6 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Cache;
 
 class RoomFacilitiesTable
 {
@@ -82,7 +82,7 @@ class RoomFacilitiesTable
             ->reorderable('sort_order')
             ->defaultSort('sort_order', 'asc')
             ->afterReordering(function (): void {
-                Cache::forget('local_cms_room_facilities_');
+                ApiCacheInvalidator::forModule('room_facilities');
             })
             ->filters([
                 SelectFilter::make('category')
