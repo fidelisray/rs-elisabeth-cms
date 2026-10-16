@@ -9,32 +9,38 @@ use Illuminate\Support\Facades\Hash;
 class AdminUserSeeder extends Seeder
 {
     /**
+     * Email akun default yang BARU dibuat pada eksekusi seeder ini.
+     * Dipakai RoleAndPermissionSeeder agar role hanya dipasang pada akun baru
+     * dan tidak pernah mengembalikan role yang sudah dicabut admin.
+     *
+     * @var list<string>
+     */
+    public static array $createdEmails = [];
+
+    /**
      * Run the database seeds.
      *
-     * Seeder ini HANYA membuat akun-akun default dan BERSIFAT NON-DESTRUCTIVE:
+     * Seeder ini HANYA membuat akun default dan BERSIFAT NON-DESTRUCTIVE:
      * - Memakai `firstOrCreate` sehingga TIDAK pernah menimpa password/atribut
-     *   akun yang sudah ada (aman dijalankan ulang setiap kali boot/deploy).
-     * - Penetapan role Spatie (super_admin, marketing, Staff IT) sepenuhnya
-     *   dilakukan di RoleAndPermissionSeeder agar logika role terpusat.
+     *   akun yang sudah ada (aman dijalankan ulang setiap deploy).
+     * - Penetapan role dilakukan di RoleAndPermissionSeeder, hanya untuk akun baru.
      *
-     * PENTING: Jangan mengganti `firstOrCreate` dengan `updateOrCreate` di sini,
-     * karena itu akan mereset password admin kembali ke default pada setiap
-     * restart container (menghapus perubahan password yang sudah dilakukan user).
+     * PENTING: Jangan mengganti `firstOrCreate` dengan `updateOrCreate`, karena
+     * itu akan mereset password pada setiap deploy.
      */
     public function run(): void
     {
+        self::$createdEmails = [];
+
         // 1. Akun Super Admin utama.
         //    must_change_password = false karena Super Admin sudah langsung
         //    menetapkan password-nya sendiri sejak awal.
-        User::firstOrCreate(
-            ['email' => 'admin@rs-elisabeth.com'],
-            [
-                'name' => 'Super Admin',
-                'password' => Hash::make('admin@123456'),
-                'role' => 'super_admin',
-                'must_change_password' => false,
-            ]
-        );
+        $this->firstOrCreateAccount('admin@rs-elisabeth.com', [
+            'name' => 'Super Admin',
+            'password' => Hash::make('admin@123456'),
+            'role' => 'super_admin',
+            'must_change_password' => false,
+        ]);
 
         // 2. Akun Staf Marketing (menggantikan akun humas@rs-elisabeth.com).
         //    Migrasi hanya dilakukan jika marketing belum ada, dan TANPA
@@ -49,26 +55,36 @@ class AdminUserSeeder extends Seeder
                 'role' => 'staff',
             ]);
         } elseif (! $marketingExists) {
-            User::firstOrCreate(
-                ['email' => 'marketing@rs-elisabeth.com'],
-                [
-                    'name' => 'Staf Marketing',
-                    'password' => Hash::make('123456'),
-                    'role' => 'staff',
-                    'must_change_password' => true,
-                ]
-            );
-        }
-
-        // 3. Akun Staf IT dengan password default '123456'.
-        User::firstOrCreate(
-            ['email' => 'it@rs-elisabeth.com'],
-            [
-                'name' => 'Staff IT',
+            $this->firstOrCreateAccount('marketing@rs-elisabeth.com', [
+                'name' => 'Staf Marketing',
                 'password' => Hash::make('123456'),
                 'role' => 'staff',
                 'must_change_password' => true,
-            ]
-        );
+            ]);
+        }
+
+        // 3. Akun Staf IT dengan password default '123456'.
+        $this->firstOrCreateAccount('it@rs-elisabeth.com', [
+            'name' => 'Staff IT',
+            'password' => Hash::make('123456'),
+            'role' => 'staff',
+            'must_change_password' => true,
+        ]);
+    }
+
+    /**
+     * Buat akun bila belum ada dan catat bila benar-benar baru dibuat.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function firstOrCreateAccount(string $email, array $attributes): User
+    {
+        $user = User::firstOrCreate(['email' => $email], $attributes);
+
+        if ($user->wasRecentlyCreated) {
+            self::$createdEmails[] = $email;
+        }
+
+        return $user;
     }
 }

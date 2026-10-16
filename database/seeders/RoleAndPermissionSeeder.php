@@ -235,44 +235,34 @@ class RoleAndPermissionSeeder extends Seeder
     }
 
     /**
-     * Pasangkan role Spatie ke masing-masing akun default.
+     * Pasangkan role Spatie ke tiga akun default HANYA saat akun tersebut
+     * baru dibuat oleh AdminUserSeeder pada eksekusi ini.
      *
-     * Memakai `assignRole` (aditif) sehingga TIDAK pernah melepas role lain
-     * yang mungkin sudah diberikan secara manual oleh admin.
+     * Seeder ini berjalan pada setiap deploy. Karena itu ia TIDAK boleh:
+     * - mengembalikan role yang sudah dicabut admin (pencabutan akses harus bertahan),
+     * - memberi role ke user lain berdasarkan kolom legacy `users.role`
+     *   (hal itu pernah melanggar aturan satu super_admin).
+     *
+     * Migrasi data user lama dilakukan sekali lewat migration
+     * `migrate_legacy_user_roles`, bukan di seeder.
      */
     protected function assignRolesToUsers(Role $superAdminRole, Role $marketingRole, Role $staffItRole): void
     {
-        $admin = User::where('email', 'admin@rs-elisabeth.com')->first();
-        if ($admin && ! $admin->hasRole($superAdminRole)) {
-            $admin->assignRole($superAdminRole);
-        }
+        $assignments = [
+            'admin@rs-elisabeth.com' => $superAdminRole,
+            'marketing@rs-elisabeth.com' => $marketingRole,
+            'it@rs-elisabeth.com' => $staffItRole,
+        ];
 
-        $marketing = User::where('email', 'marketing@rs-elisabeth.com')->first();
-        if ($marketing && ! $marketing->hasRole($marketingRole)) {
-            $marketing->assignRole($marketingRole);
-        }
-
-        $it = User::where('email', 'it@rs-elisabeth.com')->first();
-        if ($it && ! $it->hasRole($staffItRole)) {
-            $it->assignRole($staffItRole);
-        }
-
-        // Migrasi user super_admin lama (kolom role = super_admin) yang belum
-        // memiliki role Spatie.
-        $oldSuperAdmins = User::where('role', 'super_admin')->get();
-        foreach ($oldSuperAdmins as $user) {
-            if (! $user->hasRole(self::ROLE_SUPER_ADMIN)) {
-                $user->assignRole($superAdminRole);
+        foreach ($assignments as $email => $role) {
+            if (! in_array($email, AdminUserSeeder::$createdEmails, true)) {
+                continue;
             }
-        }
 
-        // Migrasi user staff umum lainnya (selain marketing & it & humas lama).
-        $otherStaffs = User::where('role', 'staff')
-            ->whereNotIn('email', ['marketing@rs-elisabeth.com', 'it@rs-elisabeth.com', 'humas@rs-elisabeth.com'])
-            ->get();
-        foreach ($otherStaffs as $user) {
-            if (! $user->roles()->exists()) {
-                $user->assignRole($marketingRole);
+            $user = User::where('email', $email)->first();
+
+            if ($user && ! $user->hasRole($role)) {
+                $user->assignRole($role);
             }
         }
 
