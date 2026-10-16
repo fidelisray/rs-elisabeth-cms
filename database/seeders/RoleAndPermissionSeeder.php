@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -128,11 +129,36 @@ class RoleAndPermissionSeeder extends Seeder
 
     /**
      * Buat role super_admin dan berikan SEMUA permission.
+     *
+     * Bersifat aditif (givePermissionTo): permission baru dari modul baru
+     * otomatis ikut, dan tidak ada permission yang pernah dicabut dari
+     * super_admin oleh seeder.
      */
     protected function seedSuperAdminRole(): Role
     {
         $role = Role::findOrCreate(self::ROLE_SUPER_ADMIN, 'web');
-        $role->syncPermissions(Permission::all());
+        $role->givePermissionTo(Permission::all());
+
+        return $role;
+    }
+
+    /**
+     * Terapkan set permission awal HANYA bila role baru dibuat.
+     *
+     * Seeder berjalan pada setiap rilis. Untuk role yang sudah ada, perubahan
+     * permission yang dibuat admin lewat UI Shield harus bertahan, jadi seeder
+     * tidak menambah maupun mencabut apa pun. Pencabutan permission lama
+     * dilakukan lewat migration, bukan seeder.
+     *
+     * @param  Collection<int, Permission>  $permissions
+     */
+    protected function seedRoleWithInitialPermissions(string $name, $permissions): Role
+    {
+        $role = Role::findOrCreate($name, 'web');
+
+        if ($role->wasRecentlyCreated) {
+            $role->syncPermissions($permissions);
+        }
 
         return $role;
     }
@@ -159,10 +185,7 @@ class RoleAndPermissionSeeder extends Seeder
 
         $permissions = Permission::whereIn('name', $names)->get();
 
-        $role = Role::findOrCreate(self::ROLE_MARKETING, 'web');
-        $role->syncPermissions($permissions);
-
-        return $role;
+        return $this->seedRoleWithInitialPermissions(self::ROLE_MARKETING, $permissions);
     }
 
     /**
@@ -193,10 +216,7 @@ class RoleAndPermissionSeeder extends Seeder
 
         $permissions = Permission::whereIn('name', $names)->get();
 
-        $role = Role::findOrCreate(self::ROLE_STAFF_IT, 'web');
-        $role->syncPermissions($permissions);
-
-        return $role;
+        return $this->seedRoleWithInitialPermissions(self::ROLE_STAFF_IT, $permissions);
     }
 
     /**
