@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Exceptions\UserAccessException;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -26,6 +27,17 @@ class User extends Authenticatable implements FilamentUser
         'password',
         'role',
         'must_change_password',
+        'is_active',
+    ];
+
+    /**
+     * Nilai bawaan atribut. Selaras dengan default kolom di database
+     * agar model yang baru dibuat langsung berstatus aktif.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_active' => true,
     ];
 
     /**
@@ -49,16 +61,32 @@ class User extends Authenticatable implements FilamentUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'must_change_password' => 'boolean',
+            'is_active' => 'boolean',
         ];
     }
 
     /**
+     * Guard aturan akses. Ditegakkan di model agar berlaku untuk semua jalur
+     * kode (form, command, tinker), bukan hanya satu halaman.
+     */
+    protected static function booted(): void
+    {
+        static::updating(function (User $user) {
+            if ($user->isDirty('is_active') && ! $user->is_active && $user->isSuperAdmin()) {
+                throw new UserAccessException('Akun super_admin tidak boleh dinonaktifkan.');
+            }
+        });
+    }
+
+    /**
      * Menentukan apakah user ini boleh mengakses panel Filament Admin.
-     * Mengizinkan semua user yang memiliki minimal 1 role/peran.
+     * Syarat: akun aktif DAN memiliki minimal 1 role/peran.
+     * Role tidak dihapus saat akun dinonaktifkan, sehingga pengaktifan kembali
+     * langsung memulihkan akses tanpa perlu mengatur ulang role.
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->roles()->exists();
+        return $this->is_active && $this->roles()->exists();
     }
 
     /**

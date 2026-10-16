@@ -2,8 +2,10 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
+use App\Models\User;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Hash;
 
@@ -24,6 +26,13 @@ class UserForm
                     ->email()
                     ->required()
                     ->unique(ignoreRecord: true)
+                    ->columnSpanFull(),
+
+                Toggle::make('is_active')
+                    ->label('Akun Aktif')
+                    ->helperText('Nonaktifkan untuk mencabut akses panel tanpa menghapus role. Akun bisa diaktifkan kembali kapan saja.')
+                    ->default(true)
+                    ->disabled(fn (?User $record): bool => $record?->isSuperAdmin() ?? false)
                     ->columnSpanFull(),
 
                 Select::make('roles')

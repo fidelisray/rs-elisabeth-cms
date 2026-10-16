@@ -2,16 +2,32 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
+use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class UsersTable
 {
+    /**
+     * Aksi aktif/nonaktif hanya boleh dilakukan super_admin, tidak pada diri
+     * sendiri, dan tidak pada akun super_admin.
+     */
+    private static function canToggle(User $record): bool
+    {
+        $actor = Auth::user();
+
+        return $actor !== null
+            && $actor->isSuperAdmin()
+            && $actor->getKey() !== $record->getKey()
+            && ! $record->isSuperAdmin();
+    }
+
     public static function configure(Table $table): Table
     {
         return $table
@@ -42,6 +58,11 @@ class UsersTable
                         default => $state,
                     }),
 
+                IconColumn::make('is_active')
+                    ->label('Aktif')
+                    ->boolean()
+                    ->sortable(),
+
                 IconColumn::make('must_change_password')
                     ->label('Password Default?')
                     ->boolean()
@@ -60,6 +81,42 @@ class UsersTable
             ->recordActions([
                 EditAction::make()
                     ->label('Edit'),
+
+                Action::make('deactivate')
+                    ->label('Nonaktifkan')
+                    ->icon('heroicon-o-no-symbol')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Nonaktifkan Akun')
+                    ->modalDescription(fn ($record) => "Akses panel {$record->name} akan dicabut. Role tetap tersimpan dan akun dapat diaktifkan kembali.")
+                    ->visible(fn ($record): bool => $record->is_active && self::canToggle($record))
+                    ->action(function ($record) {
+                        $record->update(['is_active' => false]);
+
+                        Notification::make()
+                            ->success()
+                            ->title('Akun dinonaktifkan')
+                            ->body("{$record->name} tidak dapat lagi mengakses panel.")
+                            ->send();
+                    }),
+
+                Action::make('activate')
+                    ->label('Aktifkan')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Aktifkan Akun')
+                    ->modalDescription(fn ($record) => "Akses panel {$record->name} akan dipulihkan sesuai role yang dimiliki.")
+                    ->visible(fn ($record): bool => ! $record->is_active && self::canToggle($record))
+                    ->action(function ($record) {
+                        $record->update(['is_active' => true]);
+
+                        Notification::make()
+                            ->success()
+                            ->title('Akun diaktifkan')
+                            ->body("{$record->name} dapat kembali mengakses panel.")
+                            ->send();
+                    }),
 
                 Action::make('resetPassword')
                     ->label('Reset Password')
