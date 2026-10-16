@@ -10,6 +10,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
@@ -32,9 +33,13 @@ class RoomFacilityForm
                             ->required()
                             ->maxLength(100)
                             ->live(onBlur: true)
-                            ->afterStateUpdated(function (Set $set, ?string $state) {
-                                // Auto-generate slug dari name
-                                $set('slug', Str::slug($state));
+                            ->afterStateUpdated(function (Set $set, Get $get, ?string $operation, ?string $state) {
+                                // Slug hanya dibuat otomatis saat membuat data baru (atau bila slug
+                                // kosong). Slug adalah bagian URL publik, jadi mengedit nama record
+                                // lama tidak boleh mengubahnya (link web, bookmark, dan SEO).
+                                if (($operation === 'create' || empty($get('slug'))) && filled($state)) {
+                                    $set('slug', Str::slug($state));
+                                }
                             }),
 
                         TextInput::make('slug')
