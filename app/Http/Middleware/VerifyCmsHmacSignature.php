@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Symfony\Component\HttpFoundation\Response;
 
 class VerifyCmsHmacSignature
@@ -51,6 +52,29 @@ class VerifyCmsHmacSignature
         if (! hash_equals($expectedSignature, $signature)) {
             return $this->unauthorizedResponse('Invalid signature.');
         }
+
+        // 5. Batas laju per klien. Sengaja dihitung DI SINI, setelah signature terbukti valid,
+        //    bukan lewat middleware throttle terpisah: Laravel mengurutkan ulang middleware
+        //    throttle ke depan, sehingga request yang gagal HMAC ikut menghabiskan kuota.
+        //    Cons-ID bukan rahasia; tanpa ini penyerang yang memalsukan signature dapat
+        //    mengunci klien sah dengan 429.
+        $limiterKey = 'cms-api:'.$consId;
+        $maxAttempts = (int) config('cms_api.rate_limit_per_minute', 60);
+
+        if (RateLimiter::tooManyAttempts($limiterKey, $maxAttempts)) {
+            return response()->json([
+                'success' => false,
+                'status_code' => 429,
+                'message' => 'Too many requests.',
+                'errors' => null,
+            ], Response::HTTP_TOO_MANY_REQUESTS, [
+                'Retry-After' => RateLimiter::availableIn($limiterKey),
+                'X-RateLimit-Limit' => $maxAttempts,
+                'X-RateLimit-Remaining' => 0,
+            ]);
+        }
+
+        RateLimiter::hit($limiterKey, 60);
 
         return $next($request);
     }

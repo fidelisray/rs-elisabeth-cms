@@ -14,7 +14,9 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::prefix('v1/cms')
-    ->middleware('verifyCmsHmac')
+    // Batas per IP berjalan lebih dulu (untuk semua request, termasuk yang gagal HMAC).
+    // Batas per klien dihitung di dalam verifyCmsHmac setelah signature valid.
+    ->middleware(['throttleCmsIp', 'verifyCmsHmac'])
     ->group(function () {
         Route::get('/news', [NewsApiController::class, 'index']);
         Route::get('/news/{slug}', [NewsApiController::class, 'show']);

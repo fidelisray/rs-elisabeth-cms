@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Cms;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\Cms\PromotionResource;
 use App\Models\Promotion;
+use App\Support\PageParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use OpenApi\Attributes as OA;
@@ -21,7 +22,7 @@ class PromotionApiController extends Controller
     #[OA\Response(response: 200, description: 'Successful operation')]
     public function index()
     {
-        $page = request('page', 1);
+        $page = PageParameter::from(request());
         $version = Cache::rememberForever('rs_web_cms_api_promotions_version', fn () => time());
 
         // Tanggal hari ini ikut di cache key: tanpa itu, promo yang berakhir atau baru
@@ -29,11 +30,11 @@ class PromotionApiController extends Controller
         // pergantian tanggal tidak memicu event model apa pun.
         $today = Promotion::today();
 
-        $promotions = Cache::remember("rs_web_cms_api_promotions_v{$version}_{$today}_page_{$page}", now()->addHours(2), function () use ($today) {
+        $promotions = Cache::remember("rs_web_cms_api_promotions_v{$version}_{$today}_page_{$page}", now()->addHours(2), function () use ($today, $page) {
             return Promotion::query()
                 ->activeOn($today)
                 ->latest()
-                ->paginate(12);
+                ->paginate(12, ['*'], 'page', $page);
         });
 
         return PromotionResource::collection($promotions);

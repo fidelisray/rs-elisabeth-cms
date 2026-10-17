@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Cms;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\Cms\ArticleResource;
 use App\Models\Article;
+use App\Support\PageParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
 use OpenApi\Attributes as OA;
@@ -21,14 +22,14 @@ class ArticleApiController extends Controller
     #[OA\Response(response: 200, description: 'Successful operation')]
     public function index()
     {
-        $page = request('page', 1);
+        $page = PageParameter::from(request());
         $version = Cache::rememberForever('rs_web_cms_api_articles_version', fn () => time());
 
-        $articles = Cache::remember("rs_web_cms_api_articles_v{$version}_page_{$page}", now()->addHours(2), function () {
+        $articles = Cache::remember("rs_web_cms_api_articles_v{$version}_page_{$page}", now()->addHours(2), function () use ($page) {
             return Article::query()
                 ->where('is_active', 'yes')
                 ->latest()
-                ->paginate(12);
+                ->paginate(12, ['*'], 'page', $page);
         });
 
         return ArticleResource::collection($articles);

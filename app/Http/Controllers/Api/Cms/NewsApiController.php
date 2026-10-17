@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Cms;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\Cms\NewsResource;
 use App\Models\News;
+use App\Support\PageParameter;
 use Illuminate\Support\Facades\Cache;
 use OpenApi\Attributes as OA;
 
@@ -20,14 +21,14 @@ class NewsApiController extends Controller
     #[OA\Response(response: 200, description: 'Successful operation')]
     public function index()
     {
-        $page = request('page', 1);
+        $page = PageParameter::from(request());
         $version = Cache::rememberForever('rs_web_cms_api_news_version', fn () => time());
 
-        $news = Cache::remember("rs_web_cms_api_news_v{$version}_page_{$page}", now()->addHours(2), function () {
+        $news = Cache::remember("rs_web_cms_api_news_v{$version}_page_{$page}", now()->addHours(2), function () use ($page) {
             return News::query()
                 ->where('is_published', true)
                 ->latest()
-                ->paginate(12);
+                ->paginate(12, ['*'], 'page', $page);
         });
 
         return NewsResource::collection($news);

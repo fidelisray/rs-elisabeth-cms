@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Middleware\ThrottleCmsApiByIp;
 use App\Http\Middleware\VerifyCmsHmacSignature;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -21,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Daftarkan alias untuk middleware API Key CMS
         $middleware->alias([
             'verifyCmsHmac' => VerifyCmsHmacSignature::class,
+            'throttleCmsIp' => ThrottleCmsApiByIp::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -30,6 +33,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (Throwable $e, Request $request) {
             if (! $request->is('api/*')) {
                 return null;
+            }
+
+            // Exception ini membawa respons yang SUDAH jadi (mis. 429 dari rate limiter yang
+            // memakai ->response()). Teruskan apa adanya; membungkusnya lagi menjadi 500
+            // membuang status dan header Retry-After yang benar.
+            if ($e instanceof HttpResponseException) {
+                return $e->getResponse();
             }
 
             $envelope = fn (int $status, string $message, mixed $errors = null) => response()->json([
