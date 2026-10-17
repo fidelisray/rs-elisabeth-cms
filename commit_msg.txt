@@ -1,13 +1,0 @@
-﻿feat(cms): inisiasi arsitektur dasar modul CMS (Fase 1) dan REST API
-
-Melakukan setup tahap pertama untuk pengembangan sistem CMS berbasis Filament PHP dan penyediaan RESTful API untuk frontend / master app. 
-Fase 1 ini menggunakan pendekatan Local Auth agar proses development bisa berjalan mandiri.
-
-Perubahan utama yang dilakukan:
-- Setup Filament PHP: Instalasi core package, integrasi aset, dan konfigurasi AdminPanelProvider pada bootstrap Laravel.
-- Skema Database (Migrations): Pembuatan tabel 
-ews, rticles, promotions, acility_services, serta tabel sanctum untuk token API.
-- Eloquent Models: Pembuatan model untuk entitas News, Article, Promotion, dan FacilityService.
-- Dashboard Admin (Filament Resources): Pembuatan panel CRUD lengkap (Create, Read, Update, Delete) untuk keempat entitas guna mengelola konten secara dinamis oleh tim admin.
-- REST API: Pembuatan routing di outes/api.php dengan prefix /api/cms dan implementasi Controller (NewsApiController, ArticleApiController, PromotionApiController, FacilityServiceApiController) untuk mengekspos data ke publik.
-- Otentikasi Lokal (Seeder): Penambahan AdminUserSeeder untuk men-generate kredensial admin dummy (dmin@rs-elisabeth.com) guna memfasilitasi testing fitur CMS secara independen sebelum integrasi ke Master App (Fase 2).

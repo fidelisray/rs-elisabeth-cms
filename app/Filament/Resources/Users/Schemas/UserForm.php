@@ -38,7 +38,7 @@ class UserForm
 
                 Select::make('roles')
                     // super_admin tidak pernah bisa dipilih di form (K-3): akun itu hanya
-                    // dibuat oleh pp:super-admin:init, dan hanya ada satu.
+                    // dibuat oleh app:super-admin:init, dan hanya ada satu.
                     ->relationship(
                         'roles',
                         'name',
@@ -47,7 +47,11 @@ class UserForm
                     ->getOptionLabelFromRecordUsing(fn ($record) => str($record->name)->headline())
                     ->preload()
                     ->label('Role / Jabatan')
-                    ->required(),
+                    // Role akun super_admin terkunci (K-3, K-7): tidak ditampilkan sebagai opsi,
+                    // jadi pada record itu field tidak wajib, tidak bisa diubah, dan tidak disimpan.
+                    ->disabled(fn (?User $record): bool => $record?->isSuperAdmin() ?? false)
+                    ->dehydrated(fn (?User $record): bool => ! ($record?->isSuperAdmin() ?? false))
+                    ->required(fn (?User $record): bool => ! ($record?->isSuperAdmin() ?? false)),
 
                 // Password hanya muncul saat Create, bukan Edit
                 // Saat Edit, reset password dilakukan via aksi tabel

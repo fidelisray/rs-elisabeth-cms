@@ -34,12 +34,13 @@ services:
       - storage_data:/var/www/html/storage
     healthcheck:
       # Container dinyatakan "healthy" setelah entrypoint selesai sepenuhnya
-      # (migrate, cache, asset sync). Sentinel file dibuat di akhir entrypoint.sh.
+      # (cache konfigurasi, asset sync). Sentinel file dibuat di akhir entrypoint.sh.
+      # migrate/seed TIDAK ada di sini: lihat docs/DEPLOYMENT_RUNBOOK.md.
       test: ["CMD-SHELL", "test -f /tmp/app_healthy || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10
-      start_period: 120s # Beri waktu cukup untuk migrasi awal (fresh deploy)
+      start_period: 120s # Beri waktu cukup untuk bootstrap (cache & asset sync)
 
   # ---------------------------------------------------------
   # 1b. CMS QUEUE WORKER (Memproses job webhook & antrean lainnya)

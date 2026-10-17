@@ -1,9 +1,0 @@
-feat(cms): integrasi final API dan perbaikan bug rendering gambar & cache
-
-Penyelesaian tahap akhir pengembangan modul CMS untuk RS St. Elisabeth, berfokus pada transisi API, optimalisasi performa, dan stabilitas rendering gambar di lingkungan lokal maupun production.
-
-Detail Perubahan:
-- HospitalApiService & Controllers: Refactoring arsitektur pemanggilan data pada modul Promotions dan News agar tersentralisasi ke Endpoint Local CMS API yang baru (/api/cms/...), sekaligus menonaktifkan (deprecate) koneksi ke API Master RS yang lama.
-- Cache Invalidation Real-time: Mengimplementasikan Eloquent Model Events (booted / boot) langsung ke dalam struktur model Article, News, Promotion, dan RoomFacility. Sistem kini akan men-trigger eksekusi Cache::forget secara otomatis saat terjadi penambahan, perubahan, atau penghapusan data via Filament (Admin Panel). Hal ini menjamin konten halaman web (frontend) langsung terbarui seketika.
-- FormatsArticleData (Bug Fix rendering): Menyelesaikan isu kritis terkait broken images pada modul Artikel dan Berita. Mengganti sistem fallback URL dari yang semula mengandalkan Storage::url() (rentan konflik APP_URL dengan Nginx pada Laravel Herd/Docker) menjadi sistem dinamis berbasis fungsi asset('storage/...'). Gambar kini bersifat environment-agnostic (kebal terhadap perubahan IP/Domain).
-- NewsApiController (Enhancement): Melakukan penyesuaian pengambilan path gambar untuk merujuk pada storage disk 'public', menyelaraskannya dengan pola modul lainnya.

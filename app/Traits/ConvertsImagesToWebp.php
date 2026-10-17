@@ -27,7 +27,8 @@ use Intervention\Image\ImageManager;
  *    (mencegah gambar broken di frontend)
  *
  * Kompatibel dengan disk S3/MinIO maupun disk lokal (public).
- * Disk yang digunakan dibaca otomatis dari konfigurasi FILESYSTEM_DISK di .env.
+ * Disk yang digunakan dibaca otomatis dari konfigurasi MEDIA_DISK di .env
+ * (config filesystems.media_disk).
  *
  * @mixin Model
  *

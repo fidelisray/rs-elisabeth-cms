@@ -258,8 +258,8 @@ class RoleAndPermissionSeeder extends Seeder
      * - memberi role ke user lain berdasarkan kolom legacy `users.role`
      *   (hal itu pernah melanggar aturan satu super_admin).
      *
-     * Migrasi data user lama dilakukan sekali lewat migration
-     * `migrate_legacy_user_roles`, bukan di seeder.
+     * Data user lama tidak dimigrasi otomatis: go-live memakai database kosong
+     * (database pre-production direset lewat `app:preprod:reset`), bukan seeder.
      */
     protected function assignRolesToUsers(Role $superAdminRole, Role $marketingRole, Role $staffItRole): void
     {

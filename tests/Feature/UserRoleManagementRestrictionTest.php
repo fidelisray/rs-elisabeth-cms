@@ -9,7 +9,6 @@ use App\Policies\RolePolicy;
 use App\Policies\UserPolicy;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -126,36 +125,6 @@ class UserRoleManagementRestrictionTest extends TestCase
         $this->assertFalse($policy->create($this->it->fresh()));
 
         $this->actingAs($this->it->fresh())->get('/admin/users')->assertForbidden();
-    }
-
-    public function test_revoke_migration_strips_user_and_role_permissions_from_existing_staff_it(): void
-    {
-        // Meniru produksi: Staff IT yang sudah terlanjur memegang permission User/Role.
-        $role = Role::findByName('Staff IT', 'web');
-        $role->givePermissionTo(['ViewAny:User', 'Create:User', 'Delete:User', 'View:Role', 'Update:Role']);
-        $this->assertTrue($role->fresh()->hasPermissionTo('Create:User'));
-
-        $migration = require database_path('migrations/2026_10_20_000003_revoke_staff_it_user_and_role_management.php');
-        $migration->up();
-
-        $names = $role->fresh()->permissions->pluck('name');
-        $this->assertSame([], $names->filter(fn ($n) => str_ends_with($n, ':User') || str_ends_with($n, ':Role'))->values()->all());
-        $this->assertTrue($role->fresh()->hasPermissionTo('View:News'), 'Permission konten tidak boleh ikut tercabut.');
-    }
-
-    public function test_revoke_migration_is_idempotent_and_leaves_other_roles_alone(): void
-    {
-        $marketingBefore = Role::findByName('marketing', 'web')->permissions()->count();
-        $superBefore = Role::findByName('super_admin', 'web')->permissions()->count();
-
-        $migration = require database_path('migrations/2026_10_20_000003_revoke_staff_it_user_and_role_management.php');
-        $migration->up();
-        $afterFirst = DB::table('role_has_permissions')->count();
-        $migration->up();
-
-        $this->assertSame($afterFirst, DB::table('role_has_permissions')->count());
-        $this->assertSame($marketingBefore, Role::findByName('marketing', 'web')->permissions()->count());
-        $this->assertSame($superBefore, Role::findByName('super_admin', 'web')->permissions()->count());
     }
 
     public function test_reseed_does_not_give_staff_it_user_permissions_back(): void

@@ -6,7 +6,6 @@ use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
@@ -114,53 +113,6 @@ class SeederAccessRevocationTest extends TestCase
         $this->assertSame('Nama Diubah Admin', $after->name);
         $this->assertFalse($after->is_active);
         $this->assertSame($passwordBefore, $after->password);
-    }
-
-    public function test_legacy_migration_gives_marketing_once_and_is_idempotent(): void
-    {
-        $this->seedAll();
-
-        $staff = User::factory()->create(['role' => 'staff', 'email' => 'legacy.staff@rs-elisabeth.com']);
-        $this->assertSame(0, $staff->roles()->count());
-
-        $migration = require database_path('migrations/2026_10_20_000002_migrate_legacy_user_roles.php');
-
-        $migration->up();
-        $this->assertTrue($staff->fresh()->hasRole('marketing'));
-        $this->assertSame(1, $staff->fresh()->roles()->count());
-
-        // Dijalankan ulang: tidak ada perubahan.
-        $before = DB::table('model_has_roles')->count();
-        $migration->up();
-        $this->assertSame($before, DB::table('model_has_roles')->count());
-    }
-
-    public function test_legacy_migration_never_grants_super_admin(): void
-    {
-        $this->seedAll();
-        $this->initSuperAdmin();
-
-        $legacy = User::factory()->create(['role' => 'super_admin', 'email' => 'lama@rs-elisabeth.com']);
-
-        $migration = require database_path('migrations/2026_10_20_000002_migrate_legacy_user_roles.php');
-        $migration->up();
-
-        $this->assertFalse($legacy->fresh()->hasRole('super_admin'));
-        $this->assertSame(1, User::role('super_admin')->count());
-    }
-
-    public function test_legacy_migration_does_not_touch_users_that_already_have_a_role(): void
-    {
-        $this->seedAll();
-
-        $it = User::where('email', 'it@rs-elisabeth.com')->first();
-        $it->update(['role' => 'staff']);
-
-        $migration = require database_path('migrations/2026_10_20_000002_migrate_legacy_user_roles.php');
-        $migration->up();
-
-        $this->assertTrue($it->fresh()->hasRole('Staff IT'));
-        $this->assertFalse($it->fresh()->hasRole('marketing'));
     }
 
     public function test_artisan_db_seed_twice_keeps_revoked_access(): void
