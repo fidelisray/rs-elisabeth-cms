@@ -69,6 +69,15 @@ class RoleAndPermissionSeeder extends Seeder
     ];
 
     /**
+     * Subject yang mendukung drag-and-drop sort_order dan boleh diatur Marketing.
+     */
+    protected const REORDERABLE_SUBJECTS = [
+        'BannerPromotion',
+        'FacilityService',
+        'RoomFacility',
+    ];
+
+    /**
      * Nama widget yang dipakai untuk permission widget.
      */
     protected const WIDGET_SUBJECTS = [
@@ -177,6 +186,10 @@ class RoleAndPermissionSeeder extends Seeder
             foreach ($allowed as $action) {
                 $names[] = "{$action}:{$subject}";
             }
+        }
+
+        foreach (self::REORDERABLE_SUBJECTS as $subject) {
+            $names[] = "Reorder:{$subject}";
         }
 
         foreach (self::WIDGET_SUBJECTS as $subject) {
