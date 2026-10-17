@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages\Auth;
 
+use App\Models\AuditLog;
 use App\Rules\StrongNewPassword;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
@@ -100,6 +101,10 @@ class ForcePasswordChange extends Page
             'password' => $data['password'],
             'must_change_password' => false,
         ])->save();
+
+        if ($user->isSuperAdmin()) {
+            AuditLog::record('super_admin.password_changed', $user, ['source' => 'force-password-change']);
+        }
 
         // Sesi lain dari akun yang sama dibatalkan setelah password berubah.
         Auth::logoutOtherDevices($data['password']);

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Console\Command;
@@ -77,6 +78,7 @@ class InitSuperAdminCommand extends Command
             ]);
 
             $user->assignRole($role);
+            AuditLog::record('super_admin.created', $user, ['source' => 'app:super-admin:init']);
 
             return true;
         });
