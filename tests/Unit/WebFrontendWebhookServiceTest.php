@@ -6,6 +6,7 @@ use App\Services\WebFrontendWebhookService;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 class WebFrontendWebhookServiceTest extends TestCase
@@ -54,6 +55,16 @@ class WebFrontendWebhookServiceTest extends TestCase
         $this->assertFalse($result);
     }
 
+    public function test_dispatch_returns_false_when_cons_id_is_missing(): void
+    {
+        Config::set('web_frontend.cons_id', null);
+
+        $result = $this->service->dispatch('news', 'content.updated', 'test-slug');
+
+        $this->assertFalse($result);
+        Http::assertNothingSent();
+    }
+
     public function test_dispatch_sends_valid_http_request_and_headers(): void
     {
         Http::fake([
@@ -88,15 +99,35 @@ class WebFrontendWebhookServiceTest extends TestCase
         });
     }
 
-    public function test_dispatch_throws_on_http_error(): void
+    public function test_dispatch_throws_on_http_error_and_logs_once(): void
     {
         Http::fake([
             '*' => Http::response(['error' => 'Forbidden'], 403),
         ]);
+        Log::spy();
 
-        $this->expectException(\RuntimeException::class);
+        try {
+            $this->service->dispatch('articles', 'content.updated', 'artikel-test');
+            $this->fail('HTTP non-2xx harus melempar RuntimeException.');
+        } catch (\RuntimeException) {
+            Log::shouldHaveReceived('error')->once();
+        }
+    }
 
-        $this->service->dispatch('articles', 'content.updated', 'artikel-test');
+    public function test_dispatch_catches_throwable_and_logs_once(): void
+    {
+        Log::spy();
+        Http::fake(function () {
+            throw new \Error('Transport fatal error');
+        });
+
+        try {
+            $this->service->dispatch('promotions', 'content.updated', 'promo-test');
+            $this->fail('Throwable harus dilempar ulang agar queue dapat retry.');
+        } catch (\Throwable $e) {
+            $this->assertInstanceOf(\Error::class, $e);
+            Log::shouldHaveReceived('error')->once();
+        }
     }
 
     public function test_dispatch_handles_exceptions_gracefully(): void
