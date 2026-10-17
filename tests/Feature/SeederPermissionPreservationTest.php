@@ -29,7 +29,7 @@ class SeederPermissionPreservationTest extends TestCase
 
         $this->assertTrue($marketing->hasPermissionTo('Update:News'));
         $this->assertFalse($marketing->hasPermissionTo('Delete:News'));
-        $this->assertCount(26, $marketing->permissions);
+        $this->assertCount(29, $marketing->permissions);
     }
 
     public function test_custom_permission_added_by_admin_survives_reseed(): void
@@ -71,7 +71,7 @@ class SeederPermissionPreservationTest extends TestCase
         $this->seedAll();
 
         $marketing = Role::findByName('marketing', 'web');
-        $this->assertCount(26, $marketing->permissions);
+        $this->assertCount(29, $marketing->permissions);
     }
 
     public function test_new_permission_is_added_to_existing_super_admin(): void

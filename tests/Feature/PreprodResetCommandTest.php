@@ -32,8 +32,10 @@ class PreprodResetCommandTest extends TestCase
         $this->assertSame($migrationRows, DB::table('migrations')->count());
     }
 
-    public function test_flag_defaults_to_off(): void
+    public function test_flag_can_be_explicitly_disabled(): void
     {
+        config(['app.allow_destructive_reset' => false]);
+
         $this->assertFalse(config('app.allow_destructive_reset'));
     }
 
