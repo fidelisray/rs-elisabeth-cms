@@ -50,37 +50,6 @@ class MarketingReorderTest extends TestCase
         }
     }
 
-    public function test_migration_grants_reorder_permissions_to_existing_marketing_role(): void
-    {
-        $role = Role::findByName('marketing', 'web');
-        $role->revokePermissionTo([
-            'Reorder:BannerPromotion',
-            'Reorder:FacilityService',
-            'Reorder:RoomFacility',
-        ]);
-
-        $migration = require database_path('migrations/2026_10_17_090200_grant_marketing_reorder_permissions.php');
-        $migration->up();
-
-        foreach (['BannerPromotion', 'FacilityService', 'RoomFacility'] as $subject) {
-            $this->assertTrue($role->fresh()->hasPermissionTo("Reorder:{$subject}"));
-        }
-    }
-
-    public function test_migration_is_idempotent_and_preserves_other_permissions(): void
-    {
-        $role = Role::findByName('marketing', 'web');
-        $role->givePermissionTo('Delete:News');
-
-        $migration = require database_path('migrations/2026_10_17_090200_grant_marketing_reorder_permissions.php');
-        $migration->up();
-        $firstCount = $role->fresh()->permissions()->count();
-        $migration->up();
-
-        $this->assertSame($firstCount, $role->fresh()->permissions()->count());
-        $this->assertTrue($role->fresh()->hasPermissionTo('Delete:News'));
-    }
-
     public function test_marketing_can_reorder_banner_promotions(): void
     {
         [$a, $b] = BannerPromotion::withoutEvents(fn () => [

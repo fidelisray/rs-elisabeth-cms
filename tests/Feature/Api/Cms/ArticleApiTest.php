@@ -26,7 +26,7 @@ class ArticleApiTest extends TestCase
     {
         // Arrange
         Article::create([
-            'judul' => 'Test Article',
+            'title' => 'Test Article',
             'content' => 'Content here',
             'is_active' => true,
         ]);
@@ -43,7 +43,7 @@ class ArticleApiTest extends TestCase
     {
         // Arrange
         $article = Article::create([
-            'judul' => 'Detail Article',
+            'title' => 'Detail Article',
             'slug' => 'detail-article',
             'content' => 'Content here',
             'is_active' => true,
@@ -61,7 +61,7 @@ class ArticleApiTest extends TestCase
     {
         // Arrange
         Article::create([
-            'judul' => 'Cegah Stunting Pada Anak',
+            'title' => 'Cegah Stunting Pada Anak',
             'slug' => 'cegah-stunting-pada-anak',
             'content' => 'Content here',
             'is_active' => true,
@@ -103,7 +103,7 @@ class ArticleApiTest extends TestCase
     {
         // Arrange
         Article::create([
-            'judul' => 'Draft Article',
+            'title' => 'Draft Article',
             'slug' => 'draft-article',
             'content' => 'Content here',
             'is_active' => false,

@@ -21,7 +21,7 @@ class ArticlesTable
                     ->disk(config('filesystems.media_disk'))
                     ->width(80)
                     ->height(50),
-                TextColumn::make('judul')
+                TextColumn::make('title')
                     ->label('Judul')
                     ->searchable(),
                 TextColumn::make('tags')

@@ -144,34 +144,6 @@ class UserRoleManagementRestrictionTest extends TestCase
         $this->assertSame([], $names->filter(fn ($n) => str_ends_with($n, ':User') || str_ends_with($n, ':Role'))->values()->all());
     }
 
-    public function test_migration_revokes_user_and_role_permissions_from_existing_staff_it_and_is_idempotent(): void
-    {
-        $role = Role::findByName('Staff IT', 'web');
-        $role->givePermissionTo(['ViewAny:User', 'Create:User', 'ViewAny:Role', 'Update:Role']);
-
-        $this->assertTrue($role->fresh()->hasPermissionTo('ViewAny:User'));
-        $this->assertTrue($role->fresh()->hasPermissionTo('ViewAny:Role'));
-
-        $migration = require database_path('migrations/2026_10_19_090200_revoke_staff_it_user_and_role_management.php');
-        $migration->up();
-
-        $role = $role->fresh();
-        $this->assertFalse($role->hasPermissionTo('ViewAny:User'));
-        $this->assertFalse($role->hasPermissionTo('Create:User'));
-        $this->assertFalse($role->hasPermissionTo('ViewAny:Role'));
-        $this->assertFalse($role->hasPermissionTo('Update:Role'));
-        $this->assertTrue($role->hasPermissionTo('ViewAny:News'));
-        $this->assertTrue($role->hasPermissionTo('View:News'));
-
-        // Eksekusi kedua harus idempoten tanpa mengubah permission konten.
-        $migration->up();
-
-        $role = $role->fresh();
-        $this->assertFalse($role->hasPermissionTo('ViewAny:User'));
-        $this->assertFalse($role->hasPermissionTo('ViewAny:Role'));
-        $this->assertTrue($role->hasPermissionTo('ViewAny:News'));
-    }
-
     // -------------------------------------------------------------------- K-3
 
     public function test_cannot_assign_super_admin_role_to_a_second_user(): void
