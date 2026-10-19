@@ -100,19 +100,27 @@ class UserRoleManagementRestrictionTest extends TestCase
 
         foreach ([$this->it, $this->marketing] as $actor) {
             $this->assertFalse($userPolicy->viewAny($actor));
+            $this->assertFalse($userPolicy->view($actor));
             $this->assertFalse($userPolicy->create($actor));
             $this->assertFalse($userPolicy->update($actor));
             $this->assertFalse($userPolicy->delete($actor));
             $this->assertFalse($rolePolicy->viewAny($actor));
+            $this->assertFalse($rolePolicy->view($actor, $role));
             $this->assertFalse($rolePolicy->create($actor));
             $this->assertFalse($rolePolicy->update($actor, $role));
             $this->assertFalse($rolePolicy->delete($actor, $role));
         }
 
         $this->assertTrue($userPolicy->viewAny($this->admin));
+        $this->assertTrue($userPolicy->view($this->admin));
         $this->assertTrue($userPolicy->create($this->admin));
+        $this->assertTrue($userPolicy->update($this->admin));
+        $this->assertTrue($userPolicy->delete($this->admin));
         $this->assertTrue($rolePolicy->viewAny($this->admin));
+        $this->assertTrue($rolePolicy->view($this->admin, $role));
         $this->assertTrue($rolePolicy->create($this->admin));
+        $this->assertTrue($rolePolicy->update($this->admin, $role));
+        $this->assertTrue($rolePolicy->delete($this->admin, $role));
     }
 
     public function test_policy_denies_even_if_permission_is_granted_directly(): void
@@ -134,6 +142,34 @@ class UserRoleManagementRestrictionTest extends TestCase
 
         $names = Role::findByName('Staff IT', 'web')->permissions->pluck('name');
         $this->assertSame([], $names->filter(fn ($n) => str_ends_with($n, ':User') || str_ends_with($n, ':Role'))->values()->all());
+    }
+
+    public function test_migration_revokes_user_and_role_permissions_from_existing_staff_it_and_is_idempotent(): void
+    {
+        $role = Role::findByName('Staff IT', 'web');
+        $role->givePermissionTo(['ViewAny:User', 'Create:User', 'ViewAny:Role', 'Update:Role']);
+
+        $this->assertTrue($role->fresh()->hasPermissionTo('ViewAny:User'));
+        $this->assertTrue($role->fresh()->hasPermissionTo('ViewAny:Role'));
+
+        $migration = require database_path('migrations/2026_10_19_090200_revoke_staff_it_user_and_role_management.php');
+        $migration->up();
+
+        $role = $role->fresh();
+        $this->assertFalse($role->hasPermissionTo('ViewAny:User'));
+        $this->assertFalse($role->hasPermissionTo('Create:User'));
+        $this->assertFalse($role->hasPermissionTo('ViewAny:Role'));
+        $this->assertFalse($role->hasPermissionTo('Update:Role'));
+        $this->assertTrue($role->hasPermissionTo('ViewAny:News'));
+        $this->assertTrue($role->hasPermissionTo('View:News'));
+
+        // Eksekusi kedua harus idempoten tanpa mengubah permission konten.
+        $migration->up();
+
+        $role = $role->fresh();
+        $this->assertFalse($role->hasPermissionTo('ViewAny:User'));
+        $this->assertFalse($role->hasPermissionTo('ViewAny:Role'));
+        $this->assertTrue($role->hasPermissionTo('ViewAny:News'));
     }
 
     // -------------------------------------------------------------------- K-3
@@ -178,6 +214,23 @@ class UserRoleManagementRestrictionTest extends TestCase
             $this->fail('syncRoles yang mencabut super_admin tunggal harus ditolak.');
         } catch (UserAccessException) {
             $this->assertTrue($this->admin->fresh()->hasRole('super_admin'));
+        }
+
+        try {
+            $this->admin->syncRoles([]);
+            $this->fail('syncRoles([]) pada super_admin tunggal harus ditolak.');
+        } catch (UserAccessException) {
+            $this->assertTrue($this->admin->fresh()->hasRole('super_admin'));
+        }
+    }
+
+    public function test_cannot_deactivate_the_super_admin_user(): void
+    {
+        try {
+            $this->admin->update(['is_active' => false]);
+            $this->fail('Menonaktifkan super_admin tunggal harus ditolak.');
+        } catch (UserAccessException) {
+            $this->assertTrue($this->admin->fresh()->is_active);
         }
     }
 

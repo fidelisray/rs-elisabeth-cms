@@ -49,5 +49,82 @@ jobs:
       - name: Build frontend assets
         run: npm run build
 
+      - name: Check code style (Pint)
+        run: php vendor/bin/pint --test
+
       - name: Execute tests
         run: php artisan test
+
+  tests-pgsql:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: true
+      matrix:
+        php: [8.4]
+
+    name: PHP ${{ matrix.php }} (PostgreSQL 15)
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: rs_elisabeth_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pgsql, pdo_pgsql
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Copy environment file
+        run: cp .env.example .env
+
+      - name: Generate app key
+        run: php artisan key:generate
+
+      - name: Install NPM dependencies
+        run: npm ci
+
+      - name: Build frontend assets
+        run: npm run build
+
+      - name: Run migrations and seeders on PostgreSQL 15
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: rs_elisabeth_test
+          DB_USERNAME: postgres
+          DB_PASSWORD: secret
+          MEDIA_DISK: local
+          WEB_FRONTEND_WEBHOOK_URL: ""
+        run: php artisan migrate:fresh --seed --force
+
+      - name: Execute tests on PostgreSQL 15
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: rs_elisabeth_test
+          DB_USERNAME: postgres
+          DB_PASSWORD: secret
+        run: php artisan test
+
