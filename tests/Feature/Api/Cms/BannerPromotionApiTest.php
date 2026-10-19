@@ -4,12 +4,21 @@ namespace Tests\Feature\Api\Cms;
 
 use App\Models\BannerPromotion;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 use Tests\Traits\GeneratesHmacHeaders;
 
 class BannerPromotionApiTest extends TestCase
 {
     use GeneratesHmacHeaders, RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['filesystems.media_disk' => 'media-test']);
+        Storage::fake('media-test');
+    }
 
     public function test_api_returns_401_without_hmac_headers(): void
     {
