@@ -29,7 +29,6 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
-            'role' => 'staff',
             'must_change_password' => true,
             'remember_token' => Str::random(10),
         ];
@@ -54,7 +53,6 @@ class UserFactory extends Factory
             'name' => 'Super Admin',
             'email' => 'admin@rs-elisabeth.com',
             'password' => Hash::make(Str::password(24, symbols: false)),
-            'role' => 'super_admin',
             'must_change_password' => false,
         ]);
     }
@@ -68,7 +66,6 @@ class UserFactory extends Factory
             'name' => 'Staf Marketing',
             'email' => 'marketing@rs-elisabeth.com',
             'password' => static::$password ??= Hash::make('password'),
-            'role' => 'staff',
             'must_change_password' => true,
         ]);
     }
@@ -82,7 +79,6 @@ class UserFactory extends Factory
             'name' => 'Staff IT',
             'email' => 'it@rs-elisabeth.com',
             'password' => static::$password ??= Hash::make('password'),
-            'role' => 'staff',
             'must_change_password' => true,
         ]);
     }

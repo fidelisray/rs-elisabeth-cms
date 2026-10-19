@@ -3,7 +3,9 @@
 namespace App\Filament\Pages\Auth;
 
 use App\Models\AuditLog;
+use App\Services\RecoveryCodeService;
 use Filament\Auth\Pages\EditProfile as BaseEditProfile;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class CustomProfile extends BaseEditProfile
@@ -18,6 +20,18 @@ class CustomProfile extends BaseEditProfile
                 $this->getEmailFormComponent()->disabled(),
                 $this->getPasswordFormComponent(),
                 $this->getPasswordConfirmationFormComponent(),
+                Section::make('Kode Pemulihan Darurat')
+                    ->description(function (): string {
+                        $remaining = app(RecoveryCodeService::class)->remainingCount($this->getUser());
+                        $message = "Tersisa {$remaining} dari ".RecoveryCodeService::CODE_COUNT.' kode pemulihan sekali pakai.';
+
+                        if ($remaining < 3) {
+                            $message .= ' Peringatan: sisa kode pemulihan kurang dari 3. Segera buat ulang melalui terminal dengan perintah php artisan app:super-admin:recovery-codes:regenerate.';
+                        }
+
+                        return $message;
+                    })
+                    ->visible(fn (): bool => $this->getUser()->isSuperAdmin()),
             ]);
     }
 

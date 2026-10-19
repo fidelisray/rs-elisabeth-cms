@@ -53,11 +53,13 @@ class UserForm
                     ->dehydrated(fn (?User $record): bool => ! ($record?->isSuperAdmin() ?? false))
                     ->required(fn (?User $record): bool => ! ($record?->isSuperAdmin() ?? false)),
 
-                // Password hanya muncul saat Create, bukan Edit
-                // Saat Edit, reset password dilakukan via aksi tabel
+                // Password opsional saat mengedit akun staf biasa (bila diisi, pengguna wajib
+                // mengganti password saat login berikutnya). Disembunyikan pada akun super_admin
+                // agar perubahan password super_admin selalu melewati StrongNewPassword dan AuditLog.
                 TextInput::make('password')
                     ->label('Password')
                     ->password()
+                    ->hidden(fn (?User $record): bool => $record?->isSuperAdmin() ?? false)
                     ->dehydrated(fn (?string $state, string $operation): bool => filled($state) || $operation === 'create')
                     ->dehydrateStateUsing(function (?string $state, string $operation) {
                         if (filled($state)) {

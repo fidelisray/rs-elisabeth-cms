@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\CustomProfile;
+use App\Filament\Pages\Auth\RecoveryLogin;
 use App\Filament\Widgets\FeedbackStatsWidget;
 use App\Filament\Widgets\LatestFeedbackWidget;
 use App\Http\Middleware\EnforcePasswordChange;
@@ -15,6 +16,7 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -22,6 +24,8 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -34,6 +38,18 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->profile(CustomProfile::class, isSimple: false) // Aktifkan halaman profil (ganti password) dengan CustomProfile
+            ->routes(function (): void {
+                Route::get('/recovery-login', RecoveryLogin::class)->name('auth.recovery-login');
+            })
+            ->renderHook(
+                PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
+                fn (): HtmlString => new HtmlString(
+                    '<div class="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">'
+                    .'<a href="'.e(route('filament.admin.auth.recovery-login')).'" class="font-medium text-primary-600 hover:underline dark:text-primary-400">'
+                    .'Gunakan kode pemulihan Super Admin'
+                    .'</a></div>'
+                ),
+            )
             ->colors([
                 'primary' => Color::Amber,
             ])

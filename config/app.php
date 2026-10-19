@@ -43,20 +43,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Allow Destructive Reset
-    |--------------------------------------------------------------------------
-    |
-    | Pengaman untuk command `app:preprod:reset` (menghapus SELURUH tabel dan
-    | data). Hanya boleh true di server pre-production/testing. Server go-live
-    | TIDAK BOLEH memiliki ALLOW_DESTRUCTIVE_RESET=true. Tidak memakai APP_ENV
-    | karena docker-compose memaksa APP_ENV=production di semua server.
-    |
-    */
-
-    'allow_destructive_reset' => (bool) env('ALLOW_DESTRUCTIVE_RESET', false),
-
-    /*
-    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |

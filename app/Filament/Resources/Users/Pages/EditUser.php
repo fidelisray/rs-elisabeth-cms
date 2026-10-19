@@ -17,4 +17,20 @@ class EditUser extends EditRecord
                 ->hidden(fn (): bool => $this->getRecord()->isSuperAdmin()),
         ];
     }
+
+    /**
+     * Bila password diubah oleh admin melalui halaman Edit, pemilik akun
+     * wajib menggantinya pada login berikutnya (K-8, K-9).
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        if (filled($data['password'] ?? null)) {
+            $data['must_change_password'] = true;
+        }
+
+        return $data;
+    }
 }

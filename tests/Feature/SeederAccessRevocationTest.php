@@ -6,6 +6,7 @@ use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 /**
@@ -75,7 +76,7 @@ class SeederAccessRevocationTest extends TestCase
     {
         $this->seedAll();
 
-        $staff = User::factory()->create(['role' => 'staff', 'email' => 'staf.baru@rs-elisabeth.com']);
+        $staff = User::factory()->create(['email' => 'staf.baru@rs-elisabeth.com']);
 
         $this->seedAll();
         $this->seedAll();
@@ -83,19 +84,20 @@ class SeederAccessRevocationTest extends TestCase
         $this->assertSame(0, $staff->fresh()->roles()->count());
     }
 
-    public function test_seeder_never_grants_super_admin_to_legacy_super_admin_column(): void
+    public function test_seeder_never_grants_super_admin_to_extra_users_and_legacy_role_column_is_dropped(): void
     {
+        $this->assertFalse(Schema::hasColumn('users', 'role'), 'Kolom legacy users.role harus sudah dihapus.');
+
         $this->seedAll();
         $this->initSuperAdmin();
 
-        // Dua user lama berkolom role=super_admin, tanpa role Spatie.
-        $legacyA = User::factory()->create(['role' => 'super_admin', 'email' => 'lama.a@rs-elisabeth.com']);
-        $legacyB = User::factory()->create(['role' => 'super_admin', 'email' => 'lama.b@rs-elisabeth.com']);
+        $extraA = User::factory()->create(['email' => 'lama.a@rs-elisabeth.com']);
+        $extraB = User::factory()->create(['email' => 'lama.b@rs-elisabeth.com']);
 
         $this->seedAll();
 
-        $this->assertFalse($legacyA->fresh()->hasRole('super_admin'));
-        $this->assertFalse($legacyB->fresh()->hasRole('super_admin'));
+        $this->assertFalse($extraA->fresh()->hasRole('super_admin'));
+        $this->assertFalse($extraB->fresh()->hasRole('super_admin'));
         $this->assertSame(1, User::role('super_admin')->count(), 'Harus tetap tepat satu super_admin.');
     }
 
