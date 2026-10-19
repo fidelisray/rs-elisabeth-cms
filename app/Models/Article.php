@@ -28,7 +28,7 @@ class Article extends Model
     }
 
     protected $fillable = [
-        'judul',
+        'title',
         'slug',
         'image_path',
         'shorts',

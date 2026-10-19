@@ -25,7 +25,7 @@ class ArticleForm
                     ->columns(3)
                     ->schema([
 
-                        TextInput::make('judul')
+                        TextInput::make('title')
                             ->label('Judul Artikel')
                             ->required()
                             ->maxLength(255)

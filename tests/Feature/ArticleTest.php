@@ -2,7 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\Articles\ArticleResource;
 use App\Models\Article;
+use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
@@ -28,7 +31,7 @@ class ArticleTest extends TestCase
     {
         // 1. Arrange & Act: Buat artikel tanpa login (simulasi system)
         $article = Article::create([
-            'judul' => 'Artikel Kesehatan Jantung',
+            'title' => 'Artikel Kesehatan Jantung',
             'content' => 'Konten panjang artikel.',
         ]);
 
@@ -43,7 +46,7 @@ class ArticleTest extends TestCase
     {
         // 1. Arrange
         $article = Article::create([
-            'judul' => 'Artikel Soft Delete',
+            'title' => 'Artikel Soft Delete',
             'content' => 'Konten artikel.',
         ]);
         $articleId = $article->id;
@@ -69,7 +72,7 @@ class ArticleTest extends TestCase
         $this->assertTrue(Cache::has('rs_web_cms_api_articles_version'));
 
         // 2. Act
-        Article::create(['judul' => 'Artikel Baru', 'content' => 'Konten.']);
+        Article::create(['title' => 'Artikel Baru', 'content' => 'Konten.']);
 
         // 3. Assert
         $this->assertNotEquals('data-lama', Cache::get('rs_web_cms_api_articles_version'), 'Cache version harus diperbarui!');
@@ -81,7 +84,7 @@ class ArticleTest extends TestCase
     public function test_article_clears_cache_on_deleted(): void
     {
         // 1. Arrange
-        $article = Article::create(['judul' => 'Artikel Lama', 'content' => 'Konten.']);
+        $article = Article::create(['title' => 'Artikel Lama', 'content' => 'Konten.']);
         Cache::put('rs_web_cms_api_articles_version', 'data-lama');
         $this->assertTrue(Cache::has('rs_web_cms_api_articles_version'));
 
@@ -99,7 +102,7 @@ class ArticleTest extends TestCase
     {
         // 1. Arrange & Act: Set is_active = true (boolean)
         $article = Article::create([
-            'judul' => 'Artikel Aktif',
+            'title' => 'Artikel Aktif',
             'content' => 'Konten.',
             'is_active' => true,
         ]);
@@ -111,24 +114,48 @@ class ArticleTest extends TestCase
         $this->assertTrue($article->fresh()->is_active);
     }
 
+    /**
+     * [Happy Path] Memastikan ArticleResource membaca kolom title untuk judul record dan Global Search.
+     */
+    public function test_article_resource_record_title_and_global_search_use_title_column(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $marketing = User::where('email', 'marketing@rs-elisabeth.com')->firstOrFail();
+        $marketing->update(['must_change_password' => false]);
+        $this->actingAs($marketing);
+
+        $article = Article::create([
+            'title' => 'Panduan Deteksi Dini Stroke',
+            'slug' => 'panduan-deteksi-dini-stroke',
+            'content' => 'Konten artikel.',
+            'is_active' => true,
+        ]);
+
+        $this->assertSame('Panduan Deteksi Dini Stroke', ArticleResource::getRecordTitle($article));
+
+        $results = ArticleResource::getGlobalSearchResults('Deteksi Dini Stroke');
+        $this->assertCount(1, $results);
+        $this->assertSame('Panduan Deteksi Dini Stroke', $results->first()->title);
+    }
+
     // =========================================================================
     // SAD PATH
     // =========================================================================
 
     /**
-     * [Sad Path] Memastikan artikel dengan 'judul' null tetap tersimpan (kolom nullable),
-     * namun nilai 'judul' tersebut memang null di database.
+     * [Sad Path] Memastikan artikel dengan 'title' null tetap tersimpan (kolom nullable),
+     * namun nilai 'title' tersebut memang null di database.
      *
      * Catatan: Validasi 'required' dilakukan di layer Filament Form, bukan di DB.
      * Test ini mendokumentasikan bahwa DB layer bersifat lenient (nullable).
      */
-    public function test_article_judul_is_nullable_at_db_level(): void
+    public function test_article_title_is_nullable_at_db_level(): void
     {
-        // 1. Act: Buat artikel tanpa judul (DB mengizinkan karena nullable)
+        // 1. Act: Buat artikel tanpa title (DB mengizinkan karena nullable)
         $article = Article::create(['content' => 'Konten tanpa judul.']);
 
-        // 2. Assert: Data tersimpan tapi judul memang null
+        // 2. Assert: Data tersimpan tapi title memang null
         $this->assertDatabaseHas('articles', ['id' => $article->id]);
-        $this->assertNull($article->judul);
+        $this->assertNull($article->title);
     }
 }

@@ -12,7 +12,7 @@ class ArticleFactory extends Factory
         $title = $this->faker->sentence(8);
 
         return [
-            'judul' => $title,
+            'title' => $title,
             'slug' => Str::slug($title),
             'image_path' => null,
             'shorts' => $this->faker->text(200),
