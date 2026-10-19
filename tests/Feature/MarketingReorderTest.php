@@ -14,6 +14,7 @@ use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -30,6 +31,9 @@ class MarketingReorderTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        config(['filesystems.media_disk' => 'media-test']);
+        Storage::fake('media-test');
 
         $this->seed(DatabaseSeeder::class);
         $this->marketing = User::where('email', 'marketing@rs-elisabeth.com')->first();
@@ -55,7 +59,7 @@ class MarketingReorderTest extends TestCase
             'Reorder:RoomFacility',
         ]);
 
-        $migration = require database_path('migrations/2026_10_20_000005_grant_marketing_reorder_permissions.php');
+        $migration = require database_path('migrations/2026_10_17_090200_grant_marketing_reorder_permissions.php');
         $migration->up();
 
         foreach (['BannerPromotion', 'FacilityService', 'RoomFacility'] as $subject) {
@@ -68,7 +72,7 @@ class MarketingReorderTest extends TestCase
         $role = Role::findByName('marketing', 'web');
         $role->givePermissionTo('Delete:News');
 
-        $migration = require database_path('migrations/2026_10_20_000005_grant_marketing_reorder_permissions.php');
+        $migration = require database_path('migrations/2026_10_17_090200_grant_marketing_reorder_permissions.php');
         $migration->up();
         $firstCount = $role->fresh()->permissions()->count();
         $migration->up();

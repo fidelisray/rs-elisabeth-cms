@@ -122,7 +122,12 @@ class SuperAdminInitCommandTest extends TestCase
     public function test_no_known_super_admin_password_remains_in_seeders(): void
     {
         $source = '';
-        foreach (glob(database_path('seeders/*.php')) as $file) {
+        $files = array_merge(
+            glob(database_path('seeders/*.php')) ?: [],
+            glob(database_path('factories/*.php')) ?: [],
+        );
+
+        foreach ($files as $file) {
             $source .= file_get_contents($file);
         }
 
