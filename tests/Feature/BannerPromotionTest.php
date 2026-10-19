@@ -6,6 +6,7 @@ use App\Models\BannerPromotion;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class BannerPromotionTest extends TestCase
@@ -16,6 +17,8 @@ class BannerPromotionTest extends TestCase
     {
         parent::setUp();
         Cache::flush();
+        config(['filesystems.media_disk' => 'media-test']);
+        Storage::fake('media-test');
     }
 
     // =========================================================================
