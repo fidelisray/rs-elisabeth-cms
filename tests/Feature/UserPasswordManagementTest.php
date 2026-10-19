@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\Users\Pages\CreateUser;
+use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
@@ -114,5 +115,49 @@ class UserPasswordManagementTest extends TestCase
         Livewire::test(ListUsers::class)
             ->callTableAction('resetPassword', $staff)
             ->assertNotified('Password Berhasil Direset');
+    }
+
+    public function test_editing_staff_password_sets_must_change_password_to_true(): void
+    {
+        $this->actAsSuperAdmin();
+
+        $staff = User::where('email', 'marketing@rs-elisabeth.com')->first();
+        $staff->update(['password' => 'PasswordLama#2026', 'must_change_password' => false]);
+
+        Livewire::test(EditUser::class, ['record' => $staff->getKey()])
+            ->fillForm(['password' => 'PasswordBaruAdmin#2026'])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $fresh = $staff->fresh();
+        $this->assertTrue(Hash::check('PasswordBaruAdmin#2026', $fresh->password));
+        $this->assertTrue($fresh->must_change_password, 'Mengubah password staf lewat EditUser wajib menyetel must_change_password = true.');
+    }
+
+    public function test_editing_staff_name_with_empty_password_keeps_old_password_and_flag(): void
+    {
+        $this->actAsSuperAdmin();
+
+        $staff = User::where('email', 'marketing@rs-elisabeth.com')->first();
+        $staff->update(['password' => 'PasswordTetap#2026', 'must_change_password' => false]);
+        $oldHash = $staff->fresh()->password;
+
+        Livewire::test(EditUser::class, ['record' => $staff->getKey()])
+            ->fillForm(['name' => 'Nama Staf Diperbarui', 'password' => ''])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $fresh = $staff->fresh();
+        $this->assertSame('Nama Staf Diperbarui', $fresh->name);
+        $this->assertSame($oldHash, $fresh->password);
+        $this->assertFalse($fresh->must_change_password);
+    }
+
+    public function test_password_field_is_hidden_when_editing_super_admin_record(): void
+    {
+        $admin = $this->actAsSuperAdmin();
+
+        Livewire::test(EditUser::class, ['record' => $admin->getKey()])
+            ->assertFormFieldHidden('password');
     }
 }

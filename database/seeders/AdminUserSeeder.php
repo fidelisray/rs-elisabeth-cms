@@ -47,13 +47,11 @@ class AdminUserSeeder extends Seeder
             $legacyHumas->update([
                 'name' => 'Staf Marketing',
                 'email' => 'marketing@rs-elisabeth.com',
-                'role' => 'staff',
             ]);
         } elseif (! $marketingExists) {
             $this->firstOrCreateAccount('marketing@rs-elisabeth.com', [
                 'name' => 'Staf Marketing',
                 'password' => Hash::make('123456'),
-                'role' => 'staff',
                 'must_change_password' => true,
             ]);
         }
@@ -62,7 +60,6 @@ class AdminUserSeeder extends Seeder
         $this->firstOrCreateAccount('it@rs-elisabeth.com', [
             'name' => 'Staff IT',
             'password' => Hash::make('123456'),
-            'role' => 'staff',
             'must_change_password' => true,
         ]);
     }
