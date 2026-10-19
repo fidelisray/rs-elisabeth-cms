@@ -3,10 +3,13 @@
 namespace Tests\Feature;
 
 use App\Exceptions\UserAccessException;
+use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Models\Role;
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 use Filament\Panel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class UserActivationTest extends TestCase
@@ -26,6 +29,18 @@ class UserActivationTest extends TestCase
         $user->assignRole($role);
 
         return $user;
+    }
+
+    private function actAsSuperAdmin(): User
+    {
+        $this->seed(DatabaseSeeder::class);
+        $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])->assertExitCode(0);
+
+        $admin = User::where('email', 'admin@rs-elisabeth.com')->first();
+        $admin->update(['must_change_password' => false]);
+        $this->actingAs($admin);
+
+        return $admin;
     }
 
     public function test_active_user_with_role_can_access_panel(): void
@@ -113,5 +128,36 @@ class UserActivationTest extends TestCase
 
         // Request berikutnya pada sesi yang sama harus ditolak.
         $this->actingAs($user->fresh())->get('/admin')->assertForbidden();
+    }
+
+    public function test_super_admin_can_deactivate_and_activate_regular_user_via_table_action(): void
+    {
+        $this->actAsSuperAdmin();
+        $staff = User::where('email', 'marketing@rs-elisabeth.com')->first();
+
+        Livewire::test(ListUsers::class)
+            ->assertTableActionVisible('deactivate', $staff)
+            ->assertTableActionHidden('activate', $staff)
+            ->callTableAction('deactivate', $staff);
+
+        $staff->refresh();
+        $this->assertFalse($staff->is_active);
+        $this->assertTrue($staff->hasRole('marketing'));
+
+        Livewire::test(ListUsers::class)
+            ->assertTableActionHidden('deactivate', $staff)
+            ->assertTableActionVisible('activate', $staff)
+            ->callTableAction('activate', $staff);
+
+        $this->assertTrue($staff->fresh()->is_active);
+    }
+
+    public function test_deactivate_and_activate_table_actions_are_hidden_for_self_and_super_admin(): void
+    {
+        $admin = $this->actAsSuperAdmin();
+
+        Livewire::test(ListUsers::class)
+            ->assertTableActionHidden('deactivate', $admin)
+            ->assertTableActionHidden('activate', $admin);
     }
 }

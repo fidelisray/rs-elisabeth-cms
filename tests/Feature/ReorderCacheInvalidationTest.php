@@ -15,6 +15,7 @@ use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 use Tests\Traits\GeneratesHmacHeaders;
@@ -33,6 +34,9 @@ class ReorderCacheInvalidationTest extends TestCase
      */
     private function actAsReorderer(): void
     {
+        config(['filesystems.media_disk' => 'media-test']);
+        Storage::fake('media-test');
+
         $this->seed(DatabaseSeeder::class);
         $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])->assertExitCode(0);
 
