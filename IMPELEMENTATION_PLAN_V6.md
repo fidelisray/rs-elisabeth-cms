@@ -76,6 +76,11 @@ Prinsip kerja:
 
 Baseline setelah MVP-2.5: **239 test lulus** dan `pint --test` lulus.
 
+Validasi Docker terakhir: build image berhasil, one-off migrate dan seed berhasil,
+`cms_app` healthy, `cms_worker` running, Nginx `/up` HTTP 200, halaman admin HTTP
+200, dan API CMS HMAC HTTP 200. Nginx juga diperbaiki agar tidak memakai IP
+PHP-FPM lama setelah container `cms_app` direcreate.
+
 ---
 
 ## 3. Mitigasi Super_admin Sementara (sampai Next Phase selesai)
@@ -635,4 +640,5 @@ Next Phase: N-1 s/d N-16
 - Test: **239 lulus (737 assertions)**.
 - `pint --test`: **lulus**.
 - Commit MVP-2.5: `b7cdb3a`.
+- Validasi terakhir: **239 test lulus (737 assertions)**, `pint --test` lulus, dan smoke test Docker berhasil.
 - Dokumen ini versi 6.
