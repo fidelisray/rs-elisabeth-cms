@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\BannerPromotions\Pages;
 
+use App\Filament\Concerns\ValidatesTranslatableLocales;
 use App\Filament\Resources\BannerPromotions\BannerPromotionResource;
 use Filament\Resources\Pages\CreateRecord;
 use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
@@ -10,6 +11,7 @@ use LaraZeus\SpatieTranslatable\Resources\Pages\CreateRecord\Concerns\Translatab
 class CreateBannerPromotion extends CreateRecord
 {
     use Translatable;
+    use ValidatesTranslatableLocales;
 
     protected static string $resource = BannerPromotionResource::class;
 
