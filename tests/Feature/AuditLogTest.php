@@ -91,10 +91,14 @@ class AuditLogTest extends TestCase
         $user->update(['must_change_password' => false]);
         $this->actingAs($user);
 
+        // Halaman profil menampilkan tombol tautan ganti password terpusat
         Livewire::test(CustomProfile::class)
+            ->assertSee('Ganti Password')
+            ->assertSee(ForcePasswordChange::getUrl());
+
+        // Penggantian password dilakukan di halaman ganti password terpusat
+        Livewire::test(ForcePasswordChange::class)
             ->fillForm([
-                'name' => $user->name,
-                'email' => $user->email,
                 'password' => 'ProfileBaru#2026',
                 'passwordConfirmation' => 'ProfileBaru#2026',
             ])
@@ -104,6 +108,7 @@ class AuditLogTest extends TestCase
         $audit = AuditLog::where('action', 'super_admin.password_changed')->latest('id')->first();
         $this->assertNotNull($audit);
         $this->assertSame((string) $user->id, (string) $audit->subject_id);
+        $this->assertSame('profile', $audit->metadata['source'] ?? null);
         $this->assertStringNotContainsString('ProfileBaru#2026', json_encode($audit->toArray()));
         $this->assertTrue(Hash::check('ProfileBaru#2026', $user->fresh()->password));
     }
@@ -119,10 +124,8 @@ class AuditLogTest extends TestCase
             ->fillForm(['password' => 'PasswordSatu#2026', 'passwordConfirmation' => 'PasswordSatu#2026'])
             ->call('save');
 
-        Livewire::test(CustomProfile::class)
+        Livewire::test(ForcePasswordChange::class)
             ->fillForm([
-                'name' => $user->name,
-                'email' => $user->email,
                 'password' => 'PasswordDua#2026',
                 'passwordConfirmation' => 'PasswordDua#2026',
             ])
