@@ -216,4 +216,33 @@ class ForcePasswordChangeTest extends TestCase
     {
         $this->assertFalse(ForcePasswordChange::shouldRegisterNavigation());
     }
+
+    public function test_voluntary_user_can_access_page_with_cancel_action(): void
+    {
+        $user = $this->user(['must_change_password' => false]);
+        $this->actingAs($user);
+
+        Livewire::test(ForcePasswordChange::class)
+            ->assertSee('Ganti Password')
+            ->assertDontSee('Anda harus mengganti password')
+            ->assertSee('Batal / Kembali ke Profil')
+            ->assertDontSeeHtml('id="force-logout-form"');
+    }
+
+    public function test_voluntary_user_changes_password_and_redirects_to_profile(): void
+    {
+        $user = $this->user(['must_change_password' => false]);
+        $this->actingAs($user);
+
+        Livewire::test(ForcePasswordChange::class)
+            ->fillForm([
+                'password' => 'Voluntary#2026Password',
+                'passwordConfirmation' => 'Voluntary#2026Password',
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors()
+            ->assertRedirect(route('filament.admin.auth.profile'));
+
+        $this->assertTrue(Hash::check('Voluntary#2026Password', $user->fresh()->password));
+    }
 }

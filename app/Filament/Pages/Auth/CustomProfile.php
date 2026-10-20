@@ -2,24 +2,33 @@
 
 namespace App\Filament\Pages\Auth;
 
-use App\Models\AuditLog;
 use App\Services\RecoveryCodeService;
+use Filament\Actions\Action;
 use Filament\Auth\Pages\EditProfile as BaseEditProfile;
+use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class CustomProfile extends BaseEditProfile
 {
-    protected bool $passwordWasChanged = false;
-
     public function form(Schema $schema): Schema
     {
         return $schema
             ->components([
                 $this->getNameFormComponent(),
                 $this->getEmailFormComponent()->disabled(),
-                $this->getPasswordFormComponent(),
-                $this->getPasswordConfirmationFormComponent(),
+                Section::make('Keamanan Kata Sandi')
+                    ->description('Demi menjaga keamanan akun, seluruh pembaruan kata sandi dilakukan secara terpusat dengan sistem pengecekan kekuatan sandi.')
+                    ->schema([
+                        Actions::make([
+                            Action::make('changePassword')
+                                ->label('Ganti Password')
+                                ->icon('heroicon-o-key')
+                                ->color('primary')
+                                ->button()
+                                ->url(ForcePasswordChange::getUrl()),
+                        ]),
+                    ]),
                 Section::make('Kode Pemulihan Darurat')
                     ->description(function (): string {
                         $remaining = app(RecoveryCodeService::class)->remainingCount($this->getUser());
@@ -33,27 +42,6 @@ class CustomProfile extends BaseEditProfile
                     })
                     ->visible(fn (): bool => $this->getUser()->isSuperAdmin()),
             ]);
-    }
-
-    /**
-     * Memanipulasi data sebelum disimpan ke database.
-     */
-    protected function mutateFormDataBeforeSave(array $data): array
-    {
-        // Jika user mengisi/mengganti password baru, ubah status wajib ganti password menjadi false
-        if (! empty($data['password'])) {
-            $this->passwordWasChanged = true;
-            $data['must_change_password'] = false;
-        }
-
-        return $data;
-    }
-
-    protected function afterSave(): void
-    {
-        if ($this->passwordWasChanged && $this->getUser()->isSuperAdmin()) {
-            AuditLog::record('super_admin.password_changed', $this->getUser(), ['source' => 'profile']);
-        }
     }
 
     /**
