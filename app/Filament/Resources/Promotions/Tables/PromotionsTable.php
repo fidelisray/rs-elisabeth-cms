@@ -29,14 +29,18 @@ class PromotionsTable
 
                 TextColumn::make('start_date')
                     ->label('Mulai')
-                    ->date('d M Y')
-                    ->placeholder(fn (Promotion $record): ?string => $record->created_at?->translatedFormat('d M Y'))
+                    ->formatStateUsing(fn ($state, Promotion $record): ?string => filled($state)
+                        ? $record->start_date?->translatedFormat('d M Y')
+                        : $record->created_at?->translatedFormat('d M Y')
+                    )
                     ->sortable(),
 
                 TextColumn::make('end_date')
                     ->label('Berakhir')
-                    ->date('d M Y')
-                    ->placeholder('Aktif tanpa batas waktu')
+                    ->formatStateUsing(fn ($state, Promotion $record): string => filled($state)
+                        ? $record->end_date?->translatedFormat('d M Y')
+                        : 'Aktif tanpa batas waktu'
+                    )
                     ->sortable(),
 
                 TextColumn::make('created_at')
