@@ -27,6 +27,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\HtmlString;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use LaraZeus\SpatieTranslatable\SpatieTranslatablePlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -69,6 +70,13 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 FilamentShieldPlugin::make(),
+                SpatieTranslatablePlugin::make()
+                    ->defaultLocales(config('app.supported_locales', ['id', 'en']))
+                    ->getLocaleLabelUsing(fn (string $locale): string => match ($locale) {
+                        'id' => 'Bahasa Indonesia (ID)',
+                        'en' => 'English (EN)',
+                        default => strtoupper($locale),
+                    }),
             ])
             ->middleware([
                 EncryptCookies::class,

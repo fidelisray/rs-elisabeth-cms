@@ -22,7 +22,6 @@ class RoomFacilityTest extends TestCase
         $room = RoomFacility::create([
             'name' => 'Test Room',
             'slug' => 'test-room-1',
-            'category' => 'standard',
             'description' => 'Desc',
         ]);
 
@@ -31,7 +30,7 @@ class RoomFacilityTest extends TestCase
 
     public function test_room_uses_soft_delete(): void
     {
-        $room = RoomFacility::create(['name' => 'Name', 'slug' => 'name-1', 'category' => 'standard', 'description' => 'Desc']);
+        $room = RoomFacility::create(['name' => 'Name', 'slug' => 'name-1', 'description' => 'Desc']);
         $id = $room->id;
 
         $room->delete();
@@ -44,7 +43,7 @@ class RoomFacilityTest extends TestCase
     {
         Cache::put('rs_web_cms_api_room_facilities', 'data-lama');
 
-        $room = RoomFacility::create(['name' => 'Name', 'slug' => 'name-2', 'category' => 'standard', 'description' => 'Desc']);
+        $room = RoomFacility::create(['name' => 'Name', 'slug' => 'name-2', 'description' => 'Desc']);
         $this->assertFalse(Cache::has('rs_web_cms_api_room_facilities'));
 
         Cache::put('rs_web_cms_api_room_facilities', 'data-lama2');
@@ -57,7 +56,6 @@ class RoomFacilityTest extends TestCase
         $room = RoomFacility::create([
             'name' => 'Name',
             'slug' => 'name-3',
-            'category' => 'premium',
             'description' => 'Desc',
             'is_active' => true,
         ]);

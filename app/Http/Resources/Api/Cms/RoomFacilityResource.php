@@ -19,7 +19,7 @@ class RoomFacilityResource extends BaseCmsResource
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
-            'category' => $this->category,
+            'alternate_slugs' => $this->getAlternateSlugs(),
             'tagline' => $this->tagline,
             'description' => $this->description,
             'room_size' => $this->room_size,

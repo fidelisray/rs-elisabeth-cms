@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Observers\WebFrontendWebhookObserver;
 use App\Traits\ConvertsImagesToWebp;
+use App\Traits\HasCmsTranslations;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,8 +16,16 @@ use Illuminate\Support\Facades\Cache;
 class News extends Model
 {
     use ConvertsImagesToWebp;
+    use HasCmsTranslations;
     use HasFactory;
     use SoftDeletes;
+
+    public array $translatable = [
+        'title',
+        'slug',
+        'shorts',
+        'content',
+    ];
 
     /**
      * Kolom-kolom yang menyimpan path gambar dan akan dikonversi ke WebP.

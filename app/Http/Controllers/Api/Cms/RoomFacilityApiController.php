@@ -28,7 +28,7 @@ class RoomFacilityApiController extends Controller
             return RoomFacility::query()
                 ->where('is_active', true)
                 ->orderBy('sort_order')
-                ->orderBy('name')
+                ->orderBy('name->id')
                 ->get();
         });
 
@@ -49,7 +49,7 @@ class RoomFacilityApiController extends Controller
     {
         $room = RoomFacility::query()
             ->where('is_active', true)
-            ->where('slug', $slug)
+            ->whereTranslatedSlug($slug)
             ->firstOrFail();
 
         return new RoomFacilityResource($room);

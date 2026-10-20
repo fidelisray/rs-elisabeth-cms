@@ -82,8 +82,8 @@ class MarketingReorderTest extends TestCase
     public function test_marketing_can_reorder_room_facilities(): void
     {
         [$a, $b] = RoomFacility::withoutEvents(fn () => [
-            RoomFacility::create(['name' => 'A', 'slug' => 'a', 'category' => 'premium', 'is_active' => true, 'sort_order' => 1]),
-            RoomFacility::create(['name' => 'B', 'slug' => 'b', 'category' => 'premium', 'is_active' => true, 'sort_order' => 2]),
+            RoomFacility::create(['name' => 'A', 'slug' => 'a', 'is_active' => true, 'sort_order' => 1]),
+            RoomFacility::create(['name' => 'B', 'slug' => 'b', 'is_active' => true, 'sort_order' => 2]),
         ]);
 
         $component = Livewire::test(ListRoomFacilities::class);

@@ -15,11 +15,10 @@ return new class extends Migration
             $table->id();
 
             // Informasi Utama
-            $table->string('name', 100);                        // Nama ruangan: "President Suite", "VIP", dst
-            $table->string('slug', 100)->unique();              // Identifier unik: "president-suite", "vip"
-            $table->enum('category', ['premium', 'standard']); // Untuk filter tab di view
-            $table->string('tagline', 500)->nullable();         // Deskripsi singkat pada card ruangan
-            $table->text('description')->nullable();            // Deskripsi panjang ruangan
+            $table->json('name');                               // Nama ruangan multi-bahasa: "President Suite", "VIP", dst
+            $table->json('slug');                               // Identifier unik per bahasa: "president-suite", "vip"
+            $table->json('tagline')->nullable();                // Deskripsi singkat pada card ruangan
+            $table->json('description')->nullable();            // Deskripsi panjang ruangan
 
             // Spesifikasi Kamar
             $table->string('room_size', 50)->nullable();        // Luas kamar, misal: "~40 m²"

@@ -49,11 +49,11 @@ class ArticleApiController extends Controller
     {
         $query = Article::query()->where('is_active', 'yes');
 
-        // Smart identifier: angka = lookup by ID, selain itu = lookup by slug.
+        // Smart identifier: angka = lookup by ID, selain itu = lookup by slug multi-bahasa.
         if (is_numeric($identifier)) {
             $query->where('id', (int) $identifier);
         } else {
-            $query->where('slug', $identifier);
+            $query->whereTranslatedSlug($identifier);
         }
 
         $article = $query->first();
