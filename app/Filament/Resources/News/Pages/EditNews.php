@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\News\Pages;
 
+use App\Filament\Concerns\ValidatesTranslatableLocales;
 use App\Filament\Resources\News\NewsResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
@@ -11,6 +12,7 @@ use LaraZeus\SpatieTranslatable\Resources\Pages\EditRecord\Concerns\Translatable
 class EditNews extends EditRecord
 {
     use Translatable;
+    use ValidatesTranslatableLocales;
 
     protected static string $resource = NewsResource::class;
 

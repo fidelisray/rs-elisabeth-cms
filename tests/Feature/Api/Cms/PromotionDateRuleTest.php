@@ -288,6 +288,14 @@ class PromotionDateRuleTest extends TestCase
 
         Livewire::test(CreatePromotion::class)
             ->fillForm($this->validForm(['end_date' => null, 'confirm_no_end_date' => true]))
+            ->set('activeLocale', 'en')
+            ->fillForm([
+                'title' => 'Promo Form EN',
+                'slug' => 'promo-form-en',
+                'shorts' => 'Short EN',
+                'description' => '<p>Description EN</p>',
+                'confirm_no_end_date' => true,
+            ])
             ->call('create')
             ->assertHasNoFormErrors();
 
@@ -312,6 +320,14 @@ class PromotionDateRuleTest extends TestCase
 
         Livewire::test(CreatePromotion::class)
             ->fillForm($this->validForm(['end_date' => null, 'confirm_no_end_date' => true]))
+            ->set('activeLocale', 'en')
+            ->fillForm([
+                'title' => 'Promo Form EN',
+                'slug' => 'promo-form-en',
+                'shorts' => 'Short EN',
+                'description' => '<p>Description EN</p>',
+                'confirm_no_end_date' => true,
+            ])
             ->call('create')
             ->assertHasNoFormErrors();
 
