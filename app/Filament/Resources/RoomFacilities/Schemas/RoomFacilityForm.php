@@ -47,18 +47,8 @@ class RoomFacilityForm
                             ->placeholder('Klik pada form teks akan terisi otomatis')
                             ->required()
                             ->maxLength(100)
-                            ->unique(ignoreRecord: true)
+                            ->unique(column: fn ($livewire = null): string => 'slug->'.($livewire?->activeLocale ?? app()->getLocale()), ignoreRecord: true)
                             ->helperText('Dapat diedit jika diperlukan'),
-
-                        Select::make('category')
-                            ->label('Kategori Ruangan')
-                            ->placeholder('Pilih Kategori Ruangan')
-                            ->options([
-                                'premium' => 'Premium (President Suite, Suites, Executive)',
-                                'standard' => 'Standard (VIP, Kelas I, II, III)',
-                            ])
-                            ->required()
-                            ->helperText('Menentukan di section mana ruangan ini akan ditampilkan'),
                     ]),
 
                 Section::make('Deskripsi Ruangan')

@@ -14,7 +14,6 @@ class RoomFacilityFactory extends Factory
         return [
             'name' => $name,
             'slug' => Str::slug($name.'-'.Str::random(4)),
-            'category' => $this->faker->randomElement(['premium', 'standard']),
             'tagline' => $this->faker->sentence(),
             'description' => '<p>'.implode('</p><p>', $this->faker->paragraphs(2)).'</p>',
             'room_size' => '~'.$this->faker->numberBetween(15, 50).' m²',

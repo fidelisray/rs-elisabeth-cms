@@ -22,7 +22,6 @@ class RoomFacilityApiTest extends TestCase
         RoomFacility::create([
             'name' => 'Test Room',
             'slug' => 'test-room',
-            'category' => 'standard',
             'description' => 'Desc',
             'is_active' => true,
         ]);
@@ -36,7 +35,6 @@ class RoomFacilityApiTest extends TestCase
         RoomFacility::create([
             'name' => 'Detail Room',
             'slug' => 'detail-room',
-            'category' => 'premium',
             'description' => 'Desc',
             'is_active' => true,
         ]);

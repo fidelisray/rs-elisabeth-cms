@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Observers\WebFrontendWebhookObserver;
 use App\Traits\ConvertsImagesToWebp;
+use App\Traits\HasCmsTranslations;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,8 +17,16 @@ use Illuminate\Support\Str;
 class RoomFacility extends Model
 {
     use ConvertsImagesToWebp;
+    use HasCmsTranslations;
     use HasFactory;
     use SoftDeletes;
+
+    public array $translatable = [
+        'name',
+        'slug',
+        'tagline',
+        'description',
+    ];
 
     /**
      * Kolom-kolom yang menyimpan path gambar dan akan dikonversi ke WebP.
@@ -30,7 +39,6 @@ class RoomFacility extends Model
     protected $fillable = [
         'name',
         'slug',
-        'category',
         'tagline',
         'description',
         'room_size',
@@ -65,14 +73,16 @@ class RoomFacility extends Model
         parent::boot();
 
         static::creating(function (self $model) {
-            if (empty($model->slug)) {
+            $model->ensureTranslatedSlugsFrom('name');
+            if (empty($model->slug) && filled($model->name)) {
                 $model->slug = Str::slug($model->name);
             }
             $model->created_by = Auth::user()?->email ?? 'system';
         });
 
         static::updating(function (self $model) {
-            if (empty($model->slug)) {
+            $model->ensureTranslatedSlugsFrom('name');
+            if (empty($model->slug) && filled($model->name)) {
                 $model->slug = Str::slug($model->name);
             }
             $model->updated_by = Auth::user()?->email ?? 'system';

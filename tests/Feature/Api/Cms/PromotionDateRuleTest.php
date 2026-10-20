@@ -279,7 +279,7 @@ class PromotionDateRuleTest extends TestCase
             ->call('create')
             ->assertHasFormErrors(['confirm_no_end_date']);
 
-        $this->assertSame(0, Promotion::where('slug', 'promo-form')->count());
+        $this->assertSame(0, Promotion::whereTranslatedSlug('promo-form')->count());
     }
 
     public function test_empty_end_date_is_saved_when_checkbox_is_confirmed(): void
@@ -291,7 +291,7 @@ class PromotionDateRuleTest extends TestCase
             ->call('create')
             ->assertHasNoFormErrors();
 
-        $saved = Promotion::where('slug', 'promo-form')->first();
+        $saved = Promotion::whereTranslatedSlug('promo-form')->first();
         $this->assertNotNull($saved);
         $this->assertNull($saved->end_date);
     }

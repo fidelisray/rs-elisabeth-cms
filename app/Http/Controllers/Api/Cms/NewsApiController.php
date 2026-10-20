@@ -47,8 +47,8 @@ class NewsApiController extends Controller
     public function show($slug)
     {
         $news = News::query()
-            ->where('slug', $slug)
             ->where('is_published', true)
+            ->whereTranslatedSlug($slug)
             ->firstOrFail();
 
         return new NewsResource($news);

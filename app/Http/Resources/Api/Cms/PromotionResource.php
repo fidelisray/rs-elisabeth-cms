@@ -19,6 +19,7 @@ class PromotionResource extends BaseCmsResource
             'id' => $this->id,
             'title' => $this->title,
             'slug' => $this->slug,
+            'alternate_slugs' => $this->getAlternateSlugs(),
             'excerpt' => $this->shorts,
             'description' => $this->description,
             'image_path' => $this->image_path,

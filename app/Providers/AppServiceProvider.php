@@ -8,6 +8,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Spatie\Translatable\Facades\Translatable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -31,6 +32,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Translatable::fallback(
+            fallbackLocale: 'id',
+            fallbackAny: true,
+        )->locales(config('app.supported_locales', ['id', 'en']));
         $tooMany = fn (Request $request, array $headers) => response()->json([
             'success' => false,
             'status_code' => 429,

@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('promotions', function (Blueprint $table) {
             $table->id();
-            $table->string('title');
-            $table->string('slug', 100)->unique()->nullable();
-            $table->string('shorts', 255)->nullable();
-            $table->text('description');
+            $table->json('title');
+            $table->json('slug')->nullable();
+            $table->json('shorts')->nullable();
+            $table->json('description');
             $table->string('image_path')->nullable();
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();

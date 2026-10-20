@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\SetCmsApiLocale;
 use App\Http\Middleware\ThrottleCmsApiByIp;
 use App\Http\Middleware\VerifyCmsHmacSignature;
 use Illuminate\Auth\AuthenticationException;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'verifyCmsHmac' => VerifyCmsHmacSignature::class,
             'throttleCmsIp' => ThrottleCmsApiByIp::class,
+            'setCmsLocale' => SetCmsApiLocale::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

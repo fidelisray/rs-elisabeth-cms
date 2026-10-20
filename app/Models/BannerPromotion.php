@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Observers\WebFrontendWebhookObserver;
 use App\Traits\ConvertsImagesToWebp;
+use App\Traits\HasCmsTranslations;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +16,13 @@ use Illuminate\Support\Facades\Cache;
 class BannerPromotion extends Model
 {
     use ConvertsImagesToWebp, SoftDeletes;
+    use HasCmsTranslations;
     use HasFactory;
+
+    public array $translatable = [
+        'title',
+        'slug',
+    ];
 
     /**
      * Kolom-kolom yang menyimpan path gambar dan akan dikonversi ke WebP.

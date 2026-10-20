@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('facility_services', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('slug')->unique()->nullable();
-            $table->text('description');
-            $table->text('short_description')->nullable();
+            $table->json('name');
+            $table->json('slug')->nullable();
+            $table->json('description');
+            $table->json('short_description')->nullable();
             $table->string('image_path')->nullable();
             $table->string('category')->nullable();
             $table->json('highlights')->nullable();

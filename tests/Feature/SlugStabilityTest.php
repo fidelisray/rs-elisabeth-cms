@@ -33,7 +33,6 @@ class SlugStabilityTest extends TestCase
         return RoomFacility::withoutEvents(fn () => RoomFacility::create(array_merge([
             'name' => 'Kamar VIP',
             'slug' => 'kamar-vip',
-            'category' => 'premium',
             'is_active' => true,
         ], $attributes)));
     }

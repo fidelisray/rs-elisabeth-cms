@@ -172,8 +172,8 @@ class ReorderCacheInvalidationTest extends TestCase
     {
         $this->actAsReorderer();
         [$first, $second] = RoomFacility::withoutEvents(fn () => [
-            RoomFacility::create(['name' => 'R1', 'slug' => 'r1', 'category' => 'premium', 'is_active' => true, 'sort_order' => 1]),
-            RoomFacility::create(['name' => 'R2', 'slug' => 'r2', 'category' => 'premium', 'is_active' => true, 'sort_order' => 2]),
+            RoomFacility::create(['name' => 'R1', 'slug' => 'r1', 'is_active' => true, 'sort_order' => 1]),
+            RoomFacility::create(['name' => 'R2', 'slug' => 'r2', 'is_active' => true, 'sort_order' => 2]),
         ]);
 
         $this->assertSame(['R1', 'R2'], collect($this->withHmac()->getJson('/api/v1/cms/room-facilities')->json('data'))->pluck('name')->all());

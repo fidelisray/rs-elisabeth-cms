@@ -44,7 +44,7 @@ class PromotionForm
                             ->placeholder('Klik pada form dan teks akan terisi otomatis')
                             ->required()
                             ->maxLength(100)
-                            ->unique(ignoreRecord: true)
+                            ->unique(column: fn ($livewire = null): string => 'slug->'.($livewire?->activeLocale ?? app()->getLocale()), ignoreRecord: true)
                             ->helperText('Dapat diedit jika diperlukan'),
 
                         Textarea::make('shorts')

@@ -19,6 +19,7 @@ class FacilityServiceResource extends BaseCmsResource
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
+            'alternate_slugs' => $this->getAlternateSlugs(),
             'category' => $this->category,
             'description' => $this->description,
             'short_description' => $this->short_description,

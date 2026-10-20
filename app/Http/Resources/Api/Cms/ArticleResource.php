@@ -19,6 +19,7 @@ class ArticleResource extends BaseCmsResource
             'id' => $this->id,
             'title' => $this->title,
             'slug' => $this->slug,
+            'alternate_slugs' => $this->getAlternateSlugs(),
             'image_path' => $this->image_path,
             'image_url' => $this->generateImageUrl($this->image_path),
             'excerpt' => $this->shorts,

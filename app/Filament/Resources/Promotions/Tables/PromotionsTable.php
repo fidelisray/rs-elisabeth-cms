@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Promotions\Tables;
 
+use App\Models\Promotion;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -29,11 +30,13 @@ class PromotionsTable
                 TextColumn::make('start_date')
                     ->label('Mulai')
                     ->date('d M Y')
+                    ->placeholder(fn (Promotion $record): ?string => $record->created_at?->translatedFormat('d M Y'))
                     ->sortable(),
 
                 TextColumn::make('end_date')
                     ->label('Berakhir')
                     ->date('d M Y')
+                    ->placeholder('Aktif tanpa batas waktu')
                     ->sortable(),
 
                 TextColumn::make('created_at')

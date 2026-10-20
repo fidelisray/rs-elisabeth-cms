@@ -9,7 +9,6 @@ use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
@@ -34,22 +33,6 @@ class RoomFacilitiesTable
                     ->searchable()
                     ->sortable()
                     ->weight('bold'),
-
-                // Kategori dengan badge berwarna
-                TextColumn::make('category')
-                    ->label('Kategori')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'premium' => 'warning',
-                        'standard' => 'info',
-                        default => 'gray',
-                    })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'premium' => '🏆 Premium',
-                        'standard' => '🛏️ Standard',
-                        default => $state,
-                    })
-                    ->sortable(),
 
                 TextColumn::make('room_size')
                     ->label('Luas')
@@ -85,13 +68,6 @@ class RoomFacilitiesTable
                 ApiCacheInvalidator::forModule('room_facilities');
             })
             ->filters([
-                SelectFilter::make('category')
-                    ->label('Kategori')
-                    ->options([
-                        'premium' => '🏆 Premium',
-                        'standard' => '🛏️ Standard',
-                    ]),
-
                 TernaryFilter::make('is_active')
                     ->label('Status Aktif')
                     ->trueLabel('Aktif saja')

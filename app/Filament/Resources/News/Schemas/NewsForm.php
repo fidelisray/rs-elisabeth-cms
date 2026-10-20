@@ -41,7 +41,7 @@ class NewsForm
                             ->placeholder('Klik pada form dan teks akan terisi otomatis')
                             ->required()
                             ->maxLength(255)
-                            ->unique(ignoreRecord: true)
+                            ->unique(column: fn ($livewire = null): string => 'slug->'.($livewire?->activeLocale ?? app()->getLocale()), ignoreRecord: true)
                             ->helperText('Dapat diedit jika diperlukan'),
 
                         Select::make('category')

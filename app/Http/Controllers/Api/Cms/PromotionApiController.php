@@ -56,11 +56,11 @@ class PromotionApiController extends Controller
         // tidak bisa diakses langsung lewat ID maupun slug.
         $query = Promotion::query()->activeOn();
 
-        // Smart identifier: angka = lookup by ID, selain itu = lookup by slug.
+        // Smart identifier: angka = lookup by ID, selain itu = lookup by slug multi-bahasa.
         if (is_numeric($identifier)) {
             $query->where('id', (int) $identifier);
         } else {
-            $query->where('slug', $identifier);
+            $query->whereTranslatedSlug($identifier);
         }
 
         $promotion = $query->first();

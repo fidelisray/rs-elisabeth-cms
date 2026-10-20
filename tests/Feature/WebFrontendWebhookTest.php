@@ -193,7 +193,6 @@ class WebFrontendWebhookTest extends TestCase
         $room = RoomFacility::create([
             'name' => 'Kamar VIP Elisabeth',
             'slug' => 'kamar-vip-elisabeth',
-            'category' => 'standard',
             'description' => 'Deskripsi Kamar VIP',
         ]);
 
