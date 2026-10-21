@@ -21,20 +21,20 @@ class RoomFacilityFactory extends Factory
             'max_companion' => $this->faker->numberBetween(1, 2),
             'image_path' => null,
             'amenities' => [
-                ['group' => 'Fasilitas Medis', 'items' => [
-                    ['name' => 'Oksigen Sentral', 'value' => null, 'show_in_comparison' => false],
-                    ['name' => 'Ners Call', 'value' => null, 'show_in_comparison' => false],
+                ['group' => ['id' => 'Fasilitas Medis', 'en' => 'Medical Facilities'], 'items' => [
+                    ['name' => ['id' => 'Oksigen Sentral', 'en' => 'Central Oxygen'], 'value' => null, 'show_in_comparison' => false],
+                    ['name' => ['id' => 'Panggilan Perawat', 'en' => 'Nurse Call'], 'value' => null, 'show_in_comparison' => false],
                 ]],
-                ['group' => 'Fasilitas Umum', 'items' => [
-                    ['name' => 'AC', 'value' => null, 'show_in_comparison' => true],
-                    ['name' => 'TV LED', 'value' => null, 'show_in_comparison' => false],
+                ['group' => ['id' => 'Fasilitas Umum', 'en' => 'General Facilities'], 'items' => [
+                    ['name' => ['id' => 'AC', 'en' => 'Air Conditioning'], 'value' => null, 'show_in_comparison' => true],
+                    ['name' => ['id' => 'Televisi', 'en' => 'Television'], 'value' => null, 'show_in_comparison' => false],
                 ]],
             ],
             'highlight_tags' => [
-                ['icon' => 'fa-solid fa-wifi', 'label' => 'Free Wi-Fi'],
-                ['icon' => 'fa-solid fa-tv', 'label' => 'Smart TV'],
+                ['icon' => 'fa-solid fa-wifi', 'label' => ['id' => 'Wi-Fi Gratis', 'en' => 'Free Wi-Fi']],
+                ['icon' => 'fa-solid fa-tv', 'label' => ['id' => 'TV Pintar', 'en' => 'Smart TV']],
             ],
-            'whatsapp_text' => 'Halo, saya ingin menanyakan ketersediaan kamar '.$name,
+            'whatsapp_text' => ['id' => 'Halo, saya ingin menanyakan ketersediaan kamar '.$name, 'en' => 'Hello, I would like to check room availability.'],
             'sort_order' => $this->faker->numberBetween(1, 10),
             'is_active' => $this->faker->boolean(95),
         ];

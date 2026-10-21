@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\RoomFacilities\Schemas;
 
+use App\Rules\ValidRoomNestedContent;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
@@ -98,16 +99,23 @@ class RoomFacilityForm
                     ]),
 
                 Section::make('Daftar Fasilitas')
-                    ->description('Kelompokkan fasilitas dalam grup. Contoh: Fasilitas Kamar, Fasilitas Tambahan, dll.')
+                    ->description('Struktur fasilitas berlaku untuk kedua bahasa. Lengkapi teks ID dan EN pada setiap grup/item; pergantian bahasa tidak membuat salinan grup.')
                     ->schema([
 
                         Repeater::make('amenities')
                             ->label('Grup Fasilitas')
+                            ->rules([new ValidRoomNestedContent('amenities')])
                             ->schema([
 
-                                TextInput::make('group')
-                                    ->label('Nama Grup')
+                                TextInput::make('group.id')
+                                    ->label('Nama Grup — Indonesia')
                                     ->placeholder('Contoh: Kamar & Ruangan')
+                                    ->required()
+                                    ->maxLength(100)
+                                    ->columnSpanFull(),
+
+                                TextInput::make('group.en')
+                                    ->label('Nama Grup — English')
                                     ->required()
                                     ->maxLength(100)
                                     ->columnSpanFull(),
@@ -117,21 +125,31 @@ class RoomFacilityForm
                                     ->label('Item Fasilitas')
                                     ->schema([
 
-                                        TextInput::make('name')
-                                            ->label('Nama Fasilitas')
+                                        TextInput::make('name.id')
+                                            ->label('Nama Fasilitas — Indonesia')
                                             ->placeholder('Contoh: Air Conditioner (AC)')
                                             ->required()
                                             ->maxLength(100),
 
-                                        TextInput::make('value')
-                                            ->label('Spesifikasi (Opsional)')
+                                        TextInput::make('name.en')
+                                            ->label('Nama Fasilitas — English')
+                                            ->required()
+                                            ->maxLength(100),
+
+                                        TextInput::make('value.id')
+                                            ->label('Spesifikasi — Indonesia (Opsional)')
                                             ->placeholder('contoh: 55" Smart TV, Central')
                                             // ->helperText('Biarkan kosong jika ini hanya fasilitas standar (tampil sebagai centang)')
                                             ->maxLength(255),
 
+                                        TextInput::make('value.en')
+                                            ->label('Spesifikasi — English (Opsional)')
+                                            ->helperText('Isi kedua bahasa jika spesifikasi digunakan, atau kosongkan keduanya.')
+                                            ->maxLength(255),
+
                                         Toggle::make('show_in_comparison')
                                             ->columnSpanFull()
-                                            ->label('Hightlight Fasilitas')
+                                            ->label('Highlight Fasilitas')
                                             ->default(false)
                                             ->helperText('Aktifkan agar fasilitas ini ikut muncul di tabel perbandingan antar-ruangan'),
                                     ])
@@ -153,6 +171,7 @@ class RoomFacilityForm
 
                         Repeater::make('highlight_tags')
                             ->label('Highlight Tags')
+                            ->rules([new ValidRoomNestedContent('highlight_tags')])
                             ->schema([
 
                                 Select::make('icon')
@@ -188,9 +207,14 @@ class RoomFacilityForm
                                     ->searchable()
                                     ->required(),
 
-                                TextInput::make('label')
-                                    ->label('Label Tag')
+                                TextInput::make('label.id')
+                                    ->label('Label Tag — Indonesia')
                                     ->placeholder('Contoh: Kamar Terluas')
+                                    ->required()
+                                    ->maxLength(100),
+
+                                TextInput::make('label.en')
+                                    ->label('Label Tag — English')
                                     ->required()
                                     ->maxLength(100),
                             ])

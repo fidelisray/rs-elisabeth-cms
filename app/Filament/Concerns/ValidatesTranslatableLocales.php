@@ -203,7 +203,7 @@ trait ValidatesTranslatableLocales
         return array_values(array_filter(
             static::getResource()::getTranslatableAttributes(),
             function (string $attribute): bool {
-                if (! in_array($attribute, ['wa_link_text', 'wa_prefilled_message'], true)) {
+                if (! in_array($attribute, ['wa_link_text', 'wa_prefilled_message', 'whatsapp_text'], true)) {
                     return true;
                 }
 
@@ -256,6 +256,7 @@ trait ValidatesTranslatableLocales
             'category', 'tags' => 'Kategori',
             'wa_link_text' => 'Label Tombol WhatsApp',
             'wa_prefilled_message' => 'Pesan Otomatis WhatsApp',
+            'whatsapp_text' => 'Pesan WhatsApp Kamar',
             default => ucfirst(str_replace('_', ' ', $attribute)),
         };
     }
