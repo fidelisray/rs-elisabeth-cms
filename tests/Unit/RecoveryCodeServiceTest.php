@@ -55,7 +55,7 @@ class RecoveryCodeServiceTest extends TestCase
         $user = $this->createSuperAdmin();
 
         $codes = $this->service->generateFor($user);
-        $records = SuperAdminRecoveryCode::where('user_id', $user->getKey())->get();
+        $records = SuperAdminRecoveryCode::where('user_id', $user->getKey())->orderBy('id')->get();
 
         $this->assertCount(10, $records);
 

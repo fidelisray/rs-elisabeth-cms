@@ -10,7 +10,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\SimplePage;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Timebox;
@@ -38,11 +37,6 @@ class RecoveryLogin extends SimplePage
 
     /** @var array<string, mixed> */
     public ?array $data = [];
-
-    /**
-     * Dummy bcrypt hash untuk menjaga waktu eksekusi tetap seragam saat email tidak ditemukan.
-     */
-    private const DUMMY_HASH = '$2y$04$usesomesillystringfore7hnbRJHxXVLeakoG8K30oukPsA.ztMG';
 
     public function mount(): void
     {
@@ -76,14 +70,18 @@ class RecoveryLogin extends SimplePage
             ->components([
                 TextInput::make('email')
                     ->label('Alamat Email')
+                    ->mutateStateForValidationUsing(fn (?string $state): string => User::normalizeEmail($state ?? ''))
+                    ->dehydrateStateUsing(fn (?string $state): string => User::normalizeEmail($state ?? ''))
                     ->email()
                     ->required()
+                    ->maxLength(255)
                     ->autocomplete('username')
                     ->autofocus(),
 
                 TextInput::make('recovery_code')
                     ->label('Kode Pemulihan')
                     ->required()
+                    ->maxLength(128)
                     ->placeholder('XXXX-XXXX-XXXX-XXXX')
                     ->autocomplete('one-time-code'),
             ])
@@ -93,7 +91,7 @@ class RecoveryLogin extends SimplePage
     public function authenticate(RecoveryCodeService $recoveryCodes): void
     {
         $data = $this->form->getState();
-        $email = strtolower(trim((string) ($data['email'] ?? '')));
+        $email = User::normalizeEmail((string) ($data['email'] ?? ''));
         $code = (string) ($data['recovery_code'] ?? '');
         $throttleKey = $this->throttleKey($email);
 
@@ -112,16 +110,8 @@ class RecoveryLogin extends SimplePage
         }
 
         app(Timebox::class)->call(function (Timebox $timebox) use ($email, $code, $throttleKey, $recoveryCodes): void {
+            $timebox->dontReturnEarly();
             $user = User::where('email', $email)->first();
-
-            if (! $user || ! $user->is_active || ! $user->isSuperAdmin()) {
-                Hash::check($recoveryCodes->normalize($code), self::DUMMY_HASH);
-                RateLimiter::hit($throttleKey, self::DECAY_SECONDS);
-
-                throw ValidationException::withMessages([
-                    'data.email' => self::INVALID_CREDENTIALS_MESSAGE,
-                ]);
-            }
 
             if (! $recoveryCodes->verifyAndConsume($user, $code)) {
                 RateLimiter::hit($throttleKey, self::DECAY_SECONDS);

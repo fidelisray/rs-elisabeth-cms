@@ -7,6 +7,7 @@ use App\Models\Pivots\UserRolePivot;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -69,6 +70,16 @@ class User extends Authenticatable implements FilamentUser
             'must_change_password' => 'boolean',
             'is_active' => 'boolean',
         ];
+    }
+
+    public static function normalizeEmail(string $email): string
+    {
+        return strtolower(trim($email));
+    }
+
+    protected function email(): Attribute
+    {
+        return Attribute::make(set: fn (string $value): string => self::normalizeEmail($value));
     }
 
     /**

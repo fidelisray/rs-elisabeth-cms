@@ -24,6 +24,8 @@ class UserForm
 
                 TextInput::make('email')
                     ->label('Alamat Email')
+                    ->mutateStateForValidationUsing(fn (?string $state): string => User::normalizeEmail($state ?? ''))
+                    ->dehydrateStateUsing(fn (?string $state): string => User::normalizeEmail($state ?? ''))
                     ->email()
                     ->required()
                     ->unique(ignoreRecord: true)
