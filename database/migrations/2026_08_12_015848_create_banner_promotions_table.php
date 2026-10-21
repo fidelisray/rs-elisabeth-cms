@@ -1,6 +1,7 @@
 <?php
 
 use App\Support\BilingualJsonConstraints;
+use App\Support\TranslatedSlugIndexes;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -31,6 +32,7 @@ return new class extends Migration
         });
 
         BilingualJsonConstraints::add('banner_promotions', ['title', 'slug']);
+        TranslatedSlugIndexes::add('banner_promotions');
     }
 
     /**

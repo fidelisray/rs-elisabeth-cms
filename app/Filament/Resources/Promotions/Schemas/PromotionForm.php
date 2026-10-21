@@ -45,6 +45,7 @@ class PromotionForm
                             ->required()
                             ->maxLength(100)
                             ->unique(column: fn ($livewire = null): string => 'slug->'.($livewire?->activeLocale ?? app()->getLocale()), ignoreRecord: true)
+                            ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
                             ->helperText('Dapat diedit jika diperlukan'),
 
                         Textarea::make('shorts')

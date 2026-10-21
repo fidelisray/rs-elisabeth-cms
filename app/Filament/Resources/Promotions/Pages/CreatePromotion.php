@@ -2,16 +2,14 @@
 
 namespace App\Filament\Resources\Promotions\Pages;
 
-use App\Filament\Concerns\ValidatesTranslatableLocales;
+use App\Filament\Concerns\CreatesTranslatedContent;
 use App\Filament\Resources\Promotions\PromotionResource;
 use Filament\Resources\Pages\CreateRecord;
 use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
-use LaraZeus\SpatieTranslatable\Resources\Pages\CreateRecord\Concerns\Translatable;
 
 class CreatePromotion extends CreateRecord
 {
-    use Translatable;
-    use ValidatesTranslatableLocales;
+    use CreatesTranslatedContent;
 
     protected static string $resource = PromotionResource::class;
 

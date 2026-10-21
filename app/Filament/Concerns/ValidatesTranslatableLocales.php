@@ -2,9 +2,15 @@
 
 namespace App\Filament\Concerns;
 
+use App\Support\TranslatedSlugIndexes;
+use Closure;
 use Filament\Notifications\Notification;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 trait ValidatesTranslatableLocales
 {
@@ -96,7 +102,7 @@ trait ValidatesTranslatableLocales
                     $recordId = $record?->getKey();
                     $keyName = $record?->getKeyName() ?? (new $modelClass)->getKeyName();
 
-                    $isDuplicate = $modelClass::where("slug->{$locale}", $slug)
+                    $isDuplicate = $modelClass::withTrashed()->where("slug->{$locale}", $slug)
                         ->when($recordId, fn ($q) => $q->where($keyName, '!=', $recordId))
                         ->exists();
 
@@ -138,10 +144,13 @@ trait ValidatesTranslatableLocales
                 $messages[] = "• {$slugMsg}";
             }
 
-            $body = "Semua field wajib diisi untuk seluruh bahasa (Indonesia & English) sebelum data dapat disimpan.\n\n".implode("\n", $messages);
+            $body = ($missingByLocale
+                ? 'Semua field wajib diisi untuk seluruh bahasa (Indonesia & English) sebelum data dapat disimpan.'
+                : 'Gunakan identifier (slug) yang belum dipakai pada bahasa terkait, termasuk oleh konten yang sudah dihapus.')
+                ."\n\n".implode("\n", $messages);
 
             Notification::make()
-                ->title('Data Multi-Bahasa Belum Lengkap')
+                ->title($missingByLocale ? 'Data Multi-Bahasa Belum Lengkap' : 'Identifier (Slug) Sudah Digunakan')
                 ->body($body)
                 ->danger()
                 ->persistent()
@@ -152,6 +161,37 @@ trait ValidatesTranslatableLocales
 
         // Bersihkan locale aktif dari otherLocaleData agar konsisten dengan Spatie translatable driver
         unset($this->otherLocaleData[$this->activeLocale]);
+    }
+
+    protected function withTranslatedSlugGuard(Closure $write): Model
+    {
+        try {
+            return DB::transaction($write);
+        } catch (QueryException $exception) {
+            $locale = TranslatedSlugIndexes::conflictingLocale($exception, (new (static::getModel()))->getTable());
+
+            if ($locale === null) {
+                throw $exception;
+            }
+
+            // Rollback has completed before changing the form or issuing any further queries.
+            if ($locale !== $this->activeLocale) {
+                $attributes = static::getResource()::getTranslatableAttributes();
+                $target = $this->otherLocaleData[$locale] ?? [];
+                $this->otherLocaleData[$this->activeLocale] = Arr::only($this->data, $attributes);
+                $this->activeLocale = $locale;
+                $this->form->fill([...Arr::except($this->data, $attributes), ...$target]);
+                unset($this->otherLocaleData[$locale]);
+
+                if (filament('spatie-translatable')->getPersistLocale()) {
+                    session()->put('spatie_translatable_active_locale', $locale);
+                }
+            }
+
+            throw ValidationException::withMessages([
+                'data.slug' => 'Identifier (Slug) sudah digunakan pada '.$this->getTranslatableLocaleLabel($locale).'. Pilih identifier lain.',
+            ]);
+        }
     }
 
     /**

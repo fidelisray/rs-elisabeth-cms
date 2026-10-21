@@ -1,6 +1,7 @@
 <?php
 
 use App\Support\BilingualJsonConstraints;
+use App\Support\TranslatedSlugIndexes;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -35,6 +36,7 @@ return new class extends Migration
         });
 
         BilingualJsonConstraints::add('facility_services', ['name', 'slug', 'description'], ['short_description', 'wa_link_text', 'wa_prefilled_message']);
+        TranslatedSlugIndexes::add('facility_services');
     }
 
     /**
