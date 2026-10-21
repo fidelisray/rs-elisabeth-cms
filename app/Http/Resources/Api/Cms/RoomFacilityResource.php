@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api\Cms;
 
 use App\Models\RoomFacility;
+use App\Support\RoomNestedContent;
 use Illuminate\Http\Request;
 
 /**
@@ -27,8 +28,9 @@ class RoomFacilityResource extends BaseCmsResource
             'max_companion' => $this->max_companion,
             'image_path' => $this->image_path,
             'image_url' => $this->generateImageUrl($this->image_path),
-            'amenities' => $this->amenities ?? [],
-            'highlight_tags' => $this->highlight_tags ?? [],
+            'amenities' => RoomNestedContent::amenities($this->amenities, app()->getLocale()),
+            'highlight_tags' => RoomNestedContent::highlightTags($this->highlight_tags, app()->getLocale()),
+            'whatsapp_text' => $this->whatsapp_text,
             'sort_order' => $this->sort_order,
         ];
     }

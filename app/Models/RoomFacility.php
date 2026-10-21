@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Observers\WebFrontendWebhookObserver;
 use App\Support\ApiCacheInvalidator;
+use App\Support\RoomNestedContent;
 use App\Traits\ConvertsImagesToWebp;
 use App\Traits\HasCmsTranslations;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -26,6 +27,7 @@ class RoomFacility extends Model
         'slug',
         'tagline',
         'description',
+        'whatsapp_text',
     ];
 
     /**
@@ -71,6 +73,17 @@ class RoomFacility extends Model
     protected static function boot(): void
     {
         parent::boot();
+
+        static::saving(function (self $model): void {
+            $data = RoomNestedContent::prepare([
+                'amenities' => $model->amenities,
+                'highlight_tags' => $model->highlight_tags,
+                'whatsapp_text' => $model->getTranslations('whatsapp_text') ?: null,
+            ]);
+            RoomNestedContent::validator($data)->validate();
+            $model->amenities = $data['amenities'];
+            $model->highlight_tags = $data['highlight_tags'];
+        });
 
         static::creating(function (self $model) {
             $model->ensureTranslatedSlugsFrom('name');

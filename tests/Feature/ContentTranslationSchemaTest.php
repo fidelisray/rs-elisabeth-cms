@@ -29,7 +29,7 @@ class ContentTranslationSchemaTest extends TestCase
             'articles' => ['articles', Article::class, ['title', 'slug', 'content'], ['shorts', 'tags']],
             'promotions' => ['promotions', Promotion::class, ['title', 'slug', 'description'], ['shorts']],
             'facilities' => ['facility_services', FacilityService::class, ['name', 'slug', 'description'], ['short_description', 'wa_link_text', 'wa_prefilled_message']],
-            'rooms' => ['room_facilities', RoomFacility::class, ['name', 'slug', 'tagline', 'description'], []],
+            'rooms' => ['room_facilities', RoomFacility::class, ['name', 'slug', 'tagline', 'description'], ['whatsapp_text']],
             'banners' => ['banner_promotions', BannerPromotion::class, ['title', 'slug'], []],
         ];
     }

@@ -31,11 +31,11 @@ return new class extends Migration
             $table->string('image_path')->nullable();           // Path foto landscape 16:9, disk public
 
             // Fasilitas & Tags (JSON)
-            $table->json('amenities')->nullable();              // Array grup fasilitas [{group, items[]}]
-            $table->json('highlight_tags')->nullable();         // Array icon+label [{icon, label}]
+            $table->jsonb('amenities')->nullable();              // Shared groups/items with bilingual text.
+            $table->jsonb('highlight_tags')->nullable();         // Shared icons with bilingual labels.
 
             // CTA
-            $table->string('whatsapp_text')->nullable();        // Teks pesan WA untuk inquiry ruangan
+            $table->jsonb('whatsapp_text')->nullable();         // Optional bilingual inquiry message.
 
             // Pengaturan Tampil
             $table->integer('sort_order')->default(0);          // Urutan tampil di halaman
@@ -48,7 +48,7 @@ return new class extends Migration
             $table->string('deleted_by')->nullable();
         });
 
-        BilingualJsonConstraints::add('room_facilities', ['name', 'slug', 'tagline', 'description']);
+        BilingualJsonConstraints::add('room_facilities', ['name', 'slug', 'tagline', 'description'], ['whatsapp_text']);
         TranslatedSlugIndexes::add('room_facilities');
     }
 

@@ -21,6 +21,14 @@ class FilamentMultiLocaleValidationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Uploads must use the fake media disk, not the deployment's S3 configuration.
+        config(['filesystems.media_disk' => 'media-test']);
+        Storage::fake('media-test');
+    }
+
     private function actAsMarketing(): User
     {
         $this->seed(DatabaseSeeder::class);
