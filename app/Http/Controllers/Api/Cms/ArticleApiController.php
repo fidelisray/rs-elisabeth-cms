@@ -40,16 +40,17 @@ class ArticleApiController extends Controller
         summary: 'Get article detail',
         security: [['HmacAuth' => []]],
         tags: ['Articles'],
-        description: 'Returns a single article data. Accepts numeric ID or slug as the identifier.'
+        description: 'Returns an active article by numeric ID or by the exact slug in the selected locale. Slugs from other locales return 404. Use alternate_slugs to switch languages.'
     )]
     #[OA\Parameter(name: 'identifier', description: 'Article ID (numeric) or slug (string)', in: 'path', required: true)]
+    #[OA\Parameter(name: 'lang', description: 'Content locale: id or en. Unsupported values use id.', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['id', 'en'], default: 'id'))]
     #[OA\Response(response: 200, description: 'Successful operation')]
     #[OA\Response(response: 404, description: 'Resource Not Found')]
     public function show($identifier): JsonResponse
     {
         $query = Article::query()->where('is_active', 'yes');
 
-        // Smart identifier: angka = lookup by ID, selain itu = lookup by slug multi-bahasa.
+        // Identifier numerik tetap lookup by ID; slug harus cocok dengan locale request.
         if (is_numeric($identifier)) {
             $query->where('id', (int) $identifier);
         } else {

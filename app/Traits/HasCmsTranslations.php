@@ -54,24 +54,21 @@ trait HasCmsTranslations
     }
 
     /**
-     * Scope pencarian berdasarkan slug multi-bahasa dengan Smart Fallback:
-     * memeriksa locale aktif terlebih dahulu, lalu memeriksa locale pendukung lainnya.
+     * Cari slug hanya pada locale yang diminta; slug bahasa lain bukan alias URL.
      */
     public function scopeWhereTranslatedSlug(Builder $query, string $slug, ?string $locale = null): Builder
     {
         $locale ??= app()->getLocale();
-        $supportedLocales = config('app.supported_locales', ['id', 'en']);
-        $localesToSearch = array_values(array_unique(array_merge([$locale, 'id'], $supportedLocales)));
 
-        return $query->where(function (Builder $q) use ($slug, $localesToSearch) {
-            foreach ($localesToSearch as $loc) {
-                $q->orWhere("slug->{$loc}", $slug);
-            }
-        });
+        if (! in_array($locale, config('app.supported_locales', ['id', 'en']), true)) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where("slug->{$locale}", $slug);
     }
 
     /**
-     * Kembalikan daftar slug untuk setiap bahasa yang didukung (dengan fallback ke 'id'),
+     * Kembalikan slug asli untuk setiap bahasa yang didukung, tanpa fallback,
      * digunakan oleh Web Frontend untuk mengarahkan language switcher pada halaman detail.
      *
      * @return array<string, string>
@@ -86,7 +83,7 @@ trait HasCmsTranslations
         $slugs = [];
 
         foreach ($supportedLocales as $locale) {
-            $slug = $this->getTranslation('slug', $locale, useFallbackLocale: true);
+            $slug = $this->getTranslationWithoutFallback('slug', $locale);
             if (filled($slug)) {
                 $slugs[$locale] = (string) $slug;
             }
