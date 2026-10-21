@@ -148,7 +148,7 @@ class ApiRateLimitAndPageTest extends TestCase
         $store = Cache::getStore();
         $storage = (new \ReflectionProperty($store, 'storage'))->getValue($store);
 
-        return collect(array_keys($storage))->filter(fn ($k) => str_contains($k, 'rs_web_cms_api_news_v') && str_contains($k, '_page_'))->values()->all();
+        return collect(array_keys($storage))->filter(fn ($k) => str_contains($k, 'rs_web_cms_api_news_id_v') && str_contains($k, '_page_'))->values()->all();
     }
 
     public function test_invalid_page_values_fall_back_to_page_one(): void
@@ -183,7 +183,7 @@ class ApiRateLimitAndPageTest extends TestCase
         $this->withHmac()->getJson('/api/v1/cms/news?page=5000')->assertOk();
         $this->withHmac()->getJson('/api/v1/cms/news?page=9000')->assertOk();
 
-        $this->assertLessThanOrEqual(1, count($this->pageKeys()), 'Page di atas batas harus dijepit ke satu key yang sama.');
+        $this->assertCount(1, $this->pageKeys(), 'Page di atas batas harus dijepit ke satu key yang sama.');
     }
 
     public function test_valid_pagination_still_works(): void

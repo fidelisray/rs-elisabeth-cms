@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Observers\WebFrontendWebhookObserver;
+use App\Support\ApiCacheInvalidator;
 use App\Traits\ConvertsImagesToWebp;
 use App\Traits\HasCmsTranslations;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -11,7 +12,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 
 #[ObservedBy([WebFrontendWebhookObserver::class])]
 class Article extends Model
@@ -86,12 +86,12 @@ class Article extends Model
 
         // Hapus cache API ketika data diubah atau ditambah
         static::saved(function ($model) {
-            Cache::put('rs_web_cms_api_articles_version', time());
+            ApiCacheInvalidator::forgetForModule('articles');
         });
 
         // Hapus cache API ketika data dihapus
         static::deleted(function ($model) {
-            Cache::put('rs_web_cms_api_articles_version', time());
+            ApiCacheInvalidator::forgetForModule('articles');
         });
     }
 }

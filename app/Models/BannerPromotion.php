@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Observers\WebFrontendWebhookObserver;
+use App\Support\ApiCacheInvalidator;
 use App\Traits\ConvertsImagesToWebp;
 use App\Traits\HasCmsTranslations;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -10,7 +11,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 
 #[ObservedBy([WebFrontendWebhookObserver::class])]
 class BannerPromotion extends Model
@@ -74,12 +74,12 @@ class BannerPromotion extends Model
 
         // Hapus cache API setiap ada perubahan data (create / update)
         static::saved(function () {
-            Cache::forget('rs_web_cms_api_banner_promotions');
+            ApiCacheInvalidator::forgetForModule('banner_promotions');
         });
 
         // Hapus cache API setiap ada penghapusan data
         static::deleted(function () {
-            Cache::forget('rs_web_cms_api_banner_promotions');
+            ApiCacheInvalidator::forgetForModule('banner_promotions');
         });
     }
 }

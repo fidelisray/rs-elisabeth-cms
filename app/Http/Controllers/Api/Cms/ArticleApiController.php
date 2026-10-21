@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Cms;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\Cms\ArticleResource;
 use App\Models\Article;
+use App\Support\ApiCacheInvalidator;
 use App\Support\PageParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -23,16 +24,18 @@ class ArticleApiController extends Controller
     public function index()
     {
         $page = PageParameter::from(request());
-        $version = Cache::rememberForever('rs_web_cms_api_articles_version', fn () => time());
+        $locale = app()->getLocale();
 
-        $articles = Cache::remember("rs_web_cms_api_articles_v{$version}_page_{$page}", now()->addHours(2), function () use ($page) {
+        $articles = Cache::remember(ApiCacheInvalidator::pageKeyForModule('articles', $page, $locale), now()->addHours(2), function () use ($page) {
             return Article::query()
                 ->where('is_active', 'yes')
                 ->latest()
                 ->paginate(12, ['*'], 'page', $page);
         });
 
-        return ArticleResource::collection($articles);
+        $pagination = (clone $articles)->withPath(request()->url())->appends('lang', $locale);
+
+        return ArticleResource::collection($pagination);
     }
 
     #[OA\Get(

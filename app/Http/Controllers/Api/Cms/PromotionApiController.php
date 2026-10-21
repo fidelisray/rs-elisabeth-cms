@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Cms;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\Cms\PromotionResource;
 use App\Models\Promotion;
+use App\Support\ApiCacheInvalidator;
 use App\Support\PageParameter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -23,21 +24,23 @@ class PromotionApiController extends Controller
     public function index()
     {
         $page = PageParameter::from(request());
-        $version = Cache::rememberForever('rs_web_cms_api_promotions_version', fn () => time());
+        $locale = app()->getLocale();
 
         // Tanggal hari ini ikut di cache key: tanpa itu, promo yang berakhir atau baru
         // mulai pada pergantian hari tetap salah tampil sampai TTL cache habis, karena
         // pergantian tanggal tidak memicu event model apa pun.
         $today = Promotion::today();
 
-        $promotions = Cache::remember("rs_web_cms_api_promotions_v{$version}_{$today}_page_{$page}", now()->addHours(2), function () use ($today, $page) {
+        $promotions = Cache::remember(ApiCacheInvalidator::pageKeyForModule('promotions', $page, $locale, $today), now()->addHours(2), function () use ($today, $page) {
             return Promotion::query()
                 ->activeOn($today)
                 ->latest()
                 ->paginate(12, ['*'], 'page', $page);
         });
 
-        return PromotionResource::collection($promotions);
+        $pagination = (clone $promotions)->withPath(request()->url())->appends('lang', $locale);
+
+        return PromotionResource::collection($pagination);
     }
 
     #[OA\Get(
