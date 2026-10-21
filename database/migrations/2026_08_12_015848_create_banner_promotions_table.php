@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\BilingualJsonConstraints;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,8 +14,8 @@ return new class extends Migration
     {
         Schema::create('banner_promotions', function (Blueprint $table) {
             $table->id();
-            $table->json('title');
-            $table->json('slug')->nullable();
+            $table->jsonb('title');
+            $table->jsonb('slug');
             $table->string('image_path');
             $table->boolean('is_active')->default(true);
             $table->integer('sort_order')->default(0);
@@ -28,6 +29,8 @@ return new class extends Migration
             $table->string('updated_by')->nullable();
             $table->string('deleted_by')->nullable();
         });
+
+        BilingualJsonConstraints::add('banner_promotions', ['title', 'slug']);
     }
 
     /**

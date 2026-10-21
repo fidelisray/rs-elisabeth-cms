@@ -41,10 +41,12 @@ class WebpConversionSafetyTest extends TestCase
         Storage::disk($this->disk)->put($path, $content ?? $this->png());
 
         // Simpan tanpa memicu konversi, lalu uji konversi secara eksplisit.
+        $slug = 'berita-uji-'.uniqid();
+
         return News::withoutEvents(fn () => News::create([
-            'title' => 'Berita Uji',
-            'slug' => 'berita-uji-'.uniqid(),
-            'content' => 'isi',
+            'title' => ['id' => 'Berita Uji', 'en' => 'Test News'],
+            'slug' => ['id' => $slug, 'en' => $slug.'-en'],
+            'content' => ['id' => 'isi', 'en' => 'content'],
             'image_path' => $path,
         ]));
     }

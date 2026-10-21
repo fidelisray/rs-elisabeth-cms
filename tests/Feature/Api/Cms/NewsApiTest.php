@@ -20,9 +20,9 @@ class NewsApiTest extends TestCase
     public function test_api_returns_200_with_valid_hmac(): void
     {
         News::create([
-            'title' => 'Test News',
-            'slug' => 'test-news',
-            'content' => 'Content here',
+            'title' => ['id' => 'Test News', 'en' => 'Test News EN'],
+            'slug' => ['id' => 'test-news', 'en' => 'test-news-en'],
+            'content' => ['id' => 'Content here', 'en' => 'English content'],
             'is_published' => true,
         ]);
 
@@ -33,9 +33,9 @@ class NewsApiTest extends TestCase
     public function test_api_returns_detail_data(): void
     {
         News::create([
-            'title' => 'Detail News',
-            'slug' => 'detail-news',
-            'content' => 'Content here',
+            'title' => ['id' => 'Detail News', 'en' => 'Detail News EN'],
+            'slug' => ['id' => 'detail-news', 'en' => 'detail-news-en'],
+            'content' => ['id' => 'Content here', 'en' => 'English content'],
             'is_published' => true,
         ]);
 

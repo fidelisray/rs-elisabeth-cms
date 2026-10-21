@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\News\Tables;
 
+use App\Models\News;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -10,6 +11,7 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class NewsTable
 {
@@ -30,20 +32,6 @@ class NewsTable
                 TextColumn::make('category')
                     ->label('Kategori')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'hospital_info' => 'Info Rumah Sakit',
-                        'announcement' => 'Pengumuman',
-                        'event' => 'Acara',
-                        'health_news' => 'Berita Kesehatan',
-                        default => $state,
-                    })
-                    ->color(fn (string $state): string => match ($state) {
-                        'hospital_info' => 'info',
-                        'announcement' => 'warning',
-                        'event' => 'success',
-                        'health_news' => 'primary',
-                        default => 'gray',
-                    })
                     ->searchable(),
 
                 TextColumn::make('author')
@@ -69,12 +57,22 @@ class NewsTable
             ->filters([
                 SelectFilter::make('category')
                     ->label('Kategori')
-                    ->options([
-                        'hospital_info' => 'Info Rumah Sakit',
-                        'announcement' => 'Pengumuman',
-                        'event' => 'Acara',
-                        'health_news' => 'Berita Kesehatan',
-                    ]),
+                    ->options(function ($livewire): array {
+                        $locale = self::locale($livewire);
+
+                        return News::query()->select("category->{$locale} as label")
+                            ->whereNotNull("category->{$locale}")->distinct()
+                            ->pluck('label', 'label')->filter()->all();
+                    })
+                    ->query(function (Builder $query, array $data, $livewire): Builder {
+                        if (blank($data['value'] ?? null)) {
+                            return $query;
+                        }
+
+                        $locale = self::locale($livewire);
+
+                        return $query->where("category->{$locale}", $data['value']);
+                    }),
             ])
             ->recordActions([
                 EditAction::make(),
@@ -84,5 +82,12 @@ class NewsTable
                     DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    private static function locale($livewire): string
+    {
+        $locale = $livewire->activeLocale ?? 'id';
+
+        return in_array($locale, config('app.supported_locales', ['id', 'en']), true) ? $locale : 'id';
     }
 }

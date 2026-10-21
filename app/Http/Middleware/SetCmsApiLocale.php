@@ -22,8 +22,10 @@ class SetCmsApiLocale
         // 1. Prioritas utama: query parameter `lang` atau `locale`
         $requestedLocale = $request->query('lang') ?? $request->query('locale');
 
-        // 2. Prioritas kedua: header Accept-Language bila query param tidak dikirim
-        if (! $requestedLocale && $request->hasHeader('Accept-Language')) {
+        // 2. Prioritas kedua: header Accept-Language bila query param tidak dikirim.
+        // Header kosong dianggap tidak dikirim.
+        $acceptLanguage = trim((string) $request->header('Accept-Language', ''));
+        if (! $requestedLocale && $acceptLanguage !== '') {
             $preferred = $request->getPreferredLanguage($supportedLocales);
             if ($preferred) {
                 $requestedLocale = $preferred;

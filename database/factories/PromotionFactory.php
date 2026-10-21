@@ -12,10 +12,10 @@ class PromotionFactory extends Factory
         $title = 'Promo '.$this->faker->words(3, true);
 
         return [
-            'title' => $title,
-            'slug' => Str::slug($title),
-            'shorts' => $this->faker->text(200),
-            'description' => '<p>'.implode('</p><p>', $this->faker->paragraphs(3)).'</p>',
+            'title' => ['id' => $title, 'en' => $title.' (EN)'],
+            'slug' => ['id' => Str::slug($title), 'en' => Str::slug($title.' en')],
+            'shorts' => ['id' => $this->faker->text(200), 'en' => $this->faker->text(200)],
+            'description' => ['id' => '<p>'.implode('</p><p>', $this->faker->paragraphs(3)).'</p>', 'en' => '<p>'.implode('</p><p>', $this->faker->paragraphs(3)).'</p>'],
             'image_path' => null,
             'start_date' => $this->faker->dateTimeBetween('-1 month', 'now')->format('Y-m-d'),
             'end_date' => $this->faker->dateTimeBetween('+1 week', '+3 months')->format('Y-m-d'),

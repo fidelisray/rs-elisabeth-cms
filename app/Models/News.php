@@ -25,6 +25,7 @@ class News extends Model
         'slug',
         'shorts',
         'content',
+        'category',
     ];
 
     /**

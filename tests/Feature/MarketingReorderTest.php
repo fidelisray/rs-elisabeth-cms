@@ -53,8 +53,8 @@ class MarketingReorderTest extends TestCase
     public function test_marketing_can_reorder_banner_promotions(): void
     {
         [$a, $b] = BannerPromotion::withoutEvents(fn () => [
-            BannerPromotion::create(['title' => 'A', 'slug' => 'a', 'image_path' => 'a.webp', 'is_active' => true, 'sort_order' => 1]),
-            BannerPromotion::create(['title' => 'B', 'slug' => 'b', 'image_path' => 'b.webp', 'is_active' => true, 'sort_order' => 2]),
+            BannerPromotion::create(['title' => ['id' => 'A', 'en' => 'A EN'], 'slug' => ['id' => 'a', 'en' => 'a-en'], 'image_path' => 'a.webp', 'is_active' => true, 'sort_order' => 1]),
+            BannerPromotion::create(['title' => ['id' => 'B', 'en' => 'B EN'], 'slug' => ['id' => 'b', 'en' => 'b-en'], 'image_path' => 'b.webp', 'is_active' => true, 'sort_order' => 2]),
         ]);
 
         $component = Livewire::test(ListBannerPromotions::class);
@@ -68,8 +68,8 @@ class MarketingReorderTest extends TestCase
     public function test_marketing_can_reorder_facilities(): void
     {
         [$a, $b] = FacilityService::withoutEvents(fn () => [
-            FacilityService::create(['name' => 'A', 'slug' => 'a', 'description' => 'd', 'is_active' => true, 'sort_order' => 1]),
-            FacilityService::create(['name' => 'B', 'slug' => 'b', 'description' => 'd', 'is_active' => true, 'sort_order' => 2]),
+            FacilityService::create(['name' => ['id' => 'A', 'en' => 'A EN'], 'slug' => ['id' => 'a', 'en' => 'a-en'], 'tagline' => ['id' => 'Tag', 'en' => 'Tag EN'], 'description' => ['id' => 'd', 'en' => 'd EN'], 'is_active' => true, 'sort_order' => 1]),
+            FacilityService::create(['name' => ['id' => 'B', 'en' => 'B EN'], 'slug' => ['id' => 'b', 'en' => 'b-en'], 'tagline' => ['id' => 'Tag', 'en' => 'Tag EN'], 'description' => ['id' => 'd', 'en' => 'd EN'], 'is_active' => true, 'sort_order' => 2]),
         ]);
 
         $component = Livewire::test(ListFacilityServices::class);
@@ -82,8 +82,8 @@ class MarketingReorderTest extends TestCase
     public function test_marketing_can_reorder_room_facilities(): void
     {
         [$a, $b] = RoomFacility::withoutEvents(fn () => [
-            RoomFacility::create(['name' => 'A', 'slug' => 'a', 'is_active' => true, 'sort_order' => 1]),
-            RoomFacility::create(['name' => 'B', 'slug' => 'b', 'is_active' => true, 'sort_order' => 2]),
+            RoomFacility::create(['name' => ['id' => 'A', 'en' => 'A EN'], 'slug' => ['id' => 'a', 'en' => 'a-en'], 'tagline' => ['id' => 'Tag', 'en' => 'Tag EN'], 'description' => ['id' => 'Desc', 'en' => 'Desc EN'], 'is_active' => true, 'sort_order' => 1]),
+            RoomFacility::create(['name' => ['id' => 'B', 'en' => 'B EN'], 'slug' => ['id' => 'b', 'en' => 'b-en'], 'tagline' => ['id' => 'Tag', 'en' => 'Tag EN'], 'description' => ['id' => 'Desc', 'en' => 'Desc EN'], 'is_active' => true, 'sort_order' => 2]),
         ]);
 
         $component = Livewire::test(ListRoomFacilities::class);
@@ -96,8 +96,8 @@ class MarketingReorderTest extends TestCase
     public function test_marketing_reorder_dispatches_the_correct_webhook(): void
     {
         [$a, $b] = BannerPromotion::withoutEvents(fn () => [
-            BannerPromotion::create(['title' => 'A', 'slug' => 'a', 'image_path' => 'a.webp', 'is_active' => true, 'sort_order' => 1]),
-            BannerPromotion::create(['title' => 'B', 'slug' => 'b', 'image_path' => 'b.webp', 'is_active' => true, 'sort_order' => 2]),
+            BannerPromotion::create(['title' => ['id' => 'A', 'en' => 'A EN'], 'slug' => ['id' => 'a', 'en' => 'a-en'], 'image_path' => 'a.webp', 'is_active' => true, 'sort_order' => 1]),
+            BannerPromotion::create(['title' => ['id' => 'B', 'en' => 'B EN'], 'slug' => ['id' => 'b', 'en' => 'b-en'], 'image_path' => 'b.webp', 'is_active' => true, 'sort_order' => 2]),
         ]);
         Bus::fake();
 

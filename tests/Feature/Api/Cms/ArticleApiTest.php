@@ -26,8 +26,9 @@ class ArticleApiTest extends TestCase
     {
         // Arrange
         Article::create([
-            'title' => 'Test Article',
-            'content' => 'Content here',
+            'title' => ['id' => 'Test Article', 'en' => 'Test Article EN'],
+            'slug' => ['id' => 'test-article', 'en' => 'test-article-en'],
+            'content' => ['id' => 'Content here', 'en' => 'Content here EN'],
             'is_active' => true,
         ]);
 
@@ -43,9 +44,9 @@ class ArticleApiTest extends TestCase
     {
         // Arrange
         $article = Article::create([
-            'title' => 'Detail Article',
-            'slug' => 'detail-article',
-            'content' => 'Content here',
+            'title' => ['id' => 'Detail Article', 'en' => 'Detail Article EN'],
+            'slug' => ['id' => 'detail-article', 'en' => 'detail-article-en'],
+            'content' => ['id' => 'Content here', 'en' => 'Content here EN'],
             'is_active' => true,
         ]);
 
@@ -61,9 +62,9 @@ class ArticleApiTest extends TestCase
     {
         // Arrange
         Article::create([
-            'title' => 'Cegah Stunting Pada Anak',
-            'slug' => 'cegah-stunting-pada-anak',
-            'content' => 'Content here',
+            'title' => ['id' => 'Cegah Stunting Pada Anak', 'en' => 'Preventing Stunting in Children'],
+            'slug' => ['id' => 'cegah-stunting-pada-anak', 'en' => 'preventing-stunting-children'],
+            'content' => ['id' => 'Content here', 'en' => 'Content here EN'],
             'is_active' => true,
         ]);
 
@@ -103,9 +104,9 @@ class ArticleApiTest extends TestCase
     {
         // Arrange
         Article::create([
-            'title' => 'Draft Article',
-            'slug' => 'draft-article',
-            'content' => 'Content here',
+            'title' => ['id' => 'Draft Article', 'en' => 'Draft Article EN'],
+            'slug' => ['id' => 'draft-article', 'en' => 'draft-article-en'],
+            'content' => ['id' => 'Content here', 'en' => 'Content here EN'],
             'is_active' => false,
         ]);
 

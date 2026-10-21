@@ -20,9 +20,10 @@ class RoomFacilityApiTest extends TestCase
     public function test_api_returns_200_with_valid_hmac(): void
     {
         RoomFacility::create([
-            'name' => 'Test Room',
-            'slug' => 'test-room',
-            'description' => 'Desc',
+            'name' => ['id' => 'Test Room', 'en' => 'Test Room EN'],
+            'slug' => ['id' => 'test-room', 'en' => 'test-room-en'],
+            'tagline' => ['id' => 'Tag', 'en' => 'Tag EN'],
+            'description' => ['id' => 'Desc', 'en' => 'Desc EN'],
             'is_active' => true,
         ]);
 
@@ -33,9 +34,10 @@ class RoomFacilityApiTest extends TestCase
     public function test_api_returns_detail_data(): void
     {
         RoomFacility::create([
-            'name' => 'Detail Room',
-            'slug' => 'detail-room',
-            'description' => 'Desc',
+            'name' => ['id' => 'Detail Room', 'en' => 'Detail Room EN'],
+            'slug' => ['id' => 'detail-room', 'en' => 'detail-room-en'],
+            'tagline' => ['id' => 'Tag', 'en' => 'Tag EN'],
+            'description' => ['id' => 'Desc', 'en' => 'Desc EN'],
             'is_active' => true,
         ]);
 

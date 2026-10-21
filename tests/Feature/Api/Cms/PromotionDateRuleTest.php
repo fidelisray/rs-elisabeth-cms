@@ -45,11 +45,11 @@ class PromotionDateRuleTest extends TestCase
         $n++;
 
         return Promotion::create(array_merge([
-            'title' => "Promo {$n}",
-            'slug' => "promo-{$n}",
-            'description' => 'Deskripsi',
+            'title' => ['id' => "Promo {$n}", 'en' => "Promotion {$n}"],
+            'slug' => ['id' => $attributes['slug'] ?? "promo-{$n}", 'en' => ($attributes['slug'] ?? "promo-{$n}").'-en'],
+            'description' => ['id' => 'Deskripsi', 'en' => 'Description'],
             'is_active' => true,
-        ], $attributes));
+        ], array_diff_key($attributes, ['slug' => true])));
     }
 
     private function listedSlugs(): array

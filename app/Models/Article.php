@@ -26,6 +26,7 @@ class Article extends Model
         'slug',
         'shorts',
         'content',
+        'tags',
     ];
 
     /**

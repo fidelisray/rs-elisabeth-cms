@@ -26,11 +26,14 @@ trait GeneratesHmacHeaders
         $signatureRaw = hash_hmac('sha256', $timestamp.$consId, $secretKey, true);
         $signature = base64_encode($signatureRaw);
 
+        // Accept-Language baseline 'id' agar hasil test tidak bergantung pada default
+        // Request::create() Symfony (en-us). Test yang menguji 'en' menimpanya sendiri.
         return $this->withHeaders([
             'X-Cons-ID' => $consId,
             'X-Timestamp' => $timestamp,
             'X-Signature' => $signature,
             'Accept' => 'application/json',
+            'Accept-Language' => 'id',
         ]);
     }
 }

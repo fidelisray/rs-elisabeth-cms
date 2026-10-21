@@ -20,7 +20,13 @@ trait HasCmsTranslations
     public function setTranslation(string $key, string $locale, $value): self
     {
         if ($value === null || $value === '') {
-            return $this->forgetTranslation($key, $locale);
+            $this->forgetTranslation($key, $locale);
+
+            if ($this->getTranslations($key) === []) {
+                $this->attributes[$key] = null;
+            }
+
+            return $this;
         }
 
         return $this->spatieSetTranslation($key, $locale, $value);
