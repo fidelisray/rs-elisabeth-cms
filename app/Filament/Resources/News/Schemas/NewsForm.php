@@ -4,7 +4,6 @@ namespace App\Filament\Resources\News\Schemas;
 
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -44,16 +43,11 @@ class NewsForm
                             ->unique(column: fn ($livewire = null): string => 'slug->'.($livewire?->activeLocale ?? app()->getLocale()), ignoreRecord: true)
                             ->helperText('Dapat diedit jika diperlukan'),
 
-                        Select::make('category')
+                        TextInput::make('category')
                             ->label('Kategori')
                             ->required()
-                            ->placeholder('Pilih Kategori Berita')
-                            ->options([
-                                'hospital_info' => 'Info Rumah Sakit',
-                                'announcement' => 'Pengumuman',
-                                'event' => 'Acara',
-                                'health_news' => 'Berita Kesehatan',
-                            ]),
+                            ->maxLength(255)
+                            ->placeholder('Masukkan kategori sesuai bahasa yang dipilih'),
 
                         TextInput::make('author')
                             ->label('Author')

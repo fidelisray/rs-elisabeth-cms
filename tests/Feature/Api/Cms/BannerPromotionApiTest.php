@@ -29,7 +29,8 @@ class BannerPromotionApiTest extends TestCase
     public function test_api_returns_200_with_valid_hmac(): void
     {
         BannerPromotion::create([
-            'title' => 'Test Banner',
+            'title' => ['id' => 'Test Banner', 'en' => 'Test Banner EN'],
+            'slug' => ['id' => 'test-banner', 'en' => 'test-banner-en'],
             'image_path' => 'banners/test.jpg',
             'is_active' => true,
             'sort_order' => 1,

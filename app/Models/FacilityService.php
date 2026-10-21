@@ -26,6 +26,8 @@ class FacilityService extends Model
         'slug',
         'short_description',
         'description',
+        'wa_link_text',
+        'wa_prefilled_message',
     ];
 
     protected $fillable = [

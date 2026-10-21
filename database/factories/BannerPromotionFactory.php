@@ -12,8 +12,8 @@ class BannerPromotionFactory extends Factory
         $title = 'Banner '.$this->faker->words(3, true);
 
         return [
-            'title' => $title,
-            'slug' => Str::slug($title),
+            'title' => ['id' => $title, 'en' => $title.' (EN)'],
+            'slug' => ['id' => Str::slug($title), 'en' => Str::slug($title.' en')],
             // Dummy image URL is not allowed directly for path if using specific disk logic,
             // but we'll put a placeholder string for now.
             'image_path' => 'banners/placeholder-'.$this->faker->numberBetween(1, 10).'.jpg',

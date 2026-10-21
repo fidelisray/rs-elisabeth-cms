@@ -20,8 +20,9 @@ class PromotionApiTest extends TestCase
     public function test_api_returns_200_with_valid_hmac(): void
     {
         Promotion::create([
-            'title' => 'Test Promo',
-            'description' => 'Desc',
+            'title' => ['id' => 'Test Promo', 'en' => 'Test Promo EN'],
+            'slug' => ['id' => 'test-promo', 'en' => 'test-promo-en'],
+            'description' => ['id' => 'Desc', 'en' => 'Desc EN'],
             'is_active' => true,
         ]);
 
@@ -32,8 +33,9 @@ class PromotionApiTest extends TestCase
     public function test_api_returns_detail_data(): void
     {
         $promo = Promotion::create([
-            'title' => 'Detail Promo',
-            'description' => 'Desc',
+            'title' => ['id' => 'Detail Promo', 'en' => 'Detail Promo EN'],
+            'slug' => ['id' => 'detail-promo', 'en' => 'detail-promo-en'],
+            'description' => ['id' => 'Desc', 'en' => 'Desc EN'],
             'is_active' => true,
         ]);
 
@@ -45,9 +47,9 @@ class PromotionApiTest extends TestCase
     {
         // Arrange
         Promotion::create([
-            'title' => 'Promo Berhasil',
-            'slug' => 'promo-berhasil',
-            'description' => 'Desc',
+            'title' => ['id' => 'Promo Berhasil', 'en' => 'Promo Successful'],
+            'slug' => ['id' => 'promo-berhasil', 'en' => 'promo-successful'],
+            'description' => ['id' => 'Desc', 'en' => 'Desc EN'],
             'is_active' => true,
         ]);
 
@@ -76,9 +78,9 @@ class PromotionApiTest extends TestCase
     {
         // Arrange
         Promotion::create([
-            'title' => 'Draft Promo',
-            'slug' => 'draft-promo',
-            'description' => 'Desc',
+            'title' => ['id' => 'Draft Promo', 'en' => 'Draft Promo EN'],
+            'slug' => ['id' => 'draft-promo', 'en' => 'draft-promo-en'],
+            'description' => ['id' => 'Desc', 'en' => 'Desc EN'],
             'is_active' => false,
         ]);
 

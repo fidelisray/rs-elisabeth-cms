@@ -20,9 +20,7 @@ class RoomFacilityTest extends TestCase
     public function test_room_auto_fills_created_by_with_system_when_no_user(): void
     {
         $room = RoomFacility::create([
-            'name' => 'Test Room',
-            'slug' => 'test-room-1',
-            'description' => 'Desc',
+            'name' => ['id' => 'Test Room', 'en' => 'Test Room EN'], 'slug' => ['id' => 'test-room-1', 'en' => 'test-room-1-en'], 'tagline' => ['id' => 'Tag', 'en' => 'Tag EN'], 'description' => ['id' => 'Desc', 'en' => 'Desc EN'],
         ]);
 
         $this->assertEquals('system', $room->created_by);
@@ -30,7 +28,7 @@ class RoomFacilityTest extends TestCase
 
     public function test_room_uses_soft_delete(): void
     {
-        $room = RoomFacility::create(['name' => 'Name', 'slug' => 'name-1', 'description' => 'Desc']);
+        $room = RoomFacility::create(['name' => ['id' => 'Name', 'en' => 'Name EN'], 'slug' => ['id' => 'name-1', 'en' => 'name-1-en'], 'tagline' => ['id' => 'Tag', 'en' => 'Tag EN'], 'description' => ['id' => 'Desc', 'en' => 'Desc EN']]);
         $id = $room->id;
 
         $room->delete();
@@ -43,7 +41,7 @@ class RoomFacilityTest extends TestCase
     {
         Cache::put('rs_web_cms_api_room_facilities', 'data-lama');
 
-        $room = RoomFacility::create(['name' => 'Name', 'slug' => 'name-2', 'description' => 'Desc']);
+        $room = RoomFacility::create(['name' => ['id' => 'Name', 'en' => 'Name EN'], 'slug' => ['id' => 'name-2', 'en' => 'name-2-en'], 'tagline' => ['id' => 'Tag', 'en' => 'Tag EN'], 'description' => ['id' => 'Desc', 'en' => 'Desc EN']]);
         $this->assertFalse(Cache::has('rs_web_cms_api_room_facilities'));
 
         Cache::put('rs_web_cms_api_room_facilities', 'data-lama2');
@@ -54,9 +52,7 @@ class RoomFacilityTest extends TestCase
     public function test_room_is_active_cast_works_correctly(): void
     {
         $room = RoomFacility::create([
-            'name' => 'Name',
-            'slug' => 'name-3',
-            'description' => 'Desc',
+            'name' => ['id' => 'Name', 'en' => 'Name EN'], 'slug' => ['id' => 'name-3', 'en' => 'name-3-en'], 'tagline' => ['id' => 'Tag', 'en' => 'Tag EN'], 'description' => ['id' => 'Desc', 'en' => 'Desc EN'],
             'is_active' => true,
         ]);
 

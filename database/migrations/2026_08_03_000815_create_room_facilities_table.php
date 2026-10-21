@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\BilingualJsonConstraints;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -15,10 +16,10 @@ return new class extends Migration
             $table->id();
 
             // Informasi Utama
-            $table->json('name');                               // Nama ruangan multi-bahasa: "President Suite", "VIP", dst
-            $table->json('slug');                               // Identifier unik per bahasa: "president-suite", "vip"
-            $table->json('tagline')->nullable();                // Deskripsi singkat pada card ruangan
-            $table->json('description')->nullable();            // Deskripsi panjang ruangan
+            $table->jsonb('name');                              // Nama ruangan multi-bahasa: "President Suite", "VIP", dst
+            $table->jsonb('slug');                              // Identifier unik per bahasa: "president-suite", "vip"
+            $table->jsonb('tagline');                           // Deskripsi singkat pada card ruangan (wajib, I-1)
+            $table->jsonb('description');                       // Deskripsi panjang ruangan (wajib, I-1)
 
             // Spesifikasi Kamar
             $table->string('room_size', 50)->nullable();        // Luas kamar, misal: "~40 m²"
@@ -45,6 +46,8 @@ return new class extends Migration
             $table->string('updated_by')->nullable();
             $table->string('deleted_by')->nullable();
         });
+
+        BilingualJsonConstraints::add('room_facilities', ['name', 'slug', 'tagline', 'description']);
     }
 
     /**

@@ -19,17 +19,14 @@ class FacilityServiceTest extends TestCase
 
     public function test_facility_auto_fills_created_by_with_system_when_no_user(): void
     {
-        $fac = FacilityService::create([
-            'name' => 'Test Facility',
-            'description' => 'Desc',
-        ]);
+        $fac = FacilityService::factory()->create();
 
         $this->assertEquals('system', $fac->created_by);
     }
 
     public function test_facility_uses_soft_delete(): void
     {
-        $fac = FacilityService::create(['name' => 'Name', 'description' => 'Desc']);
+        $fac = FacilityService::factory()->create();
         $id = $fac->id;
 
         $fac->delete();
@@ -42,7 +39,7 @@ class FacilityServiceTest extends TestCase
     {
         Cache::put('rs_web_cms_api_facility_services', 'data-lama');
 
-        $fac = FacilityService::create(['name' => 'Name', 'description' => 'Desc']);
+        $fac = FacilityService::factory()->create();
         $this->assertFalse(Cache::has('rs_web_cms_api_facility_services'));
 
         Cache::put('rs_web_cms_api_facility_services', 'data-lama2');
@@ -52,11 +49,7 @@ class FacilityServiceTest extends TestCase
 
     public function test_facility_is_active_cast_works_correctly(): void
     {
-        $fac = FacilityService::create([
-            'name' => 'Name',
-            'description' => 'Desc',
-            'is_active' => true,
-        ]);
+        $fac = FacilityService::factory()->create(['is_active' => true]);
 
         $this->assertDatabaseHas('facility_services', ['id' => $fac->id, 'is_active' => 1]);
         $this->assertTrue($fac->fresh()->is_active);

@@ -20,8 +20,8 @@ class FacilityServiceApiTest extends TestCase
     public function test_api_returns_200_with_valid_hmac(): void
     {
         FacilityService::create([
-            'name' => 'Test Facility',
-            'description' => 'Desc',
+            'name' => ['id' => 'Test Facility', 'en' => 'Test Facility EN'],
+            'description' => ['id' => 'Desc', 'en' => 'Desc EN'],
             'is_active' => true,
         ]);
 
@@ -32,9 +32,9 @@ class FacilityServiceApiTest extends TestCase
     public function test_api_returns_detail_data(): void
     {
         FacilityService::create([
-            'name' => 'Detail Facility',
-            'slug' => 'detail-facility',
-            'description' => 'Desc',
+            'name' => ['id' => 'Detail Facility', 'en' => 'Detail Facility EN'],
+            'slug' => ['id' => 'detail-facility', 'en' => 'detail-facility-en'],
+            'description' => ['id' => 'Desc', 'en' => 'Desc EN'],
             'is_active' => true,
         ]);
 

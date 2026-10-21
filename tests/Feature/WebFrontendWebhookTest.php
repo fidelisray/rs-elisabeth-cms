@@ -54,9 +54,9 @@ class WebFrontendWebhookTest extends TestCase
         ]);
 
         $news = News::create([
-            'title' => 'Judul Berita Baru',
-            'slug' => 'judul-berita-baru',
-            'content' => 'Konten Berita Baru',
+            'title' => ['id' => 'Judul Berita Baru', 'en' => 'New News Title'],
+            'slug' => ['id' => 'judul-berita-baru', 'en' => 'new-news-title'],
+            'content' => ['id' => 'Konten Berita Baru', 'en' => 'New news content'],
         ]);
 
         Http::assertSent(function (Request $request) {
@@ -89,9 +89,9 @@ class WebFrontendWebhookTest extends TestCase
         ]);
 
         $article = Article::create([
-            'judul' => 'Artikel Kesehatan Jantung',
-            'slug' => 'artikel-kesehatan-jantung',
-            'content' => 'Konten Artikel Kesehatan Jantung',
+            'title' => ['id' => 'Artikel Kesehatan Jantung', 'en' => 'Heart Health Article'],
+            'slug' => ['id' => 'artikel-kesehatan-jantung', 'en' => 'heart-health-article'],
+            'content' => ['id' => 'Konten Artikel Kesehatan Jantung', 'en' => 'Heart health article content'],
         ]);
 
         Http::assertSent(function (Request $request) {
@@ -123,9 +123,9 @@ class WebFrontendWebhookTest extends TestCase
         ]);
 
         $promo = Promotion::create([
-            'title' => 'Promo Medical Check Up',
-            'slug' => 'promo-medical-check-up',
-            'description' => 'Deskripsi Promo MCU',
+            'title' => ['id' => 'Promo Medical Check Up', 'en' => 'Medical Check Up Promo'],
+            'slug' => ['id' => 'promo-medical-check-up', 'en' => 'medical-check-up-promo'],
+            'description' => ['id' => 'Deskripsi Promo MCU', 'en' => 'MCU promo description'],
         ]);
 
         Http::assertSent(function (Request $request) {
@@ -157,9 +157,9 @@ class WebFrontendWebhookTest extends TestCase
         ]);
 
         $facility = FacilityService::create([
-            'name' => 'Layanan IGD 24 Jam',
-            'slug' => 'layanan-igd-24-jam',
-            'description' => 'Deskripsi Layanan IGD',
+            'name' => ['id' => 'Layanan IGD 24 Jam', 'en' => 'ER 24 Hours Service'],
+            'slug' => ['id' => 'layanan-igd-24-jam', 'en' => 'er-24-hours-service'],
+            'description' => ['id' => 'Deskripsi Layanan IGD', 'en' => 'ER service description'],
         ]);
 
         Http::assertSent(function (Request $request) {
@@ -191,9 +191,9 @@ class WebFrontendWebhookTest extends TestCase
         ]);
 
         $room = RoomFacility::create([
-            'name' => 'Kamar VIP Elisabeth',
-            'slug' => 'kamar-vip-elisabeth',
-            'description' => 'Deskripsi Kamar VIP',
+            'name' => ['id' => 'Kamar VIP Elisabeth', 'en' => 'Elisabeth VIP Room'],
+            'slug' => ['id' => 'kamar-vip-elisabeth', 'en' => 'elisabeth-vip-room'],
+            'description' => ['id' => 'Deskripsi Kamar VIP', 'en' => 'VIP room description'], 'tagline' => ['id' => 'Tag VIP', 'en' => 'VIP tag'],
         ]);
 
         Http::assertSent(function (Request $request) {
@@ -225,8 +225,8 @@ class WebFrontendWebhookTest extends TestCase
         ]);
 
         $banner = BannerPromotion::create([
-            'title' => 'Banner Hari Kesehatan',
-            'slug' => 'banner-hari-kesehatan',
+            'title' => ['id' => 'Banner Hari Kesehatan', 'en' => 'Health Day Banner'],
+            'slug' => ['id' => 'banner-hari-kesehatan', 'en' => 'health-day-banner'],
             'image_path' => 'banners/banner.webp',
         ]);
 

@@ -8,6 +8,7 @@ use App\Models\RoomFacility;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -21,6 +22,9 @@ class SlugStabilityTest extends TestCase
 
     private function actAsMarketing(): void
     {
+        config(['filesystems.media_disk' => 'media-test']);
+        Storage::fake('media-test');
+        Storage::disk('media-test')->put('rooms/test.webp', 'test image');
         $this->seed(DatabaseSeeder::class);
 
         $user = User::where('email', 'marketing@rs-elisabeth.com')->first();
@@ -31,8 +35,11 @@ class SlugStabilityTest extends TestCase
     private function room(array $attributes = []): RoomFacility
     {
         return RoomFacility::withoutEvents(fn () => RoomFacility::create(array_merge([
-            'name' => 'Kamar VIP',
-            'slug' => 'kamar-vip',
+            'name' => ['id' => 'Kamar VIP', 'en' => 'VIP Room'],
+            'slug' => ['id' => 'kamar-vip', 'en' => 'vip-room'],
+            'tagline' => ['id' => 'Tag', 'en' => 'Tag EN'],
+            'description' => ['id' => 'Desc', 'en' => 'Desc EN'],
+            'image_path' => 'rooms/test.webp',
             'is_active' => true,
         ], $attributes)));
     }
@@ -54,9 +61,11 @@ class SlugStabilityTest extends TestCase
 
         Livewire::test(EditRoomFacility::class, ['record' => $room->getRouteKey()])
             ->fillForm(['name' => 'Nama Yang Sama Sekali Berbeda'])
-            ->call('save');
+            ->call('save')
+            ->assertHasNoFormErrors();
 
-        $this->assertSame('kamar-vip', $room->fresh()->slug);
+        $this->assertSame('Nama Yang Sama Sekali Berbeda', $room->fresh()->getTranslation('name', 'id'));
+        $this->assertSame('kamar-vip', $room->fresh()->getTranslation('slug', 'id'));
     }
 
     public function test_creating_a_new_room_still_generates_slug_from_name(): void
@@ -71,9 +80,7 @@ class SlugStabilityTest extends TestCase
     public function test_editing_a_room_that_has_an_empty_slug_fills_it_from_the_name(): void
     {
         $this->actAsMarketing();
-        $room = $this->room(['slug' => 'sementara']);
-        RoomFacility::withoutEvents(fn () => $room->update(['slug' => '']));
-
+        $room = $this->room(['slug' => ['id' => 'sementara', 'en' => 'sementara-en']]);
         Livewire::test(EditRoomFacility::class, ['record' => $room->getRouteKey()])
             ->set('data.slug', '')
             ->fillForm(['name' => 'Nama Untuk Slug Kosong'])

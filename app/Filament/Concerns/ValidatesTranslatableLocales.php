@@ -160,7 +160,20 @@ trait ValidatesTranslatableLocales
      */
     protected function getRequiredTranslatableAttributes(): array
     {
-        return static::getResource()::getTranslatableAttributes();
+        return array_values(array_filter(
+            static::getResource()::getTranslatableAttributes(),
+            function (string $attribute): bool {
+                if (! in_array($attribute, ['wa_link_text', 'wa_prefilled_message'], true)) {
+                    return true;
+                }
+
+                // Optional CTA text may be absent; if provided in either locale, require both.
+                return ! $this->isTranslatableAttributeBlank(data_get($this->data, $attribute))
+                    || collect($this->otherLocaleData)->contains(
+                        fn ($state): bool => ! $this->isTranslatableAttributeBlank($state[$attribute] ?? null)
+                    );
+            }
+        ));
     }
 
     /**
@@ -200,6 +213,9 @@ trait ValidatesTranslatableLocales
             'content' => 'Konten',
             'description' => 'Deskripsi',
             'tagline' => 'Tagline / Highlight',
+            'category', 'tags' => 'Kategori',
+            'wa_link_text' => 'Label Tombol WhatsApp',
+            'wa_prefilled_message' => 'Pesan Otomatis WhatsApp',
             default => ucfirst(str_replace('_', ' ', $attribute)),
         };
     }

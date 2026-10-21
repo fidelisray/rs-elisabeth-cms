@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\BilingualJsonConstraints;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,12 +14,12 @@ return new class extends Migration
     {
         Schema::create('news', function (Blueprint $table) {
             $table->id();
-            $table->json('title');
-            $table->json('slug');
+            $table->jsonb('title');
+            $table->jsonb('slug');
             $table->string('author', 100)->nullable();
-            $table->json('shorts')->nullable();
-            $table->string('category')->nullable();
-            $table->json('content');
+            $table->jsonb('shorts')->nullable();
+            $table->jsonb('category')->nullable();
+            $table->jsonb('content');
             $table->string('image_path')->nullable();
             $table->boolean('is_published')->default(false);
             $table->timestamps();
@@ -27,6 +28,8 @@ return new class extends Migration
             $table->string('updated_by')->nullable();
             $table->string('deleted_by')->nullable();
         });
+
+        BilingualJsonConstraints::add('news', ['title', 'slug', 'content'], ['shorts', 'category']);
     }
 
     /**

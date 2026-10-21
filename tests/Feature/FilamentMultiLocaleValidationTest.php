@@ -86,6 +86,7 @@ class FilamentMultiLocaleValidationTest extends TestCase
             ->fillForm([
                 'title' => 'Complete Article Title EN',
                 'slug' => 'complete-article-title-en',
+                'tags' => 'Health Articles',
                 'shorts' => 'Short summary of the article in English.',
                 'content' => '<p>Full content of the article in English.</p>',
             ])
@@ -124,6 +125,7 @@ class FilamentMultiLocaleValidationTest extends TestCase
             ->set('activeLocale', 'en')
             ->fillForm([
                 'title' => 'Medical Article Title',
+                'tags' => 'Health Articles',
                 // slug sengaja tidak diisi pada form
                 'slug' => '',
                 'shorts' => 'English summary.',
@@ -144,26 +146,28 @@ class FilamentMultiLocaleValidationTest extends TestCase
         Storage::fake($mediaDisk);
         Storage::disk($mediaDisk)->put('articles/test.webp', 'fake image content');
 
-        // Record lama yang hanya memiliki translasi bahasa Indonesia
+        // Start from a valid bilingual record; remove English in form state, not in the DB.
         $article = Article::withoutEvents(fn () => Article::create([
-            'title' => ['id' => 'Judul Asli ID'],
-            'slug' => ['id' => 'judul-asli-id'],
-            'shorts' => ['id' => 'Ringkasan ID'],
-            'content' => ['id' => '<p>Konten ID</p>'],
-            'tags' => 'Artikel Kesehatan',
+            'title' => ['id' => 'Judul Asli ID', 'en' => 'Original Title'],
+            'slug' => ['id' => 'judul-asli-id', 'en' => 'original-title'],
+            'shorts' => ['id' => 'Ringkasan ID', 'en' => 'Original summary'],
+            'content' => ['id' => '<p>Konten ID</p>', 'en' => '<p>Original content</p>'],
+            'tags' => ['id' => 'Artikel Kesehatan', 'en' => 'Health Articles'],
             'author' => 'Dr. Elisabeth',
             'image_path' => 'articles/test.webp',
             'is_active' => true,
         ]));
 
         Livewire::test(EditArticle::class, ['record' => $article->getRouteKey()])
+            ->set('activeLocale', 'en')
+            ->fillForm(['title' => ''])
             ->call('save')
-            ->assertNotified()
+            ->assertHasFormErrors(['title'])
             ->assertSet('activeLocale', 'en');
 
-        // Database tidak berubah: translasi 'en' tetap tidak ada
+        // The invalid form must not overwrite the existing English translation.
         $fresh = $article->fresh();
-        $this->assertFalse($fresh->hasTranslation('title', 'en'));
+        $this->assertSame('Original Title', $fresh->getTranslation('title', 'en', false));
     }
 
     public function test_creating_promotion_requires_both_id_and_en(): void

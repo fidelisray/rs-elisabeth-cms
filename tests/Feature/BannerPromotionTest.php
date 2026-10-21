@@ -31,9 +31,9 @@ class BannerPromotionTest extends TestCase
     public function test_banner_auto_increments_sort_order(): void
     {
         // 1. Arrange & Act: Buat 3 banner tanpa mengisi sort_order secara manual
-        $banner1 = BannerPromotion::create(['title' => 'Banner A', 'image_path' => 'banners/a.jpg']);
-        $banner2 = BannerPromotion::create(['title' => 'Banner B', 'image_path' => 'banners/b.jpg']);
-        $banner3 = BannerPromotion::create(['title' => 'Banner C', 'image_path' => 'banners/c.jpg']);
+        $banner1 = BannerPromotion::create(['title' => ['id' => 'Banner A', 'en' => 'Banner A (EN)'], 'slug' => ['id' => 'banner-a', 'en' => 'banner-a-en'], 'image_path' => 'banners/a.jpg']);
+        $banner2 = BannerPromotion::create(['title' => ['id' => 'Banner B', 'en' => 'Banner B (EN)'], 'slug' => ['id' => 'banner-b', 'en' => 'banner-b-en'], 'image_path' => 'banners/b.jpg']);
+        $banner3 = BannerPromotion::create(['title' => ['id' => 'Banner C', 'en' => 'Banner C (EN)'], 'slug' => ['id' => 'banner-c', 'en' => 'banner-c-en'], 'image_path' => 'banners/c.jpg']);
 
         // 2. Assert: Setiap banner harus mendapat sort_order yang berurutan
         $this->assertEquals(1, $banner1->sort_order);
@@ -47,7 +47,7 @@ class BannerPromotionTest extends TestCase
     public function test_banner_auto_fills_created_by_with_system(): void
     {
         // 1. Arrange & Act
-        $banner = BannerPromotion::create(['title' => 'Banner Sistem', 'image_path' => 'banners/sistem.jpg']);
+        $banner = BannerPromotion::create(['title' => ['id' => 'Banner Sistem', 'en' => 'Banner Sistem (EN)'], 'slug' => ['id' => 'banner-sistem', 'en' => 'banner-sistem-en'], 'image_path' => 'banners/sistem.jpg']);
 
         // 2. Assert
         $this->assertEquals('system', $banner->created_by);
@@ -59,7 +59,7 @@ class BannerPromotionTest extends TestCase
     public function test_banner_uses_soft_delete(): void
     {
         // 1. Arrange
-        $banner = BannerPromotion::create(['title' => 'Banner Soft Delete', 'image_path' => 'banners/softdelete.jpg']);
+        $banner = BannerPromotion::create(['title' => ['id' => 'Banner Soft Delete', 'en' => 'Banner Soft Delete (EN)'], 'slug' => ['id' => 'banner-soft-delete', 'en' => 'banner-soft-delete-en'], 'image_path' => 'banners/softdelete.jpg']);
         $bannerId = $banner->id;
 
         // 2. Act
@@ -82,7 +82,7 @@ class BannerPromotionTest extends TestCase
         $this->assertTrue(Cache::has('rs_web_cms_api_banner_promotions'));
 
         // 2. Act
-        BannerPromotion::create(['title' => 'Banner Baru', 'image_path' => 'banners/baru.jpg']);
+        BannerPromotion::create(['title' => ['id' => 'Banner Baru', 'en' => 'Banner Baru (EN)'], 'slug' => ['id' => 'banner-baru', 'en' => 'banner-baru-en'], 'image_path' => 'banners/baru.jpg']);
 
         // 3. Assert
         $this->assertFalse(
@@ -97,7 +97,7 @@ class BannerPromotionTest extends TestCase
     public function test_banner_clears_cache_on_deleted(): void
     {
         // 1. Arrange
-        $banner = BannerPromotion::create(['title' => 'Banner Lama', 'image_path' => 'banners/lama.jpg']);
+        $banner = BannerPromotion::create(['title' => ['id' => 'Banner Lama', 'en' => 'Banner Lama (EN)'], 'slug' => ['id' => 'banner-lama', 'en' => 'banner-lama-en'], 'image_path' => 'banners/lama.jpg']);
         Cache::put('rs_web_cms_api_banner_promotions', 'data-lama');
         $this->assertTrue(Cache::has('rs_web_cms_api_banner_promotions'));
 

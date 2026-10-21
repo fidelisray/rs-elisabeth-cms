@@ -20,9 +20,9 @@ class NewsTest extends TestCase
     public function test_news_auto_fills_created_by_with_system_when_no_user(): void
     {
         $news = News::create([
-            'title' => 'Test Title',
-            'slug' => 'test-title',
-            'content' => 'Test Content',
+            'title' => ['id' => 'Test Title', 'en' => 'Test Title EN'],
+            'slug' => ['id' => 'test-title', 'en' => 'test-title-en'],
+            'content' => ['id' => 'Test Content', 'en' => 'Test Content EN'],
         ]);
 
         $this->assertEquals('system', $news->created_by);
@@ -30,7 +30,7 @@ class NewsTest extends TestCase
 
     public function test_news_uses_soft_delete(): void
     {
-        $news = News::create(['title' => 'Title', 'slug' => 'title', 'content' => 'Content']);
+        $news = News::factory()->create();
         $id = $news->id;
 
         $news->delete();
@@ -43,7 +43,7 @@ class NewsTest extends TestCase
     {
         Cache::put('rs_web_cms_api_news_version', 'data-lama');
 
-        $news = News::create(['title' => 'Title', 'slug' => 'title', 'content' => 'Content']);
+        $news = News::factory()->create();
         $this->assertNotEquals('data-lama', Cache::get('rs_web_cms_api_news_version'));
 
         Cache::put('rs_web_cms_api_news_version', 'data-lama2');
@@ -54,9 +54,9 @@ class NewsTest extends TestCase
     public function test_news_is_published_cast_works_correctly(): void
     {
         $news = News::create([
-            'title' => 'Title',
-            'slug' => 'title-2',
-            'content' => 'Content',
+            'title' => ['id' => 'Title', 'en' => 'Title EN'],
+            'slug' => ['id' => 'title-2', 'en' => 'title-2-en'],
+            'content' => ['id' => 'Content', 'en' => 'Content EN'],
             'is_published' => true,
         ]);
 

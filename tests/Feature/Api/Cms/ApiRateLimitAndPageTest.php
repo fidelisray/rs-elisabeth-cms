@@ -133,7 +133,12 @@ class ApiRateLimitAndPageTest extends TestCase
     {
         News::withoutEvents(function () use ($count) {
             foreach (range(1, $count) as $i) {
-                News::create(['title' => "Berita {$i}", 'slug' => "berita-{$i}", 'content' => 'isi', 'is_published' => true]);
+                News::create([
+                    'title' => ['id' => "Berita {$i}", 'en' => "News {$i}"],
+                    'slug' => ['id' => "berita-{$i}", 'en' => "news-{$i}"],
+                    'content' => ['id' => 'isi', 'en' => 'content'],
+                    'is_published' => true,
+                ]);
             }
         });
     }
@@ -194,8 +199,18 @@ class ApiRateLimitAndPageTest extends TestCase
     public function test_articles_and_promotions_apply_the_same_page_rule(): void
     {
         config(['cms_api.rate_limit_per_minute' => 1000]);
-        Article::withoutEvents(fn () => Article::create(['judul' => 'A', 'slug' => 'a', 'content' => 'c', 'is_active' => true]));
-        Promotion::withoutEvents(fn () => Promotion::create(['title' => 'P', 'slug' => 'p', 'description' => 'd', 'is_active' => true]));
+        Article::withoutEvents(fn () => Article::create([
+            'title' => ['id' => 'A', 'en' => 'A EN'],
+            'slug' => ['id' => 'a', 'en' => 'a-en'],
+            'content' => ['id' => 'c', 'en' => 'c EN'],
+            'is_active' => 'yes',
+        ]));
+        Promotion::withoutEvents(fn () => Promotion::create([
+            'title' => ['id' => 'P', 'en' => 'P EN'],
+            'slug' => ['id' => 'p', 'en' => 'p-en'],
+            'description' => ['id' => 'd', 'en' => 'd EN'],
+            'is_active' => true,
+        ]));
 
         foreach (['/api/v1/cms/articles', '/api/v1/cms/promotions'] as $path) {
             $response = $this->withHmac()->getJson($path.'?page=abc')->assertOk();

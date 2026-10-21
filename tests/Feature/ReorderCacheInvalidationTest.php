@@ -48,8 +48,8 @@ class ReorderCacheInvalidationTest extends TestCase
     private function banners(): array
     {
         return BannerPromotion::withoutEvents(fn () => [
-            BannerPromotion::create(['title' => 'A', 'slug' => 'a', 'image_path' => 'a.webp', 'is_active' => true, 'sort_order' => 1]),
-            BannerPromotion::create(['title' => 'B', 'slug' => 'b', 'image_path' => 'b.webp', 'is_active' => true, 'sort_order' => 2]),
+            BannerPromotion::create(['title' => ['id' => 'A', 'en' => 'A EN'], 'slug' => ['id' => 'a', 'en' => 'a-en'], 'image_path' => 'a.webp', 'is_active' => true, 'sort_order' => 1]),
+            BannerPromotion::create(['title' => ['id' => 'B', 'en' => 'B EN'], 'slug' => ['id' => 'b', 'en' => 'b-en'], 'image_path' => 'b.webp', 'is_active' => true, 'sort_order' => 2]),
         ]);
     }
 
@@ -155,8 +155,8 @@ class ReorderCacheInvalidationTest extends TestCase
     {
         $this->actAsReorderer();
         [$first, $second] = FacilityService::withoutEvents(fn () => [
-            FacilityService::create(['name' => 'F1', 'slug' => 'f1', 'description' => 'd', 'is_active' => true, 'sort_order' => 1]),
-            FacilityService::create(['name' => 'F2', 'slug' => 'f2', 'description' => 'd', 'is_active' => true, 'sort_order' => 2]),
+            FacilityService::create(['name' => ['id' => 'F1', 'en' => 'F1 EN'], 'slug' => ['id' => 'f1', 'en' => 'f1-en'], 'tagline' => ['id' => 'Tag', 'en' => 'Tag EN'], 'description' => ['id' => 'd', 'en' => 'd EN'], 'is_active' => true, 'sort_order' => 1]),
+            FacilityService::create(['name' => ['id' => 'F2', 'en' => 'F2 EN'], 'slug' => ['id' => 'f2', 'en' => 'f2-en'], 'tagline' => ['id' => 'Tag', 'en' => 'Tag EN'], 'description' => ['id' => 'd', 'en' => 'd EN'], 'is_active' => true, 'sort_order' => 2]),
         ]);
 
         $this->assertSame(['F1', 'F2'], collect($this->withHmac()->getJson('/api/v1/cms/facilities')->json('data'))->pluck('name')->all());
@@ -172,8 +172,8 @@ class ReorderCacheInvalidationTest extends TestCase
     {
         $this->actAsReorderer();
         [$first, $second] = RoomFacility::withoutEvents(fn () => [
-            RoomFacility::create(['name' => 'R1', 'slug' => 'r1', 'is_active' => true, 'sort_order' => 1]),
-            RoomFacility::create(['name' => 'R2', 'slug' => 'r2', 'is_active' => true, 'sort_order' => 2]),
+            RoomFacility::create(['name' => ['id' => 'R1', 'en' => 'R1 EN'], 'slug' => ['id' => 'r1', 'en' => 'r1-en'], 'tagline' => ['id' => 'Tag', 'en' => 'Tag EN'], 'description' => ['id' => 'Desc', 'en' => 'Desc EN'], 'is_active' => true, 'sort_order' => 1]),
+            RoomFacility::create(['name' => ['id' => 'R2', 'en' => 'R2 EN'], 'slug' => ['id' => 'r2', 'en' => 'r2-en'], 'tagline' => ['id' => 'Tag', 'en' => 'Tag EN'], 'description' => ['id' => 'Desc', 'en' => 'Desc EN'], 'is_active' => true, 'sort_order' => 2]),
         ]);
 
         $this->assertSame(['R1', 'R2'], collect($this->withHmac()->getJson('/api/v1/cms/room-facilities')->json('data'))->pluck('name')->all());

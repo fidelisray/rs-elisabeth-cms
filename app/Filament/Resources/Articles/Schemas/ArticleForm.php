@@ -4,7 +4,6 @@ namespace App\Filament\Resources\Articles\Schemas;
 
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -44,13 +43,10 @@ class ArticleForm
                             ->unique(column: fn ($livewire = null): string => 'slug->'.($livewire?->activeLocale ?? app()->getLocale()), ignoreRecord: true)
                             ->helperText('Dapat diedit jika diperlukan'),
 
-                        Select::make('tags')
+                        TextInput::make('tags')
                             ->label('Kategori')
-                            ->placeholder('Pilih Kategori Artikel')
-                            ->options([
-                                'Artikel Kesehatan' => 'Artikel Kesehatan',
-                                // 'Berita' => 'Berita',
-                            ])
+                            ->placeholder('Masukkan kategori sesuai bahasa yang dipilih')
+                            ->maxLength(100)
                             ->required(),
 
                         TextInput::make('author')
