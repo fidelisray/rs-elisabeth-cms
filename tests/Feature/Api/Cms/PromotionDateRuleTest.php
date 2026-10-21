@@ -182,7 +182,7 @@ class PromotionDateRuleTest extends TestCase
 
         $this->withHmac()->getJson('/api/v1/cms/promotions')->assertOk();
 
-        $keys = collect(array_keys($this->arrayCacheStore()))->filter(fn ($k) => str_contains($k, 'rs_web_cms_api_promotions_v'));
+        $keys = collect(array_keys($this->arrayCacheStore()))->filter(fn ($k) => str_contains($k, 'rs_web_cms_api_promotions_id_v'));
 
         $this->assertTrue($keys->contains(fn ($k) => str_contains($k, '2026-10-20')), 'Key cache daftar harus memuat tanggal hari ini.');
     }

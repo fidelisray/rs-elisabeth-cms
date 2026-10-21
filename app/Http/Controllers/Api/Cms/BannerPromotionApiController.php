@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Cms;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\Cms\BannerPromotionResource;
 use App\Models\BannerPromotion;
+use App\Support\ApiCacheInvalidator;
 use Illuminate\Support\Facades\Cache;
 use OpenApi\Attributes as OA;
 
@@ -24,7 +25,7 @@ class BannerPromotionApiController extends Controller
     #[OA\Response(response: 200, description: 'Successful operation')]
     public function index()
     {
-        $banners = Cache::remember('rs_web_cms_api_banner_promotions', now()->addHours(6), function () {
+        $banners = Cache::remember(ApiCacheInvalidator::keyForModule('banner_promotions'), now()->addHours(6), function () {
             return BannerPromotion::query()
                 ->where('is_active', true)
                 ->orderBy('sort_order', 'asc')

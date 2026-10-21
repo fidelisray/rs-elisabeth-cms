@@ -4,6 +4,8 @@ namespace App\Support;
 
 use App\Jobs\SendCacheInvalidationWebhookJob;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 /**
@@ -17,27 +19,41 @@ class ApiCacheInvalidator
 {
     /**
      * Peta modul (nama modul webhook) ke prefix cache API.
-     * Fasilitas/ruangan memakai suffix locale untuk menjaga urutan sesuai bahasa.
-     * Hanya modul tanpa paginasi; modul berpaginasi memakai key berversi
-     * yang dibersihkan lewat event model.
+     * Semua key data memiliki locale. Modul berpaginasi memakai satu versi bersama
+     * agar seluruh bahasa/halaman lama dapat diinvalidasi tanpa memindai cache.
      *
      * @var array<string, string>
      */
     private const KEYS = [
+        'news' => 'rs_web_cms_api_news',
+        'articles' => 'rs_web_cms_api_articles',
+        'promotions' => 'rs_web_cms_api_promotions',
         'banner_promotions' => 'rs_web_cms_api_banner_promotions',
         'facilities' => 'rs_web_cms_api_facility_services',
         'room_facilities' => 'rs_web_cms_api_room_facilities',
     ];
 
-    private const LOCALIZED_MODULES = ['facilities', 'room_facilities'];
+    private const PAGINATED_MODULES = ['news', 'articles', 'promotions'];
 
     public static function keyForModule(string $module, ?string $locale = null): string
     {
-        $key = self::baseKey($module);
+        return self::baseKey($module).'_'.TranslatedContentOrder::locale($locale ?? app()->getLocale());
+    }
 
-        return in_array($module, self::LOCALIZED_MODULES, true)
-            ? $key.'_'.TranslatedContentOrder::locale($locale ?? app()->getLocale())
-            : $key;
+    public static function pageKeyForModule(string $module, int $page, ?string $locale = null, ?string $date = null): string
+    {
+        if (! in_array($module, self::PAGINATED_MODULES, true) || $page < 1) {
+            throw new InvalidArgumentException('Invalid paginated cache key.');
+        }
+
+        if ($module === 'promotions' && (! is_string($date) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date))) {
+            throw new InvalidArgumentException('Promotion cache keys require the application date.');
+        }
+
+        $version = Cache::rememberForever(self::baseKey($module).'_version', fn (): string => (string) Str::uuid());
+
+        return self::keyForModule($module, $locale).'_v'.$version
+            .($module === 'promotions' ? '_'.$date : '').'_page_'.$page;
     }
 
     /**
@@ -45,13 +61,28 @@ class ApiCacheInvalidator
      */
     public static function forgetForModule(string $module): void
     {
+        self::invalidate($module);
+
+        // A concurrent reader can repopulate the old committed snapshot during a write.
+        if (DB::transactionLevel() > 0) {
+            DB::afterCommit(fn () => self::invalidate($module));
+        }
+    }
+
+    private static function invalidate(string $module): void
+    {
         // Also expire the pre-locale key during the transition from older application versions.
         Cache::forget(self::baseKey($module));
 
-        if (in_array($module, self::LOCALIZED_MODULES, true)) {
-            foreach (config('app.supported_locales', ['id', 'en']) as $locale) {
-                Cache::forget(self::keyForModule($module, $locale));
-            }
+        if (in_array($module, self::PAGINATED_MODULES, true)) {
+            // UUID avoids retaining a generation when two mutations happen in one second.
+            Cache::forever(self::baseKey($module).'_version', (string) Str::uuid());
+
+            return;
+        }
+
+        foreach (config('app.supported_locales', ['id', 'en']) as $locale) {
+            Cache::forget(self::keyForModule($module, $locale));
         }
     }
 

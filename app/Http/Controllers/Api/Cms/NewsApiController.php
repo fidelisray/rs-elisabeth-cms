@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Cms;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\Cms\NewsResource;
 use App\Models\News;
+use App\Support\ApiCacheInvalidator;
 use App\Support\PageParameter;
 use Illuminate\Support\Facades\Cache;
 use OpenApi\Attributes as OA;
@@ -22,16 +23,19 @@ class NewsApiController extends Controller
     public function index()
     {
         $page = PageParameter::from(request());
-        $version = Cache::rememberForever('rs_web_cms_api_news_version', fn () => time());
+        $locale = app()->getLocale();
 
-        $news = Cache::remember("rs_web_cms_api_news_v{$version}_page_{$page}", now()->addHours(2), function () use ($page) {
+        $news = Cache::remember(ApiCacheInvalidator::pageKeyForModule('news', $page, $locale), now()->addHours(2), function () use ($page) {
             return News::query()
                 ->where('is_published', true)
                 ->latest()
                 ->paginate(12, ['*'], 'page', $page);
         });
 
-        return NewsResource::collection($news);
+        // Rebuild request-specific pagination links without mutating the cached paginator.
+        $pagination = (clone $news)->withPath(request()->url())->appends('lang', $locale);
+
+        return NewsResource::collection($pagination);
     }
 
     #[OA\Get(

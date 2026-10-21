@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Observers\WebFrontendWebhookObserver;
+use App\Support\ApiCacheInvalidator;
 use App\Traits\ConvertsImagesToWebp;
 use App\Traits\HasCmsTranslations;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -12,7 +13,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 
 #[ObservedBy([WebFrontendWebhookObserver::class])]
 class Promotion extends Model
@@ -110,11 +110,11 @@ class Promotion extends Model
         });
 
         static::saved(function ($model) {
-            Cache::put('rs_web_cms_api_promotions_version', time());
+            ApiCacheInvalidator::forgetForModule('promotions');
         });
 
         static::deleted(function ($model) {
-            Cache::put('rs_web_cms_api_promotions_version', time());
+            ApiCacheInvalidator::forgetForModule('promotions');
         });
     }
 }
