@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\Cms;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\Cms\FacilityServiceResource;
 use App\Models\FacilityService;
+use App\Support\ApiCacheInvalidator;
+use App\Support\TranslatedContentOrder;
 use Illuminate\Support\Facades\Cache;
 use OpenApi\Attributes as OA;
 
@@ -12,24 +14,26 @@ class FacilityServiceApiController extends Controller
 {
     /**
      * Mengembalikan daftar fasilitas & layanan yang aktif,
-     * diurutkan berdasarkan sort_order lalu name.
+     * diurutkan berdasarkan sort_order, nama pada locale request, lalu ID.
      */
     #[OA\Get(
         path: '/api/v1/cms/facilities',
         summary: 'Get list of facilities and services',
         security: [['HmacAuth' => []]],
         tags: ['Facilities'],
-        description: 'Returns list of active facilities and services without pagination.'
+        description: 'Returns active facilities without pagination, ordered by sort_order, name in the selected locale, and ID.'
     )]
     #[OA\Response(response: 200, description: 'Successful operation')]
     public function index()
     {
-        $facilities = Cache::remember('rs_web_cms_api_facility_services', now()->addHours(6), function () {
-            return FacilityService::query()
+        $locale = TranslatedContentOrder::locale(app()->getLocale());
+        $facilities = Cache::remember(ApiCacheInvalidator::keyForModule('facilities', $locale), now()->addHours(6), function () use ($locale) {
+            $query = FacilityService::query()
                 ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->orderBy('name->id')
-                ->get();
+                ->orderBy('sort_order');
+
+            return TranslatedContentOrder::apply($query, 'name', $locale)
+                ->orderBy($query->getModel()->getQualifiedKeyName())->get();
         });
 
         return FacilityServiceResource::collection($facilities);

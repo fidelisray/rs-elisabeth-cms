@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Articles\Tables;
 
+use App\Support\TranslatedContentOrder;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -23,7 +24,12 @@ class ArticlesTable
                     ->height(50),
                 TextColumn::make('title')
                     ->label('Judul')
+                    ->sortable(query: TranslatedContentOrder::column('title'))
                     ->searchable(),
+                TextColumn::make('slug')
+                    ->label('Identifier')
+                    ->sortable(query: TranslatedContentOrder::column('slug'))
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('tags')
                     ->label('Kategori')
                     ->badge()

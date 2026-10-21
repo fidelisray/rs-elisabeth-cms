@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\Cms;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\Cms\RoomFacilityResource;
 use App\Models\RoomFacility;
+use App\Support\ApiCacheInvalidator;
+use App\Support\TranslatedContentOrder;
 use Illuminate\Support\Facades\Cache;
 use OpenApi\Attributes as OA;
 
@@ -12,24 +14,26 @@ class RoomFacilityApiController extends Controller
 {
     /**
      * Mengembalikan daftar ruang perawatan yang aktif,
-     * diurutkan berdasarkan sort_order, beserta URL foto.
+     * diurutkan berdasarkan sort_order, nama pada locale request, lalu ID.
      */
     #[OA\Get(
         path: '/api/v1/cms/room-facilities',
         summary: 'Get list of room facilities',
         security: [['HmacAuth' => []]],
         tags: ['Room Facilities'],
-        description: 'Returns list of active room facilities without pagination.'
+        description: 'Returns active rooms without pagination, ordered by sort_order, name in the selected locale, and ID.'
     )]
     #[OA\Response(response: 200, description: 'Successful operation')]
     public function index()
     {
-        $rooms = Cache::remember('rs_web_cms_api_room_facilities', now()->addHours(6), function () {
-            return RoomFacility::query()
+        $locale = TranslatedContentOrder::locale(app()->getLocale());
+        $rooms = Cache::remember(ApiCacheInvalidator::keyForModule('room_facilities', $locale), now()->addHours(6), function () use ($locale) {
+            $query = RoomFacility::query()
                 ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->orderBy('name->id')
-                ->get();
+                ->orderBy('sort_order');
+
+            return TranslatedContentOrder::apply($query, 'name', $locale)
+                ->orderBy($query->getModel()->getQualifiedKeyName())->get();
         });
 
         return RoomFacilityResource::collection($rooms);

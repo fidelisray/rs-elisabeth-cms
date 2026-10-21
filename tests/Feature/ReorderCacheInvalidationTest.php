@@ -160,11 +160,12 @@ class ReorderCacheInvalidationTest extends TestCase
         ]);
 
         $this->assertSame(['F1', 'F2'], collect($this->withHmac()->getJson('/api/v1/cms/facilities')->json('data'))->pluck('name')->all());
+        $this->assertTrue(Cache::has('rs_web_cms_api_facility_services_id'));
 
         Bus::fake();
         Livewire::test(ListFacilityServices::class)->call('reorderTable', [$second->id, $first->id]);
 
-        $this->assertNull(Cache::get('rs_web_cms_api_facility_services'));
+        $this->assertNull(Cache::get('rs_web_cms_api_facility_services_id'));
         Bus::assertDispatched(SendCacheInvalidationWebhookJob::class, fn ($job) => $job->module === 'facilities');
     }
 
@@ -177,11 +178,12 @@ class ReorderCacheInvalidationTest extends TestCase
         ]);
 
         $this->assertSame(['R1', 'R2'], collect($this->withHmac()->getJson('/api/v1/cms/room-facilities')->json('data'))->pluck('name')->all());
+        $this->assertTrue(Cache::has('rs_web_cms_api_room_facilities_id'));
 
         Bus::fake();
         Livewire::test(ListRoomFacilities::class)->call('reorderTable', [$second->id, $first->id]);
 
-        $this->assertNull(Cache::get('rs_web_cms_api_room_facilities'));
+        $this->assertNull(Cache::get('rs_web_cms_api_room_facilities_id'));
         Bus::assertDispatched(SendCacheInvalidationWebhookJob::class, fn ($job) => $job->module === 'room_facilities');
     }
 }
