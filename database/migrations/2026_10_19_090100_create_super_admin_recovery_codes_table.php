@@ -12,10 +12,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('code_hash');
+            $table->char('lookup_hash', 64);
             $table->timestamp('used_at')->nullable();
             $table->timestamp('created_at')->nullable();
 
-            $table->index('user_id');
+            $table->unique(['user_id', 'lookup_hash']);
         });
     }
 

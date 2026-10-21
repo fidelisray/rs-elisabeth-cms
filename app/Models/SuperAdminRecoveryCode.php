@@ -19,12 +19,14 @@ class SuperAdminRecoveryCode extends Model
     protected $fillable = [
         'user_id',
         'code_hash',
+        'lookup_hash',
         'used_at',
         'created_at',
     ];
 
     protected $hidden = [
         'code_hash',
+        'lookup_hash',
     ];
 
     protected function casts(): array

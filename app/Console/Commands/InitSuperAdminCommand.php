@@ -28,7 +28,7 @@ class InitSuperAdminCommand extends Command
 
     public function handle(RecoveryCodeService $recoveryCodes): int
     {
-        $email = (string) $this->option('email');
+        $email = User::normalizeEmail((string) $this->option('email'));
         $name = (string) $this->option('name');
 
         $validator = Validator::make(['email' => $email, 'name' => $name], [
