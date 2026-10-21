@@ -2,16 +2,14 @@
 
 namespace App\Filament\Resources\Articles\Pages;
 
-use App\Filament\Concerns\ValidatesTranslatableLocales;
+use App\Filament\Concerns\CreatesTranslatedContent;
 use App\Filament\Resources\Articles\ArticleResource;
 use Filament\Resources\Pages\CreateRecord;
 use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
-use LaraZeus\SpatieTranslatable\Resources\Pages\CreateRecord\Concerns\Translatable;
 
 class CreateArticle extends CreateRecord
 {
-    use Translatable;
-    use ValidatesTranslatableLocales;
+    use CreatesTranslatedContent;
 
     protected static string $resource = ArticleResource::class;
 
