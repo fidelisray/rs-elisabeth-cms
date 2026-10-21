@@ -45,9 +45,10 @@ class PromotionApiController extends Controller
         summary: 'Get promotion detail',
         security: [['HmacAuth' => []]],
         tags: ['Promotions'],
-        description: 'Returns a single promotion data. Accepts numeric ID or slug as the identifier.'
+        description: 'Returns a currently active promotion by numeric ID or by the exact slug in the selected locale. Slugs from other locales return 404. Use alternate_slugs to switch languages.'
     )]
     #[OA\Parameter(name: 'identifier', description: 'Promotion ID (numeric) or slug (string)', in: 'path', required: true)]
+    #[OA\Parameter(name: 'lang', description: 'Content locale: id or en. Unsupported values use id.', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['id', 'en'], default: 'id'))]
     #[OA\Response(response: 200, description: 'Successful operation')]
     #[OA\Response(response: 404, description: 'Resource Not Found')]
     public function show($identifier): JsonResponse
@@ -56,7 +57,7 @@ class PromotionApiController extends Controller
         // tidak bisa diakses langsung lewat ID maupun slug.
         $query = Promotion::query()->activeOn();
 
-        // Smart identifier: angka = lookup by ID, selain itu = lookup by slug multi-bahasa.
+        // Identifier numerik tetap lookup by ID; slug harus cocok dengan locale request.
         if (is_numeric($identifier)) {
             $query->where('id', (int) $identifier);
         } else {

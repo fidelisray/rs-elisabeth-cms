@@ -40,9 +40,10 @@ class FacilityServiceApiController extends Controller
         summary: 'Get facility or service detail',
         security: [['HmacAuth' => []]],
         tags: ['Facilities'],
-        description: 'Returns a single facility or service data.'
+        description: 'Returns an active facility matching the exact slug in the selected locale. Slugs from other locales return 404. Use alternate_slugs to switch languages.'
     )]
     #[OA\Parameter(name: 'slug', description: 'Facility slug', in: 'path', required: true)]
+    #[OA\Parameter(name: 'lang', description: 'Content locale: id or en. Unsupported values use id.', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['id', 'en'], default: 'id'))]
     #[OA\Response(response: 200, description: 'Successful operation')]
     #[OA\Response(response: 404, description: 'Resource Not Found')]
     public function show($slug)
