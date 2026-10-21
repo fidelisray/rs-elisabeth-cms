@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Observers\WebFrontendWebhookObserver;
+use App\Support\ApiCacheInvalidator;
 use App\Traits\ConvertsImagesToWebp;
 use App\Traits\HasCmsTranslations;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -10,7 +11,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 #[ObservedBy([WebFrontendWebhookObserver::class])]
@@ -94,11 +94,11 @@ class RoomFacility extends Model
         });
 
         static::saved(function ($model) {
-            Cache::forget('rs_web_cms_api_room_facilities');
+            ApiCacheInvalidator::forgetForModule('room_facilities');
         });
 
         static::deleted(function ($model) {
-            Cache::forget('rs_web_cms_api_room_facilities');
+            ApiCacheInvalidator::forgetForModule('room_facilities');
         });
     }
 }

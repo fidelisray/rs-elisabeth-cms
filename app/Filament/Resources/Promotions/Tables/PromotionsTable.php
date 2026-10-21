@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Promotions\Tables;
 
 use App\Models\Promotion;
+use App\Support\TranslatedContentOrder;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -25,7 +26,13 @@ class PromotionsTable
 
                 TextColumn::make('title')
                     ->label('Judul Promosi')
+                    ->sortable(query: TranslatedContentOrder::column('title'))
                     ->searchable(),
+
+                TextColumn::make('slug')
+                    ->label('Identifier')
+                    ->sortable(query: TranslatedContentOrder::column('slug'))
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('start_date')
                     ->label('Mulai')

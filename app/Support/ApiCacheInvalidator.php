@@ -16,7 +16,8 @@ use InvalidArgumentException;
 class ApiCacheInvalidator
 {
     /**
-     * Peta modul (nama modul webhook) ke key cache tunggal yang dibaca API.
+     * Peta modul (nama modul webhook) ke prefix cache API.
+     * Fasilitas/ruangan memakai suffix locale untuk menjaga urutan sesuai bahasa.
      * Hanya modul tanpa paginasi; modul berpaginasi memakai key berversi
      * yang dibersihkan lewat event model.
      *
@@ -28,6 +29,37 @@ class ApiCacheInvalidator
         'room_facilities' => 'rs_web_cms_api_room_facilities',
     ];
 
+    private const LOCALIZED_MODULES = ['facilities', 'room_facilities'];
+
+    public static function keyForModule(string $module, ?string $locale = null): string
+    {
+        $key = self::baseKey($module);
+
+        return in_array($module, self::LOCALIZED_MODULES, true)
+            ? $key.'_'.TranslatedContentOrder::locale($locale ?? app()->getLocale())
+            : $key;
+    }
+
+    /**
+     * Model events use this without dispatching a second webhook alongside the observer.
+     */
+    public static function forgetForModule(string $module): void
+    {
+        // Also expire the pre-locale key during the transition from older application versions.
+        Cache::forget(self::baseKey($module));
+
+        if (in_array($module, self::LOCALIZED_MODULES, true)) {
+            foreach (config('app.supported_locales', ['id', 'en']) as $locale) {
+                Cache::forget(self::keyForModule($module, $locale));
+            }
+        }
+    }
+
+    private static function baseKey(string $module): string
+    {
+        return self::KEYS[$module] ?? throw new InvalidArgumentException("Modul cache API tidak dikenal: {$module}");
+    }
+
     /**
      * Hapus cache API modul tersebut dan kirim webhook ke Web Frontend.
      *
@@ -36,11 +68,7 @@ class ApiCacheInvalidator
      */
     public static function forModule(string $module): void
     {
-        if (! array_key_exists($module, self::KEYS)) {
-            throw new InvalidArgumentException("Modul cache API tidak dikenal: {$module}");
-        }
-
-        Cache::forget(self::KEYS[$module]);
+        self::forgetForModule($module);
 
         SendCacheInvalidationWebhookJob::dispatch($module, 'content.updated')->afterCommit();
     }

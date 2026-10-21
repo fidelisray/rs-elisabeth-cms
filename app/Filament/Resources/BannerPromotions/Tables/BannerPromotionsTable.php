@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\BannerPromotions\Tables;
 
 use App\Support\ApiCacheInvalidator;
+use App\Support\TranslatedContentOrder;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -33,7 +34,13 @@ class BannerPromotionsTable
                 TextColumn::make('title')
                     ->label('Judul Banner')
                     ->searchable()
+                    ->sortable(query: TranslatedContentOrder::column('title'))
                     ->limit(50),
+
+                TextColumn::make('slug')
+                    ->label('Identifier')
+                    ->sortable(query: TranslatedContentOrder::column('slug'))
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('created_by')
                     ->label('Dibuat Oleh')

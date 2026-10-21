@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\FacilityServices\Tables;
 
 use App\Support\ApiCacheInvalidator;
+use App\Support\TranslatedContentOrder;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -32,7 +33,12 @@ class FacilityServiceTable
                 TextColumn::make('name')
                     ->label('Nama Fasilitas')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable(query: TranslatedContentOrder::column('name')),
+
+                TextColumn::make('slug')
+                    ->label('Identifier')
+                    ->sortable(query: TranslatedContentOrder::column('slug'))
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('category')
                     ->label('Kategori')

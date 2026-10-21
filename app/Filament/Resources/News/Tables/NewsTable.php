@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\News\Tables;
 
 use App\Models\News;
+use App\Support\TranslatedContentOrder;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -27,7 +28,13 @@ class NewsTable
 
                 TextColumn::make('title')
                     ->label('Judul Berita')
+                    ->sortable(query: TranslatedContentOrder::column('title'))
                     ->searchable(),
+
+                TextColumn::make('slug')
+                    ->label('Identifier')
+                    ->sortable(query: TranslatedContentOrder::column('slug'))
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('category')
                     ->label('Kategori')

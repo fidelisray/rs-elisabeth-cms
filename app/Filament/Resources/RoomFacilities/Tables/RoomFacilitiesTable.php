@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\RoomFacilities\Tables;
 
 use App\Support\ApiCacheInvalidator;
+use App\Support\TranslatedContentOrder;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -31,8 +32,13 @@ class RoomFacilitiesTable
                 TextColumn::make('name')
                     ->label('Nama Ruangan')
                     ->searchable()
-                    ->sortable()
+                    ->sortable(query: TranslatedContentOrder::column('name'))
                     ->weight('bold'),
+
+                TextColumn::make('slug')
+                    ->label('Identifier')
+                    ->sortable(query: TranslatedContentOrder::column('slug'))
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('room_size')
                     ->label('Luas')
