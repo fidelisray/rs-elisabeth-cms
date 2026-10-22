@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\GuardsHardDelete;
 use App\Observers\WebFrontendWebhookObserver;
 use App\Support\ApiCacheInvalidator;
 use App\Traits\ConvertsImagesToWebp;
@@ -15,7 +16,10 @@ use Illuminate\Support\Facades\Auth;
 #[ObservedBy([WebFrontendWebhookObserver::class])]
 class BannerPromotion extends Model
 {
-    use ConvertsImagesToWebp, SoftDeletes;
+    use ConvertsImagesToWebp, GuardsHardDelete, SoftDeletes {
+        GuardsHardDelete::forceDelete insteadof SoftDeletes;
+        GuardsHardDelete::forceDeleteQuietly insteadof SoftDeletes;
+    }
     use HasCmsTranslations;
     use HasFactory;
 

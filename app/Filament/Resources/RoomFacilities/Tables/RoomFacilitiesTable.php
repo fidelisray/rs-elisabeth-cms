@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\RoomFacilities\Tables;
 
+use App\Filament\Support\ContentTrashActions;
 use App\Support\ApiCacheInvalidator;
 use App\Support\TranslatedContentOrder;
 use Filament\Actions\BulkActionGroup;
@@ -74,6 +75,7 @@ class RoomFacilitiesTable
                 ApiCacheInvalidator::forModule('room_facilities');
             })
             ->filters([
+                ContentTrashActions::trashedFilter(),
                 TernaryFilter::make('is_active')
                     ->label('Status Aktif')
                     ->trueLabel('Aktif saja')
@@ -83,11 +85,15 @@ class RoomFacilitiesTable
 
             ->recordActions([
                 EditAction::make(),
+                ContentTrashActions::restoreAction(),
+                ContentTrashActions::forceDeleteAction(),
             ])
 
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                    ContentTrashActions::restoreBulkAction(),
+                    ContentTrashActions::forceDeleteBulkAction(),
                 ]),
             ]);
     }

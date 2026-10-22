@@ -12,6 +12,14 @@ class ArticlePolicy
 {
     use HandlesAuthorization;
 
+    /**
+     * Restore dan hard delete hanya untuk super_admin (I18N-9.2, I-15).
+     */
+    private function isSuperAdmin(AuthUser $authUser): bool
+    {
+        return method_exists($authUser, 'hasRole') && $authUser->hasRole('super_admin');
+    }
+
     public function viewAny(AuthUser $authUser): bool
     {
         return $authUser->can('ViewAny:Article');
@@ -44,22 +52,22 @@ class ArticlePolicy
 
     public function restore(AuthUser $authUser, Article $article): bool
     {
-        return $authUser->can('Restore:Article');
+        return $this->isSuperAdmin($authUser) && $authUser->can('Restore:Article');
     }
 
     public function forceDelete(AuthUser $authUser, Article $article): bool
     {
-        return $authUser->can('ForceDelete:Article');
+        return $this->isSuperAdmin($authUser) && $authUser->can('ForceDelete:Article');
     }
 
     public function forceDeleteAny(AuthUser $authUser): bool
     {
-        return $authUser->can('ForceDeleteAny:Article');
+        return $this->isSuperAdmin($authUser) && $authUser->can('ForceDeleteAny:Article');
     }
 
     public function restoreAny(AuthUser $authUser): bool
     {
-        return $authUser->can('RestoreAny:Article');
+        return $this->isSuperAdmin($authUser) && $authUser->can('RestoreAny:Article');
     }
 
     public function replicate(AuthUser $authUser, Article $article): bool

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\GuardsHardDelete;
 use App\Observers\WebFrontendWebhookObserver;
 use App\Support\ApiCacheInvalidator;
 use App\Traits\ConvertsImagesToWebp;
@@ -16,6 +17,10 @@ use Illuminate\Support\Facades\Auth;
 class News extends Model
 {
     use ConvertsImagesToWebp;
+    use GuardsHardDelete {
+        GuardsHardDelete::forceDelete insteadof SoftDeletes;
+        GuardsHardDelete::forceDeleteQuietly insteadof SoftDeletes;
+    }
     use HasCmsTranslations;
     use HasFactory;
     use SoftDeletes;

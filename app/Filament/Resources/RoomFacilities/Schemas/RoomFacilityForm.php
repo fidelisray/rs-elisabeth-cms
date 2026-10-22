@@ -5,6 +5,7 @@ namespace App\Filament\Resources\RoomFacilities\Schemas;
 use App\Rules\ValidRoomNestedContent;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -108,14 +109,14 @@ class RoomFacilityForm
                             ->schema([
 
                                 TextInput::make('group.id')
-                                    ->label('Nama Grup — Indonesia')
+                                    ->label('Nama Grup ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Indonesia')
                                     ->placeholder('Contoh: Kamar & Ruangan')
                                     ->required()
                                     ->maxLength(100)
                                     ->columnSpanFull(),
 
                                 TextInput::make('group.en')
-                                    ->label('Nama Grup — English')
+                                    ->label('Nama Grup ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â English')
                                     ->required()
                                     ->maxLength(100)
                                     ->columnSpanFull(),
@@ -126,24 +127,24 @@ class RoomFacilityForm
                                     ->schema([
 
                                         TextInput::make('name.id')
-                                            ->label('Nama Fasilitas — Indonesia')
+                                            ->label('Nama Fasilitas ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Indonesia')
                                             ->placeholder('Contoh: Air Conditioner (AC)')
                                             ->required()
                                             ->maxLength(100),
 
                                         TextInput::make('name.en')
-                                            ->label('Nama Fasilitas — English')
+                                            ->label('Nama Fasilitas ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â English')
                                             ->required()
                                             ->maxLength(100),
 
                                         TextInput::make('value.id')
-                                            ->label('Spesifikasi — Indonesia (Opsional)')
+                                            ->label('Spesifikasi ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Indonesia (Opsional)')
                                             ->placeholder('contoh: 55" Smart TV, Central')
                                             // ->helperText('Biarkan kosong jika ini hanya fasilitas standar (tampil sebagai centang)')
                                             ->maxLength(255),
 
                                         TextInput::make('value.en')
-                                            ->label('Spesifikasi — English (Opsional)')
+                                            ->label('Spesifikasi ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â English (Opsional)')
                                             ->helperText('Isi kedua bahasa jika spesifikasi digunakan, atau kosongkan keduanya.')
                                             ->maxLength(255),
 
@@ -208,13 +209,13 @@ class RoomFacilityForm
                                     ->required(),
 
                                 TextInput::make('label.id')
-                                    ->label('Label Tag — Indonesia')
+                                    ->label('Label Tag ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Indonesia')
                                     ->placeholder('Contoh: Kamar Terluas')
                                     ->required()
                                     ->maxLength(100),
 
                                 TextInput::make('label.en')
-                                    ->label('Label Tag — English')
+                                    ->label('Label Tag ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â English')
                                     ->required()
                                     ->maxLength(100),
                             ])
@@ -232,7 +233,7 @@ class RoomFacilityForm
                         TextInput::make('room_size')
                             ->label('Luas Kamar')
                             ->numeric()
-                            ->suffix('m²')
+                            ->suffix('mÃƒâ€šÃ‚Â²')
                             ->placeholder('Contoh: 40')
                             ->maxValue(999),
 
@@ -268,6 +269,11 @@ class RoomFacilityForm
                     ->description('Atur apakah ruangan ini akan ditampilkan pada halaman website')
                     ->columns(2)
                     ->schema([
+                        Placeholder::make('trash_notice')
+                            ->label('Penghapusan')
+                            ->content('Konten yang dihapus tidak tampil di website. Hanya Super Admin yang dapat memulihkannya.')
+                            ->columnSpanFull(),
+
                         Hidden::make('sort_order')
                             ->default(0),
 

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\BannerPromotions\Schemas;
 
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
@@ -72,6 +73,11 @@ class BannerPromotionForm
                     ->columnSpanFull()
                     ->description('Atur apakah Banner Promosi ini akan ditampilkan pada halaman website')
                     ->schema([
+                        Placeholder::make('trash_notice')
+                            ->label('Penghapusan')
+                            ->content('Konten yang dihapus tidak tampil di website. Hanya Super Admin yang dapat memulihkannya.')
+                            ->columnSpanFull(),
+
                         Toggle::make('is_active')
                             ->label('Aktif dan Tampilkan di halaman website')
                             ->default(false)

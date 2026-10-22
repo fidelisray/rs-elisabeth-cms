@@ -4,6 +4,7 @@ namespace App\Filament\Resources\FacilityServices\Schemas;
 
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
@@ -146,6 +147,11 @@ class FacilityServiceForm
                     ->description('Atur apakah fasilitas ini akan ditampilkan pada halaman website')
                     ->columns(2)
                     ->schema([
+                        Placeholder::make('trash_notice')
+                            ->label('Penghapusan')
+                            ->content('Konten yang dihapus tidak tampil di website. Hanya Super Admin yang dapat memulihkannya.')
+                            ->columnSpanFull(),
+
                         Hidden::make('sort_order')
                             ->default(0),
 

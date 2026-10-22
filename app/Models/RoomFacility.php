@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\GuardsHardDelete;
 use App\Observers\WebFrontendWebhookObserver;
 use App\Support\ApiCacheInvalidator;
 use App\Support\RoomNestedContent;
@@ -18,6 +19,10 @@ use Illuminate\Support\Str;
 class RoomFacility extends Model
 {
     use ConvertsImagesToWebp;
+    use GuardsHardDelete {
+        GuardsHardDelete::forceDelete insteadof SoftDeletes;
+        GuardsHardDelete::forceDeleteQuietly insteadof SoftDeletes;
+    }
     use HasCmsTranslations;
     use HasFactory;
     use SoftDeletes;

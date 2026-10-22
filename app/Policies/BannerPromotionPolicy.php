@@ -12,6 +12,14 @@ class BannerPromotionPolicy
 {
     use HandlesAuthorization;
 
+    /**
+     * Restore dan hard delete hanya untuk super_admin (I18N-9.2, I-15).
+     */
+    private function isSuperAdmin(AuthUser $authUser): bool
+    {
+        return method_exists($authUser, 'hasRole') && $authUser->hasRole('super_admin');
+    }
+
     public function viewAny(AuthUser $authUser): bool
     {
         return $authUser->can('ViewAny:BannerPromotion');
@@ -44,22 +52,22 @@ class BannerPromotionPolicy
 
     public function restore(AuthUser $authUser, BannerPromotion $bannerPromotion): bool
     {
-        return $authUser->can('Restore:BannerPromotion');
+        return $this->isSuperAdmin($authUser) && $authUser->can('Restore:BannerPromotion');
     }
 
     public function forceDelete(AuthUser $authUser, BannerPromotion $bannerPromotion): bool
     {
-        return $authUser->can('ForceDelete:BannerPromotion');
+        return $this->isSuperAdmin($authUser) && $authUser->can('ForceDelete:BannerPromotion');
     }
 
     public function forceDeleteAny(AuthUser $authUser): bool
     {
-        return $authUser->can('ForceDeleteAny:BannerPromotion');
+        return $this->isSuperAdmin($authUser) && $authUser->can('ForceDeleteAny:BannerPromotion');
     }
 
     public function restoreAny(AuthUser $authUser): bool
     {
-        return $authUser->can('RestoreAny:BannerPromotion');
+        return $this->isSuperAdmin($authUser) && $authUser->can('RestoreAny:BannerPromotion');
     }
 
     public function replicate(AuthUser $authUser, BannerPromotion $bannerPromotion): bool

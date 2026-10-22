@@ -174,14 +174,16 @@ class RoleAndPermissionSeeder extends Seeder
 
     /**
      * Buat role marketing dengan akses terbatas:
-     * View/Create/Update konten, TIDAK BISA Delete.
+     * View/Create/Update/Delete (soft delete) konten.
+     * Tidak memiliki Restore*, ForceDelete*, maupun akses User & Role (I18N-9.1).
      */
     protected function seedMarketingRole(): Role
     {
-        $allowed = ['ViewAny', 'View', 'Create', 'Update'];
+        $allowed = ['ViewAny', 'View', 'Create', 'Update', 'Delete', 'DeleteAny'];
         $names = [];
 
         // Marketing hanya mengelola konten, TIDAK termasuk User & Role.
+        // Restore* dan ForceDelete* tidak diberikan (hanya super_admin, I18N-9).
         foreach (self::CONTENT_SUBJECTS as $subject) {
             foreach ($allowed as $action) {
                 $names[] = "{$action}:{$subject}";
