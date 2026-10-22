@@ -12,6 +12,14 @@ class NewsPolicy
 {
     use HandlesAuthorization;
 
+    /**
+     * Restore dan hard delete hanya untuk super_admin (I18N-9.2, I-15).
+     */
+    private function isSuperAdmin(AuthUser $authUser): bool
+    {
+        return method_exists($authUser, 'hasRole') && $authUser->hasRole('super_admin');
+    }
+
     public function viewAny(AuthUser $authUser): bool
     {
         return $authUser->can('ViewAny:News');
@@ -44,22 +52,22 @@ class NewsPolicy
 
     public function restore(AuthUser $authUser, News $news): bool
     {
-        return $authUser->can('Restore:News');
+        return $this->isSuperAdmin($authUser) && $authUser->can('Restore:News');
     }
 
     public function forceDelete(AuthUser $authUser, News $news): bool
     {
-        return $authUser->can('ForceDelete:News');
+        return $this->isSuperAdmin($authUser) && $authUser->can('ForceDelete:News');
     }
 
     public function forceDeleteAny(AuthUser $authUser): bool
     {
-        return $authUser->can('ForceDeleteAny:News');
+        return $this->isSuperAdmin($authUser) && $authUser->can('ForceDeleteAny:News');
     }
 
     public function restoreAny(AuthUser $authUser): bool
     {
-        return $authUser->can('RestoreAny:News');
+        return $this->isSuperAdmin($authUser) && $authUser->can('RestoreAny:News');
     }
 
     public function replicate(AuthUser $authUser, News $news): bool

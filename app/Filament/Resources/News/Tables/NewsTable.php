@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\News\Tables;
 
+use App\Filament\Support\ContentTrashActions;
 use App\Models\News;
 use App\Support\TranslatedContentOrder;
 use Filament\Actions\BulkActionGroup;
@@ -62,6 +63,7 @@ class NewsTable
 
             ])
             ->filters([
+                ContentTrashActions::trashedFilter(),
                 SelectFilter::make('category')
                     ->label('Kategori')
                     ->options(function ($livewire): array {
@@ -83,10 +85,14 @@ class NewsTable
             ])
             ->recordActions([
                 EditAction::make(),
+                ContentTrashActions::restoreAction(),
+                ContentTrashActions::forceDeleteAction(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                    ContentTrashActions::restoreBulkAction(),
+                    ContentTrashActions::forceDeleteBulkAction(),
                 ]),
             ]);
     }

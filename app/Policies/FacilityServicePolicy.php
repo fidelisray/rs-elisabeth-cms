@@ -12,6 +12,14 @@ class FacilityServicePolicy
 {
     use HandlesAuthorization;
 
+    /**
+     * Restore dan hard delete hanya untuk super_admin (I18N-9.2, I-15).
+     */
+    private function isSuperAdmin(AuthUser $authUser): bool
+    {
+        return method_exists($authUser, 'hasRole') && $authUser->hasRole('super_admin');
+    }
+
     public function viewAny(AuthUser $authUser): bool
     {
         return $authUser->can('ViewAny:FacilityService');
@@ -44,22 +52,22 @@ class FacilityServicePolicy
 
     public function restore(AuthUser $authUser, FacilityService $facilityService): bool
     {
-        return $authUser->can('Restore:FacilityService');
+        return $this->isSuperAdmin($authUser) && $authUser->can('Restore:FacilityService');
     }
 
     public function forceDelete(AuthUser $authUser, FacilityService $facilityService): bool
     {
-        return $authUser->can('ForceDelete:FacilityService');
+        return $this->isSuperAdmin($authUser) && $authUser->can('ForceDelete:FacilityService');
     }
 
     public function forceDeleteAny(AuthUser $authUser): bool
     {
-        return $authUser->can('ForceDeleteAny:FacilityService');
+        return $this->isSuperAdmin($authUser) && $authUser->can('ForceDeleteAny:FacilityService');
     }
 
     public function restoreAny(AuthUser $authUser): bool
     {
-        return $authUser->can('RestoreAny:FacilityService');
+        return $this->isSuperAdmin($authUser) && $authUser->can('RestoreAny:FacilityService');
     }
 
     public function replicate(AuthUser $authUser, FacilityService $facilityService): bool

@@ -27,9 +27,40 @@ class SeederPermissionPreservationTest extends TestCase
 
         $marketing = Role::findByName('marketing', 'web');
 
+        // 6 modul konten x (ViewAny, View, Create, Update, Delete, DeleteAny) = 36,
+        // + Reorder untuk 3 modul, + View untuk 2 widget = 41 (I18N-9.1).
         $this->assertTrue($marketing->hasPermissionTo('Update:News'));
-        $this->assertFalse($marketing->hasPermissionTo('Delete:News'));
-        $this->assertCount(29, $marketing->permissions);
+        $this->assertTrue($marketing->hasPermissionTo('Delete:News'));
+        $this->assertTrue($marketing->hasPermissionTo('DeleteAny:News'));
+        $this->assertCount(41, $marketing->permissions);
+    }
+
+    public function test_marketing_never_receives_restore_or_force_delete(): void
+    {
+        $this->seedAll();
+
+        $marketing = Role::findByName('marketing', 'web');
+
+        foreach (['News', 'Article', 'Promotion', 'BannerPromotion', 'FacilityService', 'RoomFacility'] as $subject) {
+            foreach (['Restore', 'RestoreAny', 'ForceDelete', 'ForceDeleteAny'] as $action) {
+                $this->assertFalse(
+                    $marketing->hasPermissionTo("{$action}:{$subject}"),
+                    "Marketing tidak boleh memiliki {$action}:{$subject}."
+                );
+            }
+        }
+    }
+
+    public function test_super_admin_holds_restore_and_force_delete_for_content(): void
+    {
+        $this->seedAll();
+
+        $superAdmin = Role::findByName('super_admin', 'web');
+
+        foreach (['News', 'Article', 'Promotion', 'BannerPromotion', 'FacilityService', 'RoomFacility'] as $subject) {
+            $this->assertTrue($superAdmin->hasPermissionTo("Restore:{$subject}"));
+            $this->assertTrue($superAdmin->hasPermissionTo("ForceDelete:{$subject}"));
+        }
     }
 
     public function test_custom_permission_added_by_admin_survives_reseed(): void
@@ -71,7 +102,7 @@ class SeederPermissionPreservationTest extends TestCase
         $this->seedAll();
 
         $marketing = Role::findByName('marketing', 'web');
-        $this->assertCount(29, $marketing->permissions);
+        $this->assertCount(41, $marketing->permissions);
     }
 
     public function test_new_permission_is_added_to_existing_super_admin(): void

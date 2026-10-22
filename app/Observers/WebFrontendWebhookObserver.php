@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Jobs\SendCacheInvalidationWebhookJob;
 use App\Models\Article;
+use App\Models\AuditLog;
 use App\Models\BannerPromotion;
 use App\Models\FacilityService;
 use App\Models\News;
@@ -59,22 +60,19 @@ class WebFrontendWebhookObserver
     }
 
     /**
-     * Handle the Model "restored" event (Restore Soft Deleted).
+     * Audit pemulihan (I18N-9.6). Webhook tidak dikirim di sini: restore() memanggil save()
+     * yang sudah memicu "saved" (content.updated).
      */
     public function restored(Model $model): void
     {
         $module = $this->getModule($model);
         if ($module) {
-            $slug = $model->slug ?? null;
-            SendCacheInvalidationWebhookJob::dispatch($module, 'content.updated', $slug)->afterCommit();
+            AuditLog::record('content.restored', $model, [
+                'module' => $module,
+                'slug_id' => $model->getTranslation('slug', 'id', false),
+                'slug_en' => $model->getTranslation('slug', 'en', false),
+                'source' => 'panel',
+            ]);
         }
-    }
-
-    /**
-     * Handle the Model "forceDeleted" event.
-     */
-    public function forceDeleted(Model $model): void
-    {
-        $this->deleted($model);
     }
 }

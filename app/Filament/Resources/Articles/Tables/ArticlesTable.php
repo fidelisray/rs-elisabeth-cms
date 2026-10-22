@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Articles\Tables;
 
+use App\Filament\Support\ContentTrashActions;
 use App\Support\TranslatedContentOrder;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -55,14 +56,19 @@ class ArticlesTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                ContentTrashActions::trashedFilter(),
                 //
             ])
             ->recordActions([
                 EditAction::make(),
+                ContentTrashActions::restoreAction(),
+                ContentTrashActions::forceDeleteAction(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                    ContentTrashActions::restoreBulkAction(),
+                    ContentTrashActions::forceDeleteBulkAction(),
                 ]),
             ]);
     }

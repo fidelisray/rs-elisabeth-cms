@@ -112,6 +112,11 @@ class PromotionForm
                     ->columnSpanFull()
                     ->description('Atur apakah promotion ini akan ditampilkan pada halaman website')
                     ->schema([
+                        Placeholder::make('trash_notice')
+                            ->label('Penghapusan')
+                            ->content('Konten yang dihapus tidak tampil di website. Hanya Super Admin yang dapat memulihkannya.')
+                            ->columnSpanFull(),
+
                         Toggle::make('is_active')
                             ->label('Aktif dan Tampilkan di halaman website')
                             ->default(false)

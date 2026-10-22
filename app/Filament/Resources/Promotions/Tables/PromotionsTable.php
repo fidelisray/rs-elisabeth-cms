@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Promotions\Tables;
 
+use App\Filament\Support\ContentTrashActions;
 use App\Models\Promotion;
 use App\Support\TranslatedContentOrder;
 use Filament\Actions\BulkActionGroup;
@@ -60,14 +61,19 @@ class PromotionsTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                ContentTrashActions::trashedFilter(),
                 //
             ])
             ->recordActions([
                 EditAction::make(),
+                ContentTrashActions::restoreAction(),
+                ContentTrashActions::forceDeleteAction(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                    ContentTrashActions::restoreBulkAction(),
+                    ContentTrashActions::forceDeleteBulkAction(),
                 ]),
             ]);
     }

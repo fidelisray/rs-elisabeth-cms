@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\FacilityServices\Tables;
 
+use App\Filament\Support\ContentTrashActions;
 use App\Support\ApiCacheInvalidator;
 use App\Support\TranslatedContentOrder;
 use Filament\Actions\BulkActionGroup;
@@ -72,6 +73,7 @@ class FacilityServiceTable
                 ApiCacheInvalidator::forModule('facilities');
             })
             ->filters([
+                ContentTrashActions::trashedFilter(),
                 TernaryFilter::make('is_active')
                     ->label('Status Aktif')
                     ->trueLabel('Aktif saja')
@@ -80,10 +82,14 @@ class FacilityServiceTable
             ])
             ->recordActions([
                 EditAction::make(),
+                ContentTrashActions::restoreAction(),
+                ContentTrashActions::forceDeleteAction(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
+                    ContentTrashActions::restoreBulkAction(),
+                    ContentTrashActions::forceDeleteBulkAction(),
                 ]),
             ]);
     }

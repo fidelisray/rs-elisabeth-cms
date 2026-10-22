@@ -12,6 +12,14 @@ class RoomFacilityPolicy
 {
     use HandlesAuthorization;
 
+    /**
+     * Restore dan hard delete hanya untuk super_admin (I18N-9.2, I-15).
+     */
+    private function isSuperAdmin(AuthUser $authUser): bool
+    {
+        return method_exists($authUser, 'hasRole') && $authUser->hasRole('super_admin');
+    }
+
     public function viewAny(AuthUser $authUser): bool
     {
         return $authUser->can('ViewAny:RoomFacility');
@@ -44,22 +52,22 @@ class RoomFacilityPolicy
 
     public function restore(AuthUser $authUser, RoomFacility $roomFacility): bool
     {
-        return $authUser->can('Restore:RoomFacility');
+        return $this->isSuperAdmin($authUser) && $authUser->can('Restore:RoomFacility');
     }
 
     public function forceDelete(AuthUser $authUser, RoomFacility $roomFacility): bool
     {
-        return $authUser->can('ForceDelete:RoomFacility');
+        return $this->isSuperAdmin($authUser) && $authUser->can('ForceDelete:RoomFacility');
     }
 
     public function forceDeleteAny(AuthUser $authUser): bool
     {
-        return $authUser->can('ForceDeleteAny:RoomFacility');
+        return $this->isSuperAdmin($authUser) && $authUser->can('ForceDeleteAny:RoomFacility');
     }
 
     public function restoreAny(AuthUser $authUser): bool
     {
-        return $authUser->can('RestoreAny:RoomFacility');
+        return $this->isSuperAdmin($authUser) && $authUser->can('RestoreAny:RoomFacility');
     }
 
     public function replicate(AuthUser $authUser, RoomFacility $roomFacility): bool
