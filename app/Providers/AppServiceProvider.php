@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Services\DoctorApiService;
+use App\Services\DoctorSyncService;
 use App\Services\FeedbackService;
 use App\Services\WebFrontendWebhookService;
 use Filament\Forms\Components\Field;
@@ -19,6 +21,14 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         //
+        $this->app->singleton(DoctorApiService::class, function ($app) {
+            return new DoctorApiService;
+        });
+
+        $this->app->singleton(DoctorSyncService::class, function ($app) {
+            return new DoctorSyncService($app->make(DoctorApiService::class));
+        });
+
         $this->app->singleton(FeedbackService::class, function ($app) {
             return new FeedbackService;
         });
