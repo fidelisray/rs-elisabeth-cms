@@ -31,6 +31,48 @@
                 if (this.score === 3) return 'Kuat';
                 if (this.score === 4) return 'Sangat Kuat';
                 return 'Sangat Lemah';
+            },
+            debounceTimer: null,
+            clearFieldError(field, inputEl = null) {
+                const clearWrp = (wrp) => {
+                    if (!wrp) return;
+                    wrp.querySelectorAll('[data-validation-error]').forEach((el) => el.remove());
+                    wrp.querySelector('.fi-input-wrp')?.classList.remove('fi-invalid');
+                };
+
+                if (inputEl) {
+                    clearWrp(inputEl.closest('[data-field-wrapper]'));
+                }
+
+                const clearById = (id) => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        clearWrp(el.closest('[data-field-wrapper]'));
+                    }
+                };
+
+                if (field === 'password') {
+                    clearById('data.password');
+                    clearById('data.passwordConfirmation');
+                } else if (field === 'passwordConfirmation') {
+                    clearById('data.passwordConfirmation');
+                }
+            },
+            handlePasswordInput(event) {
+                this.password = event.target.value;
+                this.clearFieldError('password', event.target);
+                clearTimeout(this.debounceTimer);
+                this.debounceTimer = setTimeout(() => {
+                    $wire.clearValidationFor('password');
+                }, 400);
+            },
+            handleConfirmationInput(event) {
+                this.confirmation = event.target.value;
+                this.clearFieldError('passwordConfirmation', event.target);
+                clearTimeout(this.debounceTimer);
+                this.debounceTimer = setTimeout(() => {
+                    $wire.clearValidationFor('passwordConfirmation');
+                }, 400);
             }
         }" class="space-y-6">
             <form wire:submit="save" class="space-y-6">

@@ -81,7 +81,7 @@ class ForcePasswordChange extends Page
                             ->required()
                             ->rule(new StrongNewPassword($user?->password))
                             ->extraInputAttributes([
-                                'x-on:input' => 'password = $event.target.value',
+                                'x-on:input' => 'handlePasswordInput($event)',
                             ]),
 
                         View::make('filament.pages.auth.password-strength-indicator'),
@@ -94,13 +94,22 @@ class ForcePasswordChange extends Page
                             ->same('password')
                             ->dehydrated(false)
                             ->extraInputAttributes([
-                                'x-on:input' => 'confirmation = $event.target.value',
+                                'x-on:input' => 'handleConfirmationInput($event)',
                             ]),
 
                         View::make('filament.pages.auth.password-match-indicator'),
                     ]),
             ])
             ->statePath('data');
+    }
+
+    public function clearValidationFor(string $field = 'password'): void
+    {
+        if ($field === 'password') {
+            $this->resetErrorBag(['data.password', 'data.passwordConfirmation']);
+        } else {
+            $this->resetErrorBag(['data.passwordConfirmation']);
+        }
     }
 
     public function save(): void
