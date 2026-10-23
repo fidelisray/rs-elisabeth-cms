@@ -28,6 +28,7 @@ class FacilityServiceForm
                     ->schema([
                         TextInput::make('name')
                             ->required()
+                            ->clearErrorOnInput()
                             ->maxLength(255)
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Set $set, $get, ?string $operation, ?string $state) {
@@ -39,6 +40,7 @@ class FacilityServiceForm
                         TextInput::make('slug')
                             ->placeholder('Klik pada form, teks akan terisi otomatis')
                             ->required()
+                            ->clearErrorOnInput()
                             ->maxLength(255)
                             ->unique(column: fn ($livewire = null): string => 'slug->'.($livewire?->activeLocale ?? app()->getLocale()), ignoreRecord: true)
                             ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
@@ -55,18 +57,21 @@ class FacilityServiceForm
                                 'Unggulan' => 'Unggulan',
                             ])
                             ->required()
+                            ->clearErrorOnChange()
                             ->columnSpanFull(),
 
                         Textarea::make('short_description')
                             ->maxLength(255)
                             ->label('Deskripsi Singkat Fasilitas')
                             ->required()
+                            ->clearErrorOnInput()
                             ->columnSpanFull()
                             ->helperText('Penjelasan fasilitas secara singkat dan padat'),
 
                         RichEditor::make('description')
                             ->label('Deskripsi Lengkap Fasilitas')
                             ->required()
+                            ->clearErrorOnInput()
                             ->columnSpanFull()
                             ->helperText('Deskripsi lengkap yang menjelaskan fasilitas secara detil'),
 
@@ -100,6 +105,7 @@ class FacilityServiceForm
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                             ->helperText('Upload gambar dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB')
                             ->required()
+                            ->clearErrorOnChange()
                             ->columnSpanFull(),
                     ]),
 

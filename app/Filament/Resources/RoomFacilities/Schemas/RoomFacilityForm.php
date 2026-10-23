@@ -33,6 +33,7 @@ class RoomFacilityForm
                             ->label('Nama Ruangan')
                             ->placeholder('President Suite, VIP, Kelas I...')
                             ->required()
+                            ->clearErrorOnInput()
                             ->maxLength(100)
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Set $set, Get $get, ?string $operation, ?string $state) {
@@ -48,6 +49,7 @@ class RoomFacilityForm
                             ->label('Identifier')
                             ->placeholder('Klik pada form teks akan terisi otomatis')
                             ->required()
+                            ->clearErrorOnInput()
                             ->maxLength(100)
                             ->unique(column: fn ($livewire = null): string => 'slug->'.($livewire?->activeLocale ?? app()->getLocale()), ignoreRecord: true)
                             ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
@@ -61,6 +63,7 @@ class RoomFacilityForm
                         Textarea::make('tagline')
                             ->label('Tagline / Deskripsi Singkat')
                             ->required()
+                            ->clearErrorOnInput()
                             ->placeholder('Deskripsi singkat sebagai Highlight untuk ruangan ini...')
                             ->maxLength(500)
                             ->rows(3)
@@ -69,6 +72,7 @@ class RoomFacilityForm
                         Textarea::make('description')
                             ->label('Deskripsi Lengkap')
                             ->required()
+                            ->clearErrorOnInput()
                             ->placeholder('Deskripsi lengkap ruangan terkait fasilitas, keunggulan, atau layanan lainnya...')
                             ->rows(5)
                             ->columnSpanFull(),
@@ -95,6 +99,7 @@ class RoomFacilityForm
                             ->maxSize(5120) // 5 MB
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                             ->required()
+                            ->clearErrorOnChange()
                             ->helperText('Upload foto dengan format JPEG/JPG/PNG/WebP, ukuran maksimal 5 MB, Resolusi ideal 1920x1080')
                             ->columnSpanFull(),
                     ]),
@@ -112,12 +117,14 @@ class RoomFacilityForm
                                     ->label('Nama Grup ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Indonesia')
                                     ->placeholder('Contoh: Kamar & Ruangan')
                                     ->required()
+                                    ->clearErrorOnInput()
                                     ->maxLength(100)
                                     ->columnSpanFull(),
 
                                 TextInput::make('group.en')
                                     ->label('Nama Grup ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â English')
                                     ->required()
+                                    ->clearErrorOnInput()
                                     ->maxLength(100)
                                     ->columnSpanFull(),
 
@@ -130,11 +137,13 @@ class RoomFacilityForm
                                             ->label('Nama Fasilitas ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Indonesia')
                                             ->placeholder('Contoh: Air Conditioner (AC)')
                                             ->required()
+                                            ->clearErrorOnInput()
                                             ->maxLength(100),
 
                                         TextInput::make('name.en')
                                             ->label('Nama Fasilitas ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â English')
                                             ->required()
+                                            ->clearErrorOnInput()
                                             ->maxLength(100),
 
                                         TextInput::make('value.id')
@@ -206,17 +215,20 @@ class RoomFacilityForm
                                         ],
                                     ])
                                     ->searchable()
-                                    ->required(),
+                                    ->required()
+                                    ->clearErrorOnChange(),
 
                                 TextInput::make('label.id')
                                     ->label('Label Tag ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Indonesia')
                                     ->placeholder('Contoh: Kamar Terluas')
                                     ->required()
+                                    ->clearErrorOnInput()
                                     ->maxLength(100),
 
                                 TextInput::make('label.en')
                                     ->label('Label Tag ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â English')
                                     ->required()
+                                    ->clearErrorOnInput()
                                     ->maxLength(100),
                             ])
                             ->columns(2)

@@ -19,6 +19,7 @@ class UserForm
                 TextInput::make('name')
                     ->label('Nama Lengkap')
                     ->required()
+                    ->clearErrorOnInput()
                     ->maxLength(255)
                     ->columnSpanFull(),
 
@@ -28,6 +29,7 @@ class UserForm
                     ->dehydrateStateUsing(fn (?string $state): string => User::normalizeEmail($state ?? ''))
                     ->email()
                     ->required()
+                    ->clearErrorOnInput()
                     ->unique(ignoreRecord: true)
                     ->columnSpanFull(),
 
@@ -53,7 +55,8 @@ class UserForm
                     // jadi pada record itu field tidak wajib, tidak bisa diubah, dan tidak disimpan.
                     ->disabled(fn (?User $record): bool => $record?->isSuperAdmin() ?? false)
                     ->dehydrated(fn (?User $record): bool => ! ($record?->isSuperAdmin() ?? false))
-                    ->required(fn (?User $record): bool => ! ($record?->isSuperAdmin() ?? false)),
+                    ->required(fn (?User $record): bool => ! ($record?->isSuperAdmin() ?? false))
+                    ->clearErrorOnChange(),
 
                 // Password opsional saat mengedit akun staf biasa (bila diisi, pengguna wajib
                 // mengganti password saat login berikutnya). Disembunyikan pada akun super_admin

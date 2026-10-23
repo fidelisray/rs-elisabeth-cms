@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\FeedbackService;
 use App\Services\WebFrontendWebhookService;
+use Filament\Forms\Components\Field;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -32,6 +33,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Field::macro('clearErrorOnInput', function (): static {
+            return $this->extraFieldWrapperAttributes([
+                'x-on:input' => "
+                    \$el.querySelectorAll('[data-validation-error]').forEach((e) => e.remove());
+                    \$el.querySelector('.fi-input-wrp')?.classList.remove('fi-invalid');
+                ",
+                'x-on:change' => "
+                    \$el.querySelectorAll('[data-validation-error]').forEach((e) => e.remove());
+                    \$el.querySelector('.fi-input-wrp')?.classList.remove('fi-invalid');
+                ",
+            ], merge: true);
+        });
+
+        Field::macro('clearErrorOnChange', function (): static {
+            return $this->clearErrorOnInput();
+        });
+
         Translatable::fallback(
             fallbackLocale: 'id',
             fallbackAny: true,
