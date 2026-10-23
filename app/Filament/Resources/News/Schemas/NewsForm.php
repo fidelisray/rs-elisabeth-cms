@@ -28,6 +28,7 @@ class NewsForm
                         TextInput::make('title')
                             ->label('Headline Berita')
                             ->required()
+                            ->clearErrorOnInput()
                             ->maxLength(255)
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Set $set, Get $get, ?string $operation, ?string $state) {
@@ -40,6 +41,7 @@ class NewsForm
                             ->label('Identifier')
                             ->placeholder('Klik pada form dan teks akan terisi otomatis')
                             ->required()
+                            ->clearErrorOnInput()
                             ->maxLength(255)
                             ->unique(column: fn ($livewire = null): string => 'slug->'.($livewire?->activeLocale ?? app()->getLocale()), ignoreRecord: true)
                             ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
@@ -48,12 +50,14 @@ class NewsForm
                         TextInput::make('category')
                             ->label('Kategori')
                             ->required()
+                            ->clearErrorOnInput()
                             ->maxLength(255)
                             ->placeholder('Masukkan kategori sesuai bahasa yang dipilih'),
 
                         TextInput::make('author')
                             ->label('Author')
                             ->required()
+                            ->clearErrorOnInput()
                             ->maxLength(25)
                             ->columnSpanFull(),
 
@@ -61,12 +65,14 @@ class NewsForm
                             ->label('Ringkasan Berita')
                             ->placeholder('Ringkasan singkat yang akan muncul di bawah headline')
                             ->required()
+                            ->clearErrorOnInput()
                             ->maxLength(255)
                             ->columnSpanFull(),
 
                         RichEditor::make('content')
                             ->label('Isi Konten Berita')
                             ->required()
+                            ->clearErrorOnInput()
                             ->columnSpanFull(),
                     ]),
 
@@ -76,6 +82,7 @@ class NewsForm
                         FileUpload::make('image_path')
                             ->label('Gambar')
                             ->required()
+                            ->clearErrorOnChange()
                             ->disk(config('filesystems.media_disk'))
                             ->directory('news')
                             ->image()

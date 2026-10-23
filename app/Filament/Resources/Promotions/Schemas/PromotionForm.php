@@ -31,6 +31,7 @@ class PromotionForm
                             ->label('Nama Promosi')
                             ->placeholder('Promo Terbaru, Promo Perawatan..')
                             ->required()
+                            ->clearErrorOnInput()
                             ->maxLength(255)
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Set $set, Get $get, ?string $operation, ?string $state) {
@@ -43,6 +44,7 @@ class PromotionForm
                             ->label('Identifier')
                             ->placeholder('Klik pada form dan teks akan terisi otomatis')
                             ->required()
+                            ->clearErrorOnInput()
                             ->maxLength(100)
                             ->unique(column: fn ($livewire = null): string => 'slug->'.($livewire?->activeLocale ?? app()->getLocale()), ignoreRecord: true)
                             ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
@@ -52,12 +54,14 @@ class PromotionForm
                             ->label('Deskripsi Singkat')
                             ->placeholder('Deskripsi singkat mengenai promosi')
                             ->required()
+                            ->clearErrorOnInput()
                             ->maxLength(255)
                             ->columnSpanFull(),
 
                         RichEditor::make('description')
                             ->label('Deskripsi')
                             ->required()
+                            ->clearErrorOnInput()
                             ->columnSpanFull(),
 
                         DatePicker::make('start_date')
@@ -93,6 +97,7 @@ class PromotionForm
                         FileUpload::make('image_path')
                             ->label('Poster')
                             ->required()
+                            ->clearErrorOnChange()
                             ->disk(config('filesystems.media_disk'))
                             ->directory('promotions')
                             ->image()

@@ -28,6 +28,7 @@ class ArticleForm
                         TextInput::make('title')
                             ->label('Judul Artikel')
                             ->required()
+                            ->clearErrorOnInput()
                             ->maxLength(255)
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Set $set, Get $get, ?string $operation, ?string $state) {
@@ -40,6 +41,7 @@ class ArticleForm
                             ->label('Identifier')
                             ->placeholder('Klik pada form dan teks akan terisi otomatis')
                             ->required()
+                            ->clearErrorOnInput()
                             ->maxLength(255)
                             ->unique(column: fn ($livewire = null): string => 'slug->'.($livewire?->activeLocale ?? app()->getLocale()), ignoreRecord: true)
                             ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
@@ -49,11 +51,13 @@ class ArticleForm
                             ->label('Kategori')
                             ->placeholder('Masukkan kategori sesuai bahasa yang dipilih')
                             ->maxLength(100)
-                            ->required(),
+                            ->required()
+                            ->clearErrorOnInput(),
 
                         TextInput::make('author')
                             ->label('Author')
                             ->required()
+                            ->clearErrorOnInput()
                             ->maxLength(50)
                             ->columnSpanFull(),
 
@@ -61,12 +65,14 @@ class ArticleForm
                             ->label('Ringkasan Artikel')
                             ->maxLength(250)
                             ->columnSpanFull()
-                            ->required(),
+                            ->required()
+                            ->clearErrorOnInput(),
 
                         RichEditor::make('content')
                             ->label('Isi Konten Artikel')
                             ->columnSpanFull()
-                            ->required(),
+                            ->required()
+                            ->clearErrorOnInput(),
                     ]),
 
                 Section::make('Thumbnail Article')
@@ -75,6 +81,7 @@ class ArticleForm
                         FileUpload::make('image_path')
                             // ->label('Thumbnail Artikel')
                             ->required()
+                            ->clearErrorOnChange()
                             ->disk(config('filesystems.media_disk'))
                             ->directory('articles')
                             ->image()

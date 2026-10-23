@@ -15,7 +15,7 @@ class CustomProfile extends BaseEditProfile
     {
         return $schema
             ->components([
-                $this->getNameFormComponent(),
+                $this->getNameFormComponent()->clearErrorOnInput(),
                 $this->getEmailFormComponent()->disabled(),
                 Section::make('Keamanan Kata Sandi')
                     ->description('Demi menjaga keamanan akun, seluruh pembaruan kata sandi dilakukan secara terpusat dengan sistem pengecekan kekuatan sandi.')
