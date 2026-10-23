@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Cms\ArticleApiController;
 use App\Http\Controllers\Api\Cms\BannerPromotionApiController;
+use App\Http\Controllers\Api\Cms\DoctorApiController;
 use App\Http\Controllers\Api\Cms\FacilityServiceApiController;
 use App\Http\Controllers\Api\Cms\NewsApiController;
 use App\Http\Controllers\Api\Cms\PromotionApiController;
@@ -36,4 +37,8 @@ Route::prefix('v1/cms')
 
         // Banner Promotions (Carousel Halaman Utama)
         Route::get('/banner-promotions', [BannerPromotionApiController::class, 'index']);
+
+        // Doctors (Profil Dokter)
+        Route::get('/doctors', [DoctorApiController::class, 'index']);
+        Route::get('/doctors/{paramedicCode}', [DoctorApiController::class, 'show']);
     });

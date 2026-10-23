@@ -31,6 +31,7 @@ class ApiCacheInvalidator
         'banner_promotions' => 'rs_web_cms_api_banner_promotions',
         'facilities' => 'rs_web_cms_api_facility_services',
         'room_facilities' => 'rs_web_cms_api_room_facilities',
+        'doctors' => 'rs_web_cms_api_doctors',
     ];
 
     private const PAGINATED_MODULES = ['news', 'articles', 'promotions'];

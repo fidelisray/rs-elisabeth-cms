@@ -42,6 +42,7 @@ class RoleAndPermissionSeeder extends Seeder
         'BannerPromotion',
         'FacilityService',
         'RoomFacility',
+        'Doctor',
     ];
 
     /**
@@ -64,6 +65,7 @@ class RoleAndPermissionSeeder extends Seeder
         'BannerPromotion',
         'FacilityService',
         'RoomFacility',
+        'Doctor',
         'User',
         'Role',
     ];
