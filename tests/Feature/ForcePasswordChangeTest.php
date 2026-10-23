@@ -245,4 +245,31 @@ class ForcePasswordChangeTest extends TestCase
 
         $this->assertTrue(Hash::check('Voluntary#2026Password', $user->fresh()->password));
     }
+
+    public function test_clear_validation_for_password_clears_both_password_and_confirmation_errors(): void
+    {
+        $user = $this->user();
+        $this->actingAs($user);
+
+        Livewire::test(ForcePasswordChange::class)
+            ->fillForm(['password' => '123456', 'passwordConfirmation' => 'Berbeda#2026x'])
+            ->call('save')
+            ->assertHasFormErrors(['password', 'passwordConfirmation'])
+            ->call('clearValidationFor', 'password')
+            ->assertHasNoFormErrors(['password', 'passwordConfirmation']);
+    }
+
+    public function test_clear_validation_for_confirmation_clears_only_confirmation_error(): void
+    {
+        $user = $this->user();
+        $this->actingAs($user);
+
+        Livewire::test(ForcePasswordChange::class)
+            ->fillForm(['password' => '123456', 'passwordConfirmation' => 'Berbeda#2026x'])
+            ->call('save')
+            ->assertHasFormErrors(['password', 'passwordConfirmation'])
+            ->call('clearValidationFor', 'passwordConfirmation')
+            ->assertHasNoFormErrors(['passwordConfirmation'])
+            ->assertHasFormErrors(['password']);
+    }
 }
