@@ -4,8 +4,10 @@ use App\Http\Controllers\Api\Cms\ArticleApiController;
 use App\Http\Controllers\Api\Cms\BannerPromotionApiController;
 use App\Http\Controllers\Api\Cms\DoctorApiController;
 use App\Http\Controllers\Api\Cms\FacilityServiceApiController;
+use App\Http\Controllers\Api\Cms\FeedbackApiController;
 use App\Http\Controllers\Api\Cms\NewsApiController;
 use App\Http\Controllers\Api\Cms\PromotionApiController;
+use App\Http\Controllers\Api\Cms\QuestionnaireApiController;
 use App\Http\Controllers\Api\Cms\RoomFacilityApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -41,4 +43,11 @@ Route::prefix('v1/cms')
         // Doctors (Profil Dokter)
         Route::get('/doctors', [DoctorApiController::class, 'index']);
         Route::get('/doctors/{paramedicCode}', [DoctorApiController::class, 'show']);
+
+        // Kritik dan saran pasien (Web Frontend, POST). Body ikut ditandatangani HMAC.
+        Route::post('/feedbacks', [FeedbackApiController::class, 'store']);
+
+        // Kuesioner kepuasan pasien. Jenis kuesioner dari URL: igd, rawat-jalan, rawat-inap.
+        Route::post('/questionnaires/{type}', [QuestionnaireApiController::class, 'store'])
+            ->where('type', 'igd|rawat-jalan|rawat-inap');
     });

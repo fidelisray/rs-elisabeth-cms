@@ -44,8 +44,12 @@ class VerifyCmsHmacSignature
         }
 
         // 4. Hitung dan verifikasi Signature
-        // Format: base64_encode(hash_hmac('sha256', {timestamp} . {consId}, {secretKey}, true))
-        $expectedSignatureRaw = hash_hmac('sha256', $timestamp.$consId, $secretKey, true);
+        // GET/HEAD (tanpa body): base64(hmac_sha256({timestamp}.{consId}, secret)), format lama.
+        // POST/PUT/PATCH/DELETE: base64(hmac_sha256({timestamp}.{consId}.{rawBody}, secret)).
+        // Body ikut ditandatangani agar payload tidak bisa diubah atau di-replay dengan isi lain.
+        // Body GET diabaikan: klien GET tidak mengirim body, dan test lama mengirim "[]".
+        $signedBody = in_array($request->method(), ['GET', 'HEAD'], true) ? '' : $request->getContent();
+        $expectedSignatureRaw = hash_hmac('sha256', $timestamp.$consId.$signedBody, $secretKey, true);
         $expectedSignature = base64_encode($expectedSignatureRaw);
 
         // Gunakan hash_equals untuk mencegah Timing Attack
