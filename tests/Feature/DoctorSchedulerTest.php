@@ -2,58 +2,99 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Console\Scheduling\Event;
+use App\Services\DoctorSyncService;
+use Illuminate\Console\Command;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Support\Carbon;
+use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
-/**
- * Penarikan data dokter dari SIMRS dijalankan setiap hari pukul 04:00 WIB.
- * Urutan wajib: dokter:sync (menulis ke tabel doctors) lalu dokter:fetch-all (warm-up cache).
- */
 class DoctorSchedulerTest extends TestCase
 {
-    /**
-     * @return array<int, Event>
-     */
-    private function doctorEvents(): array
+    public function test_daily_refresh_is_due_at_0400_wib_and_not_before(): void
     {
-        $schedule = $this->app->make(Schedule::class);
-
-        return collect($schedule->events())
-            ->filter(fn (Event $event) => str_contains((string) $event->command, 'dokter:'))
-            ->values()
-            ->all();
-    }
-
-    public function test_sync_command_is_scheduled_daily_at_0400_jakarta(): void
-    {
-        $events = collect($this->doctorEvents())
-            ->filter(fn (Event $event) => str_contains((string) $event->command, 'dokter:sync'));
-
-        $this->assertCount(1, $events, 'dokter:sync harus terdaftar tepat satu kali di scheduler.');
-
-        $event = $events->first();
-        $this->assertSame('0 4 * * *', $event->expression, 'Jadwal harus setiap hari pukul 04:00.');
-        $this->assertSame('Asia/Jakarta', $event->timezone, 'Jadwal harus memakai zona WIB.');
-    }
-
-    public function test_cache_warmup_runs_after_sync_on_the_same_schedule(): void
-    {
-        $events = collect($this->doctorEvents());
-
-        $warmup = $events->first(fn (Event $event) => str_contains((string) $event->command, 'dokter:fetch-all'));
-        $this->assertNotNull($warmup, 'dokter:fetch-all harus terdaftar di scheduler.');
-
-        $this->assertSame('0 4 * * *', $warmup->expression);
-        $this->assertSame('Asia/Jakarta', $warmup->timezone);
-    }
-
-    public function test_sync_does_not_overlap_with_itself(): void
-    {
-        $event = collect($this->doctorEvents())
-            ->first(fn (Event $event) => str_contains((string) $event->command, 'dokter:sync'));
-
+        $events = collect($this->app->make(Schedule::class)->events());
+        $event = $events->first(fn ($event) => str_contains((string) $event->command, 'dokter:refresh'));
         $this->assertNotNull($event);
-        $this->assertTrue($event->withoutOverlapping, 'Sinkronisasi tidak boleh berjalan dobel.');
+        $this->assertSame('0 4 * * *', $event->expression);
+        $this->assertSame('Asia/Jakarta', $event->timezone);
+        $this->assertTrue($event->withoutOverlapping);
+        Carbon::setTestNow(Carbon::parse('2026-10-25 03:59:00', 'Asia/Jakarta'));
+        try {
+            $this->assertFalse($event->isDue($this->app));
+            Carbon::setTestNow(Carbon::parse('2026-10-25 04:00:00', 'Asia/Jakarta'));
+            $this->assertTrue($event->isDue($this->app));
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_refresh_runs_sync_before_warmup(): void
+    {
+        $calls = new \ArrayObject;
+        $this->registerProbe('dokter:sync', $calls);
+        $this->registerProbe('dokter:fetch-all', $calls);
+        $this->artisan('dokter:refresh')->assertSuccessful();
+        $this->assertSame(['dokter:sync', 'dokter:fetch-all'], $calls->getArrayCopy());
+    }
+
+    public function test_failed_sync_stops_warmup(): void
+    {
+        $calls = new \ArrayObject;
+        $this->registerProbe('dokter:sync', $calls, 1);
+        $this->registerProbe('dokter:fetch-all', $calls);
+        $this->artisan('dokter:refresh')->assertFailed();
+        $this->assertSame(['dokter:sync'], $calls->getArrayCopy());
+    }
+
+    public function test_sync_reports_failure_when_no_doctors_can_be_fetched(): void
+    {
+        $this->mock(DoctorSyncService::class)->shouldReceive('syncFromMedInfras')->once()
+            ->andReturn(['created' => 0, 'updated' => 0, 'total' => 0]);
+        $this->artisan('dokter:sync')->assertFailed();
+    }
+
+    public function test_schedule_worker_can_start_and_remain_running(): void
+    {
+        // Berjalan sebelum batas menit; tidak menunggu atau memicu jadwal RS.
+        $process = new Process([PHP_BINARY, 'artisan', 'schedule:work', '--no-interaction'], base_path(), [
+            'APP_ENV' => 'testing',
+            'DB_CONNECTION' => 'sqlite',
+            'DB_DATABASE' => ':memory:',
+            'DB_URL' => '',
+            'CACHE_STORE' => 'array',
+            'RS_API_BASE_URL' => 'http://127.0.0.1:1',
+            'RS_MEDIN_API_CONSID' => '',
+            'RS_MEDIN_API_SECRETKEY' => '',
+            'WEB_FRONTEND_WEBHOOK_URL' => '',
+        ]);
+        try {
+            $process->start();
+            usleep(1500000);
+            $this->assertTrue($process->isRunning(), $process->getErrorOutput());
+        } finally {
+            $process->stop(1);
+        }
+    }
+
+    private function registerProbe(string $name, \ArrayObject $calls, int $exit = 0): void
+    {
+        $command = new class($name, $calls, $exit) extends Command
+        {
+            public function __construct(string $name, private \ArrayObject $calls, private int $exit)
+            {
+                $this->signature = $name;
+                parent::__construct();
+            }
+
+            public function handle(): int
+            {
+                $this->calls[] = $this->getName();
+
+                return $this->exit;
+            }
+        };
+        $this->app->make(Kernel::class)->registerCommand($command);
     }
 }

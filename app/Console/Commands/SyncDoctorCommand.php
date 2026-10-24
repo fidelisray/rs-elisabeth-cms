@@ -30,6 +30,12 @@ class SyncDoctorCommand extends Command
 
         $result = $syncService->syncFromMedInfras();
 
+        if ($result['total'] === 0) {
+            $this->error('Tidak ada data dokter yang dapat disinkronkan. Periksa koneksi dan respons MedInfras.');
+
+            return Command::FAILURE;
+        }
+
         $this->info('Sinkronisasi selesai.');
         $this->table(
             ['Total Paramedis Unik', 'Baru Ditambahkan', 'Diperbarui'],

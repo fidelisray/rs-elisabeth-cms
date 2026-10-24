@@ -1,0 +1,25 @@
+# Gunakan bersama file dasar, dari direktori root proyek:
+# docker compose -f docker-compose.yml -f docker/compose.scheduler.yml up -d cms_scheduler
+services:
+  cms_scheduler:
+    image: ${CMS_IMAGE:-172.17.12.17:5051/fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest}
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      LOG_LEVEL: error
+      DB_HOST: rses_cms_db
+    command: ["php", "artisan", "schedule:work", "--no-interaction"]
+    stop_grace_period: 60s
+    networks:
+      - rses_cms_network
+    volumes:
+      - storage_data:/var/www/html/storage
+    depends_on:
+      cms_app:
+        condition: service_healthy
+      rses_cms_db:
+        condition: service_healthy

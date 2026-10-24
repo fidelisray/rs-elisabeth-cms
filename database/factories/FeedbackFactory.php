@@ -18,11 +18,11 @@ class FeedbackFactory extends Factory
         return [
             'ticket_number' => 'FB-'.now()->format('Ymd').'-'.Str::upper(Str::random(6)),
             'reporter_name' => fake('id_ID')->name(),
-            'relation_to_patient' => 'Keluarga',
+            'relation_to_patient' => 'Orang Tua',
             'relation_other' => null,
             'patient_name' => fake('id_ID')->name(),
             'phone_number' => '081234567890',
-            'categories' => ['Waktu Tunggu'],
+            'categories' => ['Pelayanan Non Medis (Prosedur pendaftaran, pembayaran, klaim asuransi, dll)'],
             'category_other' => null,
             'complaint_detail' => 'Waktu tunggu di poliklinik terlalu lama.',
             'expected_solution' => 'Penambahan petugas pendaftaran.',

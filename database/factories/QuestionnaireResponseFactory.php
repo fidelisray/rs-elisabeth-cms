@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\QuestionnaireResponse;
+use App\Support\QuestionnaireDefinition;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -19,8 +20,9 @@ class QuestionnaireResponseFactory extends Factory
             'age_group' => '15 - 64 tahun',
             'gender' => 'Perempuan',
             'payment_method' => 'BPJS Kesehatan',
-            'ratings' => ['q1' => 'Sangat Puas', 'q2' => 'Puas'],
-            'suggestions' => null,
+            'ratings' => fn (array $attributes) => collect(QuestionnaireDefinition::QUESTIONS[$attributes['questionnaire_type']])
+                ->map(fn ($scale) => QuestionnaireDefinition::SCALES[$scale][3])->all(),
+            'suggestions' => 'Saran peningkatan layanan.',
             'locale' => 'id',
             'source' => 'qr_barcode',
             'submitted_at' => now(),

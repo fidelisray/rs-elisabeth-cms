@@ -18,16 +18,17 @@ class DoctorApiController extends Controller
     public function index(Request $request)
     {
         $locale = TranslatedContentOrder::locale(app()->getLocale());
-        $specialty = $request->query('specialty');
+        $validated = $request->validate(['specialty' => ['nullable', 'string', 'max:255']]);
+        $specialty = $validated['specialty'] ?? null;
 
-        $cacheKey = ApiCacheInvalidator::keyForModule('doctors', $locale).($specialty ? '_'.md5($specialty) : '');
+        $cacheKey = ApiCacheInvalidator::doctorListKey($locale, $specialty);
 
         $doctors = Cache::remember($cacheKey, now()->addHours(6), function () use ($specialty) {
             $query = Doctor::query()
                 ->where('is_active', true)
                 ->orderBy('name');
 
-            if ($specialty) {
+            if ($specialty !== null && $specialty !== '') {
                 $query->where(function ($q) use ($specialty) {
                     $q->where('specialty_code', $specialty)
                         ->orWhere('specialty_name', $specialty);

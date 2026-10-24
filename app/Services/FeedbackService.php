@@ -84,21 +84,21 @@ class FeedbackService
     }
 
     /**
-     * Rata-rata kepuasan untuk satu jenis, dihitung dari skala "Puas" dan "Sangat Puas"
-     * pada pertanyaan berskala puas. Hanya untuk ringkasan dashboard.
+     * Persentase jawaban positif pada seluruh skala (dua tingkat tertinggi).
+     * Ini bukan skor rata-rata bintang.
      */
     public function getSatisfactionPercent(string $type): int
     {
         $responses = QuestionnaireResponse::query()
             ->where('questionnaire_type', $type)
-            ->pluck('ratings');
+            ->select('ratings')->cursor();
 
         $positive = ['Puas', 'Sangat Puas', 'Setuju', 'Sangat Setuju', 'Mudah', 'Sangat Mudah', 'Memadai', 'Sangat Memadai'];
         $total = 0;
         $good = 0;
 
-        foreach ($responses as $ratings) {
-            foreach ((array) $ratings as $scale) {
+        foreach ($responses as $response) {
+            foreach ((array) $response->ratings as $scale) {
                 $total++;
                 if (in_array($scale, $positive, true)) {
                     $good++;

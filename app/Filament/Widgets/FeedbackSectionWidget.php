@@ -2,8 +2,11 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Resources\Feedbacks\FeedbackResource;
+use App\Models\Feedback;
 use App\Services\FeedbackService;
 use Filament\Widgets\Widget;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Section "Kritik & Saran": ringkasan status dan daftar terbaru dari database.
@@ -17,8 +20,14 @@ class FeedbackSectionWidget extends Widget
 
     protected int|string|array $columnSpan = 'full';
 
+    public static function canView(): bool
+    {
+        return Gate::allows('viewAny', Feedback::class);
+    }
+
     public function getViewData(): array
     {
+        Gate::authorize('viewAny', Feedback::class);
         /** @var FeedbackService $service */
         $service = app(FeedbackService::class);
 
@@ -30,6 +39,7 @@ class FeedbackSectionWidget extends Widget
                 'detail' => $f->complaint_detail,
                 'status' => $f->status,
                 'submitted' => optional($f->submitted_at)->format('d M Y, H:i'),
+                'url' => FeedbackResource::getUrl('view', ['record' => $f]),
             ])->all(),
         ];
     }

@@ -9,14 +9,8 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 // Penarikan data dokter dari SIMRS MedInfras, setiap hari pukul 04:00 WIB.
-// Urutan: sinkronisasi tabel doctors dulu, lalu warm-up cache.
-Schedule::command('dokter:sync')
-    ->cron('0 4 * * *')
-    ->timezone('Asia/Jakarta')
-    ->withoutOverlapping()
-    ->onOneServer();
-
-Schedule::command('dokter:fetch-all')
+// Satu lock mencakup sinkronisasi dan warm-up; warm-up hanya setelah sync sukses.
+Schedule::command('dokter:refresh')
     ->cron('0 4 * * *')
     ->timezone('Asia/Jakarta')
     ->withoutOverlapping()

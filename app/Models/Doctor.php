@@ -66,10 +66,16 @@ class Doctor extends Model
      */
     public function getIsProfileCompleteAttribute(): bool
     {
-        return ! empty($this->getTranslation('bio', 'id', false))
-            && ! empty($this->getTranslation('location', 'id', false))
-            && ! empty($this->getTranslation('experience', 'id', false))
-            && ! empty($this->getTranslation('education', 'id', false));
+        foreach ($this->translatable as $field) {
+            foreach (['id', 'en'] as $locale) {
+                $text = html_entity_decode(strip_tags($this->getTranslation($field, $locale, false)), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                if (trim(str_replace("\xc2\xa0", ' ', $text)) === '') {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     protected static function boot()
@@ -90,6 +96,10 @@ class Doctor extends Model
         });
 
         static::saved(function () {
+            ApiCacheInvalidator::forgetForModule('doctors');
+        });
+
+        static::deleted(function () {
             ApiCacheInvalidator::forgetForModule('doctors');
         });
     }
