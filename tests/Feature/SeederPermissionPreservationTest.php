@@ -28,11 +28,27 @@ class SeederPermissionPreservationTest extends TestCase
         $marketing = Role::findByName('marketing', 'web');
 
         // 6 modul konten x (ViewAny, View, Create, Update, Delete, DeleteAny) = 36,
-        // + Reorder untuk 3 modul, + View untuk 2 widget = 41 (I18N-9.1).
+        // + Reorder untuk 3 modul, + View untuk 2 widget = 41 (I18N-9.1),
+        // + Doctor: ViewAny, View, Update = 3 (profil dokter) -> 44.
         $this->assertTrue($marketing->hasPermissionTo('Update:News'));
         $this->assertTrue($marketing->hasPermissionTo('Delete:News'));
         $this->assertTrue($marketing->hasPermissionTo('DeleteAny:News'));
-        $this->assertCount(41, $marketing->permissions);
+        $this->assertCount(44, $marketing->permissions);
+    }
+
+    public function test_marketing_can_only_view_and_update_doctor_profiles(): void
+    {
+        $this->seedAll();
+
+        $marketing = Role::findByName('marketing', 'web');
+
+        foreach (['ViewAny', 'View', 'Update'] as $action) {
+            $this->assertTrue($marketing->hasPermissionTo("{$action}:Doctor"), "Marketing harus memiliki {$action}:Doctor.");
+        }
+
+        foreach (['Create', 'Delete', 'DeleteAny', 'Restore', 'ForceDelete'] as $action) {
+            $this->assertFalse($marketing->hasPermissionTo("{$action}:Doctor"), "Marketing tidak boleh memiliki {$action}:Doctor.");
+        }
     }
 
     public function test_marketing_never_receives_restore_or_force_delete(): void
@@ -102,7 +118,7 @@ class SeederPermissionPreservationTest extends TestCase
         $this->seedAll();
 
         $marketing = Role::findByName('marketing', 'web');
-        $this->assertCount(41, $marketing->permissions);
+        $this->assertCount(44, $marketing->permissions);
     }
 
     public function test_new_permission_is_added_to_existing_super_admin(): void
