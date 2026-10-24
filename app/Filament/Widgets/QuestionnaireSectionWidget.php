@@ -2,9 +2,11 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Resources\Questionnaires\QuestionnaireResource;
 use App\Models\QuestionnaireResponse;
 use App\Services\FeedbackService;
 use Filament\Widgets\Widget;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Section "Kuesioner Kepuasan": tiga sub-section (IGD, Rawat Jalan, Rawat Inap).
@@ -17,8 +19,14 @@ class QuestionnaireSectionWidget extends Widget
 
     protected int|string|array $columnSpan = 'full';
 
+    public static function canView(): bool
+    {
+        return Gate::allows('viewAny', QuestionnaireResponse::class);
+    }
+
     public function getViewData(): array
     {
+        Gate::authorize('viewAny', QuestionnaireResponse::class);
         /** @var FeedbackService $service */
         $service = app(FeedbackService::class);
 
@@ -38,6 +46,7 @@ class QuestionnaireSectionWidget extends Widget
                     'gender' => $q->gender,
                     'payment' => $q->payment_method,
                     'submitted' => optional($q->submitted_at)->format('d M Y, H:i'),
+                    'url' => QuestionnaireResource::getUrl('view', ['record' => $q]),
                 ])->all(),
             ];
         }

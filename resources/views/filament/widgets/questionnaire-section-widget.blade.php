@@ -5,6 +5,8 @@
             Hasil kuesioner per layanan. Setiap layanan memiliki ringkasan sendiri.
         </x-slot>
 
+        <p class="mb-4"><a class="underline" href="{{ \App\Filament\Resources\Questionnaires\QuestionnaireResource::getUrl('index') }}">Lihat seluruh pengisian kuesioner</a></p>
+
         <div x-data="{ tab: '{{ $groups[0]['type'] ?? 'igd' }}' }">
             <div class="flex flex-wrap gap-2 mb-4" role="tablist">
                 @foreach ($groups as $group)
@@ -56,7 +58,7 @@
                                             <td class="py-2 pr-4">{{ $row['age'] }}</td>
                                             <td class="py-2 pr-4">{{ $row['gender'] }}</td>
                                             <td class="py-2 pr-4">{{ $row['payment'] }}</td>
-                                            <td class="py-2 whitespace-nowrap">{{ $row['submitted'] }}</td>
+                                            <td class="py-2 whitespace-nowrap"><a class="underline" href="{{ $row['url'] }}">{{ $row['submitted'] }} — Baca jawaban</a></td>
                                         </tr>
                                     @endforeach
                                 </tbody>

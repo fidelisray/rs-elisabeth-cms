@@ -67,10 +67,11 @@ class WebFrontendWebhookObserver
     {
         $module = $this->getModule($model);
         if ($module) {
+            $hasTranslatedSlug = method_exists($model, 'isTranslatableAttribute') && $model->isTranslatableAttribute('slug');
             AuditLog::record('content.restored', $model, [
                 'module' => $module,
-                'slug_id' => $model->getTranslation('slug', 'id', false),
-                'slug_en' => $model->getTranslation('slug', 'en', false),
+                'slug_id' => $hasTranslatedSlug ? $model->getTranslation('slug', 'id', false) : null,
+                'slug_en' => $hasTranslatedSlug ? $model->getTranslation('slug', 'en', false) : null,
                 'source' => 'panel',
             ]);
         }

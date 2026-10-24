@@ -4,6 +4,7 @@ namespace Tests\Feature\Api\Cms;
 
 use App\Models\Feedback;
 use App\Models\QuestionnaireResponse;
+use App\Support\QuestionnaireDefinition;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
@@ -35,7 +36,7 @@ class FeedbackQuestionnaireApiTest extends TestCase
         ], $override);
     }
 
-    private function questionnairePayload(array $override = []): array
+    private function questionnairePayload(array $override = [], string $type = 'igd'): array
     {
         return array_merge([
             'demographics' => [
@@ -43,7 +44,8 @@ class FeedbackQuestionnaireApiTest extends TestCase
                 'gender' => 'Perempuan',
                 'payment_method' => 'BPJS Kesehatan',
             ],
-            'ratings' => ['q1' => 'Sangat Puas', 'q2' => 'Puas', 'q3' => 'Sangat Mudah'],
+            'ratings' => collect(QuestionnaireDefinition::QUESTIONS[$type])
+                ->map(fn ($scale) => QuestionnaireDefinition::SCALES[$scale][3])->all(),
             'suggestions' => 'Tambahkan kursi tunggu.',
             'locale' => 'id',
             'source' => 'qr_barcode',
@@ -168,8 +170,8 @@ class FeedbackQuestionnaireApiTest extends TestCase
 
     public function test_questionnaire_rawat_jalan_and_rawat_inap_use_url_format(): void
     {
-        $this->signedPost('/api/v1/cms/questionnaires/rawat-jalan', $this->questionnairePayload())->assertStatus(201);
-        $this->signedPost('/api/v1/cms/questionnaires/rawat-inap', $this->questionnairePayload())->assertStatus(201);
+        $this->signedPost('/api/v1/cms/questionnaires/rawat-jalan', $this->questionnairePayload([], 'rawat-jalan'))->assertStatus(201);
+        $this->signedPost('/api/v1/cms/questionnaires/rawat-inap', $this->questionnairePayload([], 'rawat-inap'))->assertStatus(201);
 
         $this->assertDatabaseHas('questionnaire_responses', ['questionnaire_type' => 'rawat-jalan']);
         $this->assertDatabaseHas('questionnaire_responses', ['questionnaire_type' => 'rawat-inap']);
@@ -201,6 +203,30 @@ class FeedbackQuestionnaireApiTest extends TestCase
 
         $response->assertStatus(422);
         $this->assertDatabaseCount('questionnaire_responses', 0);
+    }
+
+    public function test_questionnaire_rejects_incomplete_unknown_and_wrong_scale_answers(): void
+    {
+        foreach ([
+            ['speed_triage_arrival' => 'Puas'],
+            ['unknown_question' => 'Puas'],
+            [...$this->questionnairePayload()['ratings'], 'unknown_question' => 'Puas'],
+            [...$this->questionnairePayload()['ratings'], 'speed_triage_arrival' => 'Setuju'],
+        ] as $ratings) {
+            $this->signedPost('/api/v1/cms/questionnaires/igd', $this->questionnairePayload(['ratings' => $ratings]))
+                ->assertUnprocessable();
+        }
+        $this->assertDatabaseCount('questionnaire_responses', 0);
+    }
+
+    public function test_outpatient_suggestions_are_required_and_long_comments_match_frontend_limit(): void
+    {
+        $this->signedPost('/api/v1/cms/questionnaires/rawat-jalan', $this->questionnairePayload(['suggestions' => null], 'rawat-jalan'))
+            ->assertUnprocessable();
+        $this->signedPost('/api/v1/cms/questionnaires/igd', $this->questionnairePayload(['suggestions' => str_repeat('a', 3000)]))
+            ->assertCreated();
+        $this->signedPost('/api/v1/cms/questionnaires/igd', $this->questionnairePayload(['suggestions' => 'a']))
+            ->assertCreated();
     }
 
     public function test_questionnaire_is_rejected_without_valid_hmac(): void

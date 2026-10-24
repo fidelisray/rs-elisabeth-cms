@@ -94,7 +94,7 @@ class DoctorSyncService
                     $doctor->save();
                     $updatedCount++;
                 } else {
-                    // Record baru: isi master data dan inisialisasi default 4 data marketing
+                    // Hanya data resmi SIMRS; konten marketing dibiarkan NULL sampai diverifikasi.
                     $newDoctor = new Doctor;
                     $newDoctor->paramedic_code = $paramedicCode;
                     $newDoctor->name = $data['name'];
@@ -102,19 +102,6 @@ class DoctorSyncService
                     $newDoctor->specialty_name = $data['specialty_name'];
                     $newDoctor->service_unit_name = $data['service_unit_name'];
                     $newDoctor->is_active = true;
-
-                    // Nilai awal ramah fallback sesuai tampilan modal website
-                    $newDoctor->setTranslation('bio', 'id', 'Dokter berpengalaman yang siap memberikan pelayanan kesehatan terbaik.');
-                    $newDoctor->setTranslation('bio', 'en', 'Experienced doctor ready to provide the best healthcare services.');
-
-                    $newDoctor->setTranslation('location', 'id', 'Semarang, Indonesia');
-                    $newDoctor->setTranslation('location', 'en', 'Semarang, Indonesia');
-
-                    $newDoctor->setTranslation('experience', 'id', 'Lebih Dari 5 Tahun');
-                    $newDoctor->setTranslation('experience', 'en', 'More Than 5 Years');
-
-                    $newDoctor->setTranslation('education', 'id', 'Universitas Terkemuka');
-                    $newDoctor->setTranslation('education', 'en', 'Reputable University');
 
                     $newDoctor->save();
                     $createdCount++;

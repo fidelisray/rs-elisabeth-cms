@@ -5,6 +5,8 @@
             Ringkasan dari formulir kritik dan saran di website. Nama dan nomor telepon pasien tidak ditampilkan di sini.
         </x-slot>
 
+        <p class="mb-4"><a class="underline" href="{{ \App\Filament\Resources\Feedbacks\FeedbackResource::getUrl('index') }}">Lihat seluruh kritik dan saran</a></p>
+
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:1rem; margin-bottom:1rem;">
             <div><p class="text-sm text-gray-500">Total</p><p class="text-2xl font-semibold">{{ $summary['total'] }}</p></div>
             <div><p class="text-sm text-gray-500">Baru</p><p class="text-2xl font-semibold text-amber-600">{{ $summary['baru'] }}</p></div>
@@ -29,7 +31,7 @@
                     <tbody>
                         @foreach ($latest as $row)
                             <tr class="border-b align-top">
-                                <td class="py-2 pr-4 font-mono">{{ $row['ticket'] }}</td>
+                                <td class="py-2 pr-4 font-mono"><a class="underline" href="{{ $row['url'] }}">{{ $row['ticket'] }}</a></td>
                                 <td class="py-2 pr-4">{{ $row['categories'] }}</td>
                                 <td class="py-2 pr-4 max-w-md">{{ \Illuminate\Support\Str::limit($row['detail'], 140) }}</td>
                                 <td class="py-2 pr-4">{{ ucfirst($row['status']) }}</td>

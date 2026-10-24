@@ -37,6 +37,12 @@ class FetchAllDoctor extends Command
         $this->info('Memulai fetch data jadwal dokter...');
         $total = $apiService->fetchAndCacheAllDokter();
 
+        if ($total === 0) {
+            $this->error('Warm-up tidak memperoleh data jadwal dokter.');
+
+            return Command::FAILURE;
+        }
+
         $this->info("Selesai. Total {$total} entri jadwal dokter berhasil di-cache.");
 
         return Command::SUCCESS;

@@ -41,6 +41,13 @@ class ApiCacheInvalidator
         return self::baseKey($module).'_'.TranslatedContentOrder::locale($locale ?? app()->getLocale());
     }
 
+    public static function doctorListKey(?string $locale, ?string $specialty = null): string
+    {
+        $version = Cache::rememberForever(self::baseKey('doctors').'_version', fn (): string => (string) Str::uuid());
+
+        return self::keyForModule('doctors', $locale).'_v'.$version.'_'.hash('sha256', $specialty ?? '');
+    }
+
     public static function pageKeyForModule(string $module, int $page, ?string $locale = null, ?string $date = null): string
     {
         if (! in_array($module, self::PAGINATED_MODULES, true) || $page < 1) {
@@ -75,7 +82,7 @@ class ApiCacheInvalidator
         // Also expire the pre-locale key during the transition from older application versions.
         Cache::forget(self::baseKey($module));
 
-        if (in_array($module, self::PAGINATED_MODULES, true)) {
+        if ($module === 'doctors' || in_array($module, self::PAGINATED_MODULES, true)) {
             // UUID avoids retaining a generation when two mutations happen in one second.
             Cache::forever(self::baseKey($module).'_version', (string) Str::uuid());
 

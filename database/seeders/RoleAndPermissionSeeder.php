@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Support\WidgetPermissionAliases;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Spatie\Permission\Models\Permission;
@@ -51,8 +52,8 @@ class RoleAndPermissionSeeder extends Seeder
     protected const DOCTOR_SUBJECT = 'Doctor';
 
     /**
-     * Daftar subject administrasi (hanya boleh diakses oleh super_admin
-     * dan Staff IT). Tidak termasuk di role marketing.
+     * Daftar subject administrasi (hanya super_admin). Tidak termasuk Staff IT
+     * maupun marketing.
      */
     protected const ADMIN_SUBJECTS = [
         'User',
@@ -88,9 +89,11 @@ class RoleAndPermissionSeeder extends Seeder
      * Nama widget yang dipakai untuk permission widget.
      */
     protected const WIDGET_SUBJECTS = [
-        'FeedbackStatsWidget',
-        'LatestFeedbackWidget',
+        'FeedbackSectionWidget',
+        'QuestionnaireSectionWidget',
     ];
+
+    protected const PATIENT_SUBJECTS = ['Feedback', 'QuestionnaireResponse'];
 
     /**
      * Konstanta nama role & subject agar tidak ada typo/duplikasi magic string.
@@ -113,6 +116,8 @@ class RoleAndPermissionSeeder extends Seeder
     public function run(): void
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        app(WidgetPermissionAliases::class)->reconcile();
 
         $this->seedPermissions();
 
@@ -141,6 +146,13 @@ class RoleAndPermissionSeeder extends Seeder
         foreach (self::WIDGET_SUBJECTS as $subject) {
             Permission::findOrCreate("View:{$subject}", 'web');
         }
+
+        foreach (self::PATIENT_SUBJECTS as $subject) {
+            foreach (['ViewAny', 'View'] as $action) {
+                Permission::findOrCreate("{$action}:{$subject}", 'web');
+            }
+        }
+        Permission::findOrCreate('Update:Feedback', 'web');
     }
 
     /**
@@ -201,6 +213,11 @@ class RoleAndPermissionSeeder extends Seeder
         $names[] = 'View:'.self::DOCTOR_SUBJECT;
         $names[] = 'Update:'.self::DOCTOR_SUBJECT;
 
+        foreach (self::PATIENT_SUBJECTS as $subject) {
+            $names[] = "ViewAny:{$subject}";
+            $names[] = "View:{$subject}";
+        }
+
         foreach (self::REORDERABLE_SUBJECTS as $subject) {
             $names[] = "Reorder:{$subject}";
         }
@@ -232,6 +249,11 @@ class RoleAndPermissionSeeder extends Seeder
             foreach ($viewOnly as $action) {
                 $names[] = "{$action}:{$subject}";
             }
+        }
+
+        foreach (self::PATIENT_SUBJECTS as $subject) {
+            $names[] = "ViewAny:{$subject}";
+            $names[] = "View:{$subject}";
         }
 
         foreach (self::WIDGET_SUBJECTS as $subject) {
@@ -288,7 +310,7 @@ class RoleAndPermissionSeeder extends Seeder
      *   (hal itu pernah melanggar aturan satu super_admin).
      *
      * Data user lama tidak dimigrasi otomatis: go-live memakai database kosong
-     * (database pre-production direset lewat `app:preprod:reset`), bukan seeder.
+     * (reset eksplisit pada database testing sesuai runbook), bukan seeder.
      */
     protected function assignRolesToUsers(Role $superAdminRole, Role $marketingRole, Role $staffItRole): void
     {
