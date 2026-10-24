@@ -4,8 +4,8 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\CustomProfile;
 use App\Filament\Pages\Auth\RecoveryLogin;
-use App\Filament\Widgets\FeedbackStatsWidget;
-use App\Filament\Widgets\LatestFeedbackWidget;
+use App\Filament\Widgets\FeedbackSectionWidget;
+use App\Filament\Widgets\QuestionnaireSectionWidget;
 use App\Http\Middleware\EnforcePasswordChange;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
@@ -65,8 +65,8 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 AccountWidget::class,
                 FilamentInfoWidget::class,
-                FeedbackStatsWidget::class,
-                LatestFeedbackWidget::class,
+                FeedbackSectionWidget::class,
+                QuestionnaireSectionWidget::class,
             ])
             ->plugins([
                 FilamentShieldPlugin::make(),
