@@ -42,8 +42,13 @@ class RoleAndPermissionSeeder extends Seeder
         'BannerPromotion',
         'FacilityService',
         'RoomFacility',
-        'Doctor',
     ];
+
+    /**
+     * Profil dokter: data master dikelola SIMRS (read-only), marketing hanya boleh
+     * melihat dan mengubah 4 field konten (tanpa create/delete). Lihat DoctorResource.
+     */
+    protected const DOCTOR_SUBJECT = 'Doctor';
 
     /**
      * Daftar subject administrasi (hanya boleh diakses oleh super_admin
@@ -192,6 +197,10 @@ class RoleAndPermissionSeeder extends Seeder
             }
         }
 
+        $names[] = 'ViewAny:'.self::DOCTOR_SUBJECT;
+        $names[] = 'View:'.self::DOCTOR_SUBJECT;
+        $names[] = 'Update:'.self::DOCTOR_SUBJECT;
+
         foreach (self::REORDERABLE_SUBJECTS as $subject) {
             $names[] = "Reorder:{$subject}";
         }
@@ -216,6 +225,9 @@ class RoleAndPermissionSeeder extends Seeder
         // Staff IT hanya MELIHAT modul konten. Manajemen User dan Role adalah
         // wewenang super_admin saja (K-1, K-2), jadi ADMIN_SUBJECTS tidak
         // pernah diberikan kepada Staff IT.
+        $names[] = 'ViewAny:'.self::DOCTOR_SUBJECT;
+        $names[] = 'View:'.self::DOCTOR_SUBJECT;
+
         foreach (self::CONTENT_SUBJECTS as $subject) {
             foreach ($viewOnly as $action) {
                 $names[] = "{$action}:{$subject}";
