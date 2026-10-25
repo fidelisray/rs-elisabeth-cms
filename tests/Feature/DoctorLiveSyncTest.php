@@ -24,6 +24,10 @@ class DoctorLiveSyncTest extends TestCase
     {
         parent::setUp();
 
+        if (! config('rsapi.enabled', true)) {
+            $this->markTestSkipped('RS_API_ENABLED=false: live MedInfras tidak dijalankan pada profil offline.');
+        }
+
         if (empty(config('rsapi.medin_consid')) || empty(config('rsapi.medin_secretkey'))) {
             $this->markTestSkipped('RS_MEDIN_API_CONSID dan RS_MEDIN_API_SECRETKEY belum diisi.');
         }

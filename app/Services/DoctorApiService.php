@@ -19,6 +19,8 @@ class DoctorApiService
 
     protected int $timeout;
 
+    private array $lastWarmupResult = ['status' => 'not_run', 'total' => 0, 'failed_specialties' => []];
+
     public function __construct()
     {
         $this->baseUrl = (string) (config('rsapi.base_url') ?? '');
@@ -44,6 +46,9 @@ class DoctorApiService
 
     protected function apiRequest(): PendingRequest
     {
+        if (! config('rsapi.enabled', true)) {
+            throw new \RuntimeException('RS API dinonaktifkan pada environment ini.');
+        }
         $consid = $this->consId;
         $secretKey = $this->secretKey;
 
@@ -252,6 +257,11 @@ class DoctorApiService
      */
     public function fetchAndCacheAllDokter(): int
     {
+        $this->lastWarmupResult = ['status' => 'failed', 'total' => 0, 'failed_specialties' => []];
+        if (! config('rsapi.enabled', true)) {
+            $this->lastWarmupResult['status'] = 'disabled';
+            return 0;
+        }
         $spesialisasiList = [];
 
         foreach ($this->getDaftarSpesialisasi() as $item) {
@@ -269,12 +279,19 @@ class DoctorApiService
         }
 
         $allDoctors = [];
+        $failed = [];
 
         foreach ($spesialisasiList as $code) {
             try {
                 $data = $this->getDokterBySpesialisasi($code);
 
                 if (! ($data['Success'] ?? false)) {
+                    $failed[] = $code;
+                    continue;
+                }
+
+                if (! is_array($data['ScheduleRoutine'] ?? null)) {
+                    $failed[] = $code;
                     continue;
                 }
 
@@ -286,12 +303,23 @@ class DoctorApiService
                     }
                 }
             } catch (\Exception $e) {
-                Log::warning("Gagal fetch specialty {$code}", ['error' => $e->getMessage()]);
+                $failed[] = $code;
+                Log::warning("Gagal fetch specialty {$code}", ['exception_type' => get_class($e)]);
 
                 continue;
             }
 
             sleep(1);
+        }
+
+        $this->lastWarmupResult = [
+            'status' => count($allDoctors) === 0 ? 'failed' : ($failed === [] ? 'success' : 'partial'),
+            'total' => count($allDoctors),
+            'failed_specialties' => array_values(array_unique($failed)),
+        ];
+        if ($failed !== [] || $allDoctors === []) {
+            // Jangan menimpa cache lengkap yang lama dengan hasil parsial atau kosong.
+            return 0;
         }
 
         Cache::put('all_doctors_list', $allDoctors, now()->addHours(12));
@@ -300,5 +328,10 @@ class DoctorApiService
             ->toArray(), now()->addHours(12));
 
         return count($allDoctors);
+    }
+
+    public function getLastWarmupResult(): array
+    {
+        return $this->lastWarmupResult;
     }
 }

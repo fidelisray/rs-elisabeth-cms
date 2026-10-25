@@ -32,11 +32,18 @@ class ListDoctors extends ListRecords
                 ->action(function (DoctorSyncService $syncService) {
                     $result = $syncService->syncFromMedInfras();
 
-                    Notification::make()
-                        ->title('Sinkronisasi Selesai')
-                        ->body("Berhasil memproses {$result['total']} dokter ({$result['created']} data baru, {$result['updated']} data SIMRS diperbarui).")
-                        ->success()
-                        ->send();
+                    $status = $result['status'] ?? 'failed';
+                    $notification = Notification::make()
+                        ->title($status === 'success' ? 'Sinkronisasi Selesai' : 'Sinkronisasi '.$status)
+                        ->body("{$result['total']} dokter valid diproses ({$result['created']} baru, {$result['updated']} diperbarui).".(! empty($result['failed_specialties']) ? ' Spesialisasi gagal: '.implode(', ', $result['failed_specialties']) : ''));
+                    if ($status === 'success') {
+                        $notification->success();
+                    } elseif ($status === 'partial') {
+                        $notification->warning();
+                    } else {
+                        $notification->danger();
+                    }
+                    $notification->send();
                 }),
         ];
     }

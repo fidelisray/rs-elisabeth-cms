@@ -16,6 +16,7 @@ class DoctorApiServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Config::set('rsapi.enabled', true);
 
         Config::set('rsapi.base_url', 'https://test-api.rs-elisabeth.com');
         Config::set('rsapi.medin_endpoint', '/medinfrasapi/test');

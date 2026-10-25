@@ -48,7 +48,11 @@ echo "[6/7] Creating storage symlink..."
 php artisan storage:link --force 2>/dev/null || true
 
 echo "[6b/7] Setting up MinIO bucket policy..."
-php artisan storage:setup-minio || true
+if [ "${BOOTSTRAP_MINIO_SETUP:-false}" = "true" ]; then
+    php artisan storage:setup-minio
+else
+    echo "MinIO setup skipped; run storage:setup-minio explicitly when required."
+fi
 
 # 3. Sync seluruh isi public/ ke shared volume agar Nginx bisa menyajikannya.
 #    Ini dilakukan SETELAH artisan commands selesai agar index.php dan

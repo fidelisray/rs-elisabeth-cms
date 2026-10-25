@@ -16,24 +16,30 @@ class DoctorSyncService
      * Melakukan sinkronisasi data master dokter dari SIMRS MedInfras ke tabel doctors.
      * Menjaga agar 4 field konten marketing yang telah diedit TIDAK pernah tertimpa.
      *
-     * @return array{created: int, updated: int, total: int}
+     * @return array{created: int, updated: int, unchanged: int, total: int, status: string, failed_specialties: array}
      */
     public function syncFromMedInfras(): array
     {
+        if (! config('rsapi.enabled', true)) {
+            return ['created' => 0, 'updated' => 0, 'unchanged' => 0, 'total' => 0, 'status' => 'disabled', 'failed_specialties' => []];
+        }
         $spesialisasi = $this->apiService->getDaftarSpesialisasi();
 
         if (empty($spesialisasi)) {
             Log::warning('DoctorSyncService: Daftar spesialisasi kosong dari API MedInfras.');
 
-            return ['created' => 0, 'updated' => 0, 'total' => 0];
+            return ['created' => 0, 'updated' => 0, 'unchanged' => 0, 'total' => 0, 'status' => 'failed', 'failed_specialties' => []];
         }
 
         // Kumpulkan data dokter unik berdasarkan ParamedicCode
         $uniqueDoctors = [];
+        $failedSpecialties = [];
 
         foreach ($spesialisasi as $spc) {
-            $code = $spc->Code ?? null;
+            $specialty = (array) $spc;
+            $code = $specialty['Code'] ?? null;
             if (! $code) {
+                $failedSpecialties[] = 'invalid-specialty';
                 continue;
             }
 
@@ -41,15 +47,22 @@ class DoctorSyncService
                 $response = $this->apiService->getDokterBySpesialisasi($code);
 
                 if (! ($response['Success'] ?? false)) {
+                    $failedSpecialties[] = (string) $code;
                     continue;
                 }
 
                 $schedules = $response['ScheduleRoutine'] ?? [];
+                if (! is_array($schedules)) {
+                    $failedSpecialties[] = (string) $code;
+                    continue;
+                }
                 foreach ($schedules as $item) {
-                    $itemArray = is_object($item) ? (array) $item : (array) $item;
+                    $itemArray = (array) $item;
                     $paramedicCode = trim((string) ($itemArray['ParamedicCode'] ?? ''));
+                    $name = trim((string) ($itemArray['ParamedicName'] ?? ''));
 
-                    if ($paramedicCode === '') {
+                    if ($paramedicCode === '' || $name === '') {
+                        $failedSpecialties[] = (string) $code;
                         continue;
                     }
 
@@ -57,15 +70,16 @@ class DoctorSyncService
                     if (! isset($uniqueDoctors[$paramedicCode])) {
                         $uniqueDoctors[$paramedicCode] = [
                             'paramedic_code' => $paramedicCode,
-                            'name' => trim((string) ($itemArray['ParamedicName'] ?? '')),
+                            'name' => $name,
                             'specialty_code' => trim((string) ($itemArray['SpecialtyID'] ?? $code)),
-                            'specialty_name' => trim((string) ($itemArray['SpecialtyName'] ?? ($spc->Name ?? ''))),
+                            'specialty_name' => trim((string) ($itemArray['SpecialtyName'] ?? ($specialty['Name'] ?? ''))),
                             'service_unit_name' => trim((string) ($itemArray['ServiceUnitName'] ?? '')),
                         ];
                     }
                 }
             } catch (\Exception $e) {
-                Log::warning("DoctorSyncService: Gagal fetch spesialisasi {$code}", ['error' => $e->getMessage()]);
+                $failedSpecialties[] = (string) $code;
+                Log::warning("DoctorSyncService: Gagal fetch spesialisasi {$code}", ['exception_type' => get_class($e)]);
 
                 continue;
             }
@@ -73,8 +87,9 @@ class DoctorSyncService
 
         $createdCount = 0;
         $updatedCount = 0;
+        $unchangedCount = 0;
 
-        DB::transaction(function () use ($uniqueDoctors, &$createdCount, &$updatedCount) {
+        DB::transaction(function () use ($uniqueDoctors, &$createdCount, &$updatedCount, &$unchangedCount) {
             foreach ($uniqueDoctors as $paramedicCode => $data) {
                 $doctor = Doctor::withTrashed()->where('paramedic_code', $paramedicCode)->first();
 
@@ -89,10 +104,13 @@ class DoctorSyncService
 
                     if ($doctor->trashed()) {
                         $doctor->restore();
+                        $updatedCount++;
+                    } elseif ($doctor->isDirty()) {
+                        $doctor->save();
+                        $updatedCount++;
+                    } else {
+                        $unchangedCount++;
                     }
-
-                    $doctor->save();
-                    $updatedCount++;
                 } else {
                     // Hanya data resmi SIMRS; konten marketing dibiarkan NULL sampai diverifikasi.
                     $newDoctor = new Doctor;
@@ -112,7 +130,10 @@ class DoctorSyncService
         return [
             'created' => $createdCount,
             'updated' => $updatedCount,
+            'unchanged' => $unchangedCount,
             'total' => count($uniqueDoctors),
+            'status' => $uniqueDoctors === [] ? 'failed' : ($failedSpecialties === [] ? 'success' : 'partial'),
+            'failed_specialties' => array_values(array_unique($failedSpecialties)),
         ];
     }
 }
