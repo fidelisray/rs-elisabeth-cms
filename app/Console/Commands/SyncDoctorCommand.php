@@ -30,16 +30,20 @@ class SyncDoctorCommand extends Command
 
         $result = $syncService->syncFromMedInfras();
 
-        if ($result['total'] === 0) {
-            $this->error('Tidak ada data dokter yang dapat disinkronkan. Periksa koneksi dan respons MedInfras.');
+        $status = $result['status'] ?? ($result['total'] === 0 ? 'failed' : 'success');
+        if ($status !== 'success') {
+            $this->error("Sinkronisasi {$status}; {$result['total']} dokter valid diproses. Tidak dilaporkan sebagai sukses penuh.");
+            if (! empty($result['failed_specialties'])) {
+                $this->line('Spesialisasi gagal: '.implode(', ', $result['failed_specialties']));
+            }
 
             return Command::FAILURE;
         }
 
         $this->info('Sinkronisasi selesai.');
         $this->table(
-            ['Total Paramedis Unik', 'Baru Ditambahkan', 'Diperbarui'],
-            [[$result['total'], $result['created'], $result['updated']]]
+            ['Total Paramedis Unik', 'Baru Ditambahkan', 'Diperbarui', 'Tidak Berubah'],
+            [[$result['total'], $result['created'], $result['updated'], $result['unchanged'] ?? 0]]
         );
 
         return Command::SUCCESS;

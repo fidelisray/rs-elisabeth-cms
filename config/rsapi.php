@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'enabled' => (bool) env('RS_API_ENABLED', true),
     'base_url' => env('RS_API_BASE_URL'),
     'api_key' => env('RS_API_KEY'),
     'timeout' => (int) env('RS_API_TIMEOUT', 10),

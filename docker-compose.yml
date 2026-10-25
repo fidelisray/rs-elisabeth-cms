@@ -68,6 +68,33 @@ services:
       - storage_data:/var/www/html/storage
 
   # ---------------------------------------------------------
+  # 1c. CMS SCHEDULER (Menjalankan jadwal Laravel)
+  # ---------------------------------------------------------
+  cms_scheduler:
+    image: 172.17.12.17:5051/fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
+    container_name: rses_cms_scheduler
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - LOG_LEVEL=error
+      - DB_HOST=rses_cms_db
+    command: ["php", "artisan", "schedule:work", "--no-interaction"]
+    stop_grace_period: 60s
+    networks:
+      - rses_cms_network
+    volumes:
+      - storage_data:/var/www/html/storage
+    depends_on:
+      cms_app:
+        condition: service_healthy
+      rses_cms_db:
+        condition: service_healthy
+
+  # ---------------------------------------------------------
   # 2. NGINX (Web Server)
   # ---------------------------------------------------------
   cms_nginx:

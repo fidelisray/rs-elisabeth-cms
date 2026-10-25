@@ -17,6 +17,7 @@ class DoctorModuleTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Config::set('rsapi.enabled', true);
 
         Config::set('cms_api.clients', [
             'TEST-WEB-CONSID' => 'test-secret-web-key-1234567890',

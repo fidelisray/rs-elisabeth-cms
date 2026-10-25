@@ -19,6 +19,7 @@ class DoctorReadinessTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config(['rsapi.enabled' => true]);
         Bus::fake();
     }
 

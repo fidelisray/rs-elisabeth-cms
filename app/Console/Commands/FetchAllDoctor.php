@@ -38,7 +38,8 @@ class FetchAllDoctor extends Command
         $total = $apiService->fetchAndCacheAllDokter();
 
         if ($total === 0) {
-            $this->error('Warm-up tidak memperoleh data jadwal dokter.');
+            $result = $apiService->getLastWarmupResult();
+            $this->error('Warm-up '.$result['status'].'. Cache lengkap sebelumnya dipertahankan.');
 
             return Command::FAILURE;
         }

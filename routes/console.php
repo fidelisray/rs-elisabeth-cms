@@ -11,6 +11,7 @@ Artisan::command('inspire', function () {
 // Penarikan data dokter dari SIMRS MedInfras, setiap hari pukul 04:00 WIB.
 // Satu lock mencakup sinkronisasi dan warm-up; warm-up hanya setelah sync sukses.
 Schedule::command('dokter:refresh')
+    ->when(fn () => config('rsapi.enabled', true))
     ->cron('0 4 * * *')
     ->timezone('Asia/Jakarta')
     ->withoutOverlapping()
