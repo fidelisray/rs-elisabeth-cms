@@ -4,6 +4,8 @@
 .env.backup
 .env.production
 .env-laptop
+.env.local
+.env.hospital
 .phpactor.json
 .phpunit.result.cache
 /.fleet
@@ -42,3 +44,5 @@ _ide_helper_models.php
 HEADLESS_CMS_CONTEXT.md
 /docs
 /.codegraph
+switch-env.bat
+switch-env.ps1
