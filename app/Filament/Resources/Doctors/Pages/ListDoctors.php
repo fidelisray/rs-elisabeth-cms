@@ -25,6 +25,7 @@ class ListDoctors extends ListRecords
                 ->label('Sinkronisasi MedInfras')
                 ->icon('heroicon-o-arrow-path')
                 ->color('primary')
+                ->visible(fn (): bool => auth()->user()?->can('Update:Doctor') ?? false)
                 ->requiresConfirmation()
                 ->modalHeading('Sinkronisasi Data Dokter dari SIMRS')
                 ->modalDescription('Sistem akan menarik data dokter terbaru dari API MedInfras. Data profil marketing yang sudah Anda isi (Bio, Lokasi, Pengalaman, Pendidikan) dijamin aman dan tidak akan tertimpa.')

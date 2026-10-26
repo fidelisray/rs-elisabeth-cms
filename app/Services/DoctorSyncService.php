@@ -40,6 +40,7 @@ class DoctorSyncService
             $code = $specialty['Code'] ?? null;
             if (! $code) {
                 $failedSpecialties[] = 'invalid-specialty';
+
                 continue;
             }
 
@@ -48,12 +49,14 @@ class DoctorSyncService
 
                 if (! ($response['Success'] ?? false)) {
                     $failedSpecialties[] = (string) $code;
+
                     continue;
                 }
 
                 $schedules = $response['ScheduleRoutine'] ?? [];
                 if (! is_array($schedules)) {
                     $failedSpecialties[] = (string) $code;
+
                     continue;
                 }
                 foreach ($schedules as $item) {
@@ -63,6 +66,7 @@ class DoctorSyncService
 
                     if ($paramedicCode === '' || $name === '') {
                         $failedSpecialties[] = (string) $code;
+
                         continue;
                     }
 
@@ -104,6 +108,9 @@ class DoctorSyncService
 
                     if ($doctor->trashed()) {
                         $doctor->restore();
+                        if ($doctor->isDirty()) {
+                            $doctor->save();
+                        }
                         $updatedCount++;
                     } elseif ($doctor->isDirty()) {
                         $doctor->save();
