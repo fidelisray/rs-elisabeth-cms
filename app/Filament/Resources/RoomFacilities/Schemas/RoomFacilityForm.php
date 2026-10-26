@@ -114,7 +114,7 @@ class RoomFacilityForm
                             ->schema([
 
                                 TextInput::make('group.id')
-                                    ->label('Nama Grup ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Indonesia')
+                                    ->label('Nama Grup — Indonesia')
                                     ->placeholder('Contoh: Kamar & Ruangan')
                                     ->required()
                                     ->clearErrorOnInput()
@@ -122,7 +122,7 @@ class RoomFacilityForm
                                     ->columnSpanFull(),
 
                                 TextInput::make('group.en')
-                                    ->label('Nama Grup ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â English')
+                                    ->label('Nama Grup — English')
                                     ->required()
                                     ->clearErrorOnInput()
                                     ->maxLength(100)
@@ -134,26 +134,26 @@ class RoomFacilityForm
                                     ->schema([
 
                                         TextInput::make('name.id')
-                                            ->label('Nama Fasilitas ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Indonesia')
+                                            ->label('Nama Fasilitas — Indonesia')
                                             ->placeholder('Contoh: Air Conditioner (AC)')
                                             ->required()
                                             ->clearErrorOnInput()
                                             ->maxLength(100),
 
                                         TextInput::make('name.en')
-                                            ->label('Nama Fasilitas ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â English')
+                                            ->label('Nama Fasilitas — English')
                                             ->required()
                                             ->clearErrorOnInput()
                                             ->maxLength(100),
 
                                         TextInput::make('value.id')
-                                            ->label('Spesifikasi ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Indonesia (Opsional)')
+                                            ->label('Spesifikasi — Indonesia (Opsional)')
                                             ->placeholder('contoh: 55" Smart TV, Central')
                                             // ->helperText('Biarkan kosong jika ini hanya fasilitas standar (tampil sebagai centang)')
                                             ->maxLength(255),
 
                                         TextInput::make('value.en')
-                                            ->label('Spesifikasi ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â English (Opsional)')
+                                            ->label('Spesifikasi — English (Opsional)')
                                             ->helperText('Isi kedua bahasa jika spesifikasi digunakan, atau kosongkan keduanya.')
                                             ->maxLength(255),
 
@@ -219,14 +219,14 @@ class RoomFacilityForm
                                     ->clearErrorOnChange(),
 
                                 TextInput::make('label.id')
-                                    ->label('Label Tag ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Indonesia')
+                                    ->label('Label Tag — Indonesia')
                                     ->placeholder('Contoh: Kamar Terluas')
                                     ->required()
                                     ->clearErrorOnInput()
                                     ->maxLength(100),
 
                                 TextInput::make('label.en')
-                                    ->label('Label Tag ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â English')
+                                    ->label('Label Tag — English')
                                     ->required()
                                     ->clearErrorOnInput()
                                     ->maxLength(100),
@@ -245,7 +245,7 @@ class RoomFacilityForm
                         TextInput::make('room_size')
                             ->label('Luas Kamar')
                             ->numeric()
-                            ->suffix('mÃƒâ€šÃ‚Â²')
+                            ->suffix('m²')
                             ->placeholder('Contoh: 40')
                             ->maxValue(999),
 
@@ -272,6 +272,7 @@ class RoomFacilityForm
                             ->label('Pesan Otomatis Yang Dikirim Pengunjung ke Admin')
                             ->placeholder('Contoh: Halo, saya ingin informasi Ruangan President Suite')
                             ->maxLength(255)
+                            ->clearErrorOnInput()
                             // ->helperText('Pesan ini akan menjadi default message saat pengunjung mengklik tombol WhatsApp di halaman ruangan ini.')
                             ->columnSpanFull(),
                     ]),

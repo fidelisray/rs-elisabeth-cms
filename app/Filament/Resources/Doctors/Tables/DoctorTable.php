@@ -77,15 +77,24 @@ class DoctorTable
                 TernaryFilter::make('profile_status')
                     ->label('Kelengkapan 4 Data')
                     ->queries(
-                        true: fn (Builder $query) => $query->whereNotNull('bio->id')
-                            ->whereNotNull('location->id')
-                            ->whereNotNull('experience->id')
-                            ->whereNotNull('education->id'),
-                        false: fn (Builder $query) => $query->where(function ($q) {
-                            $q->whereNull('bio->id')
-                                ->orWhereNull('location->id')
-                                ->orWhereNull('experience->id')
-                                ->orWhereNull('education->id');
+                        true: fn (Builder $query) => $query
+                            ->whereNotNull('bio->id')->where('bio->id', '!=', '')
+                            ->whereNotNull('bio->en')->where('bio->en', '!=', '')
+                            ->whereNotNull('location->id')->where('location->id', '!=', '')
+                            ->whereNotNull('location->en')->where('location->en', '!=', '')
+                            ->whereNotNull('experience->id')->where('experience->id', '!=', '')
+                            ->whereNotNull('experience->en')->where('experience->en', '!=', '')
+                            ->whereNotNull('education->id')->where('education->id', '!=', '')
+                            ->whereNotNull('education->en')->where('education->en', '!=', ''),
+                        false: fn (Builder $query) => $query->where(function (Builder $q) {
+                            $q->whereNull('bio->id')->orWhere('bio->id', '=', '')
+                                ->orWhereNull('bio->en')->orWhere('bio->en', '=', '')
+                                ->orWhereNull('location->id')->orWhere('location->id', '=', '')
+                                ->orWhereNull('location->en')->orWhere('location->en', '=', '')
+                                ->orWhereNull('experience->id')->orWhere('experience->id', '=', '')
+                                ->orWhereNull('experience->en')->orWhere('experience->en', '=', '')
+                                ->orWhereNull('education->id')->orWhere('education->id', '=', '')
+                                ->orWhereNull('education->en')->orWhere('education->en', '=', '');
                         }),
                     ),
             ])
