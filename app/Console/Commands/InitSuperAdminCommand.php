@@ -97,7 +97,7 @@ class InitSuperAdminCommand extends Command
         $this->newLine();
         $this->info('Akun super_admin berhasil dibuat.');
         $this->line("Email         : {$email}");
-        $this->line("PASSWORD={$password}");
+        $this->line("PASSWORD      : {$password}");
         $this->newLine();
         $this->info('Kode Pemulihan Darurat (10 kode sekali pakai):');
         foreach ($codes as $index => $code) {

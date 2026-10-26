@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # ---------------------------------------------------------
   # 1. CMS APPLICATION (PHP-FPM)
@@ -8,7 +6,8 @@ services:
     build:
       context: .
       target: fpm_app
-    image: 172.17.12.17:5051/fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
+    image: fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
+    # image: 172.17.12.17:5051/fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
     container_name: rses_cms_app
     restart: unless-stopped
     env_file:
@@ -46,7 +45,8 @@ services:
   # 1b. CMS QUEUE WORKER (Memproses job webhook & antrean lainnya)
   # ---------------------------------------------------------
   cms_worker:
-    image: 172.17.12.17:5051/fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
+    image: fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
+    # image: 172.17.12.17:5051/fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
     container_name: rses_cms_worker
     restart: unless-stopped
     env_file:
@@ -56,7 +56,16 @@ services:
       - APP_DEBUG=false
       - LOG_LEVEL=error
       - DB_HOST=rses_cms_db
-    command: ["php", "artisan", "queue:work", "database", "--sleep=3", "--tries=3", "--max-time=3600"]
+    command:
+      [
+        "php",
+        "artisan",
+        "queue:work",
+        "database",
+        "--sleep=3",
+        "--tries=3",
+        "--max-time=3600",
+      ]
     networks:
       - rses_cms_network
     depends_on:
@@ -71,7 +80,8 @@ services:
   # 1c. CMS SCHEDULER (Menjalankan jadwal Laravel)
   # ---------------------------------------------------------
   cms_scheduler:
-    image: 172.17.12.17:5051/fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
+    image: fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
+    # image: 172.17.12.17:5051/fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
     container_name: rses_cms_scheduler
     restart: unless-stopped
     init: true
