@@ -17,7 +17,7 @@ RUN npm run build
 # ==============================================================================
 # STAGE 1: PHP-FPM (Application Server)
 # ==============================================================================
-FROM php:8.4-fpm-alpine AS fpm_app
+FROM php:8.4.27-fpm-alpine AS fpm_app
 
 LABEL maintainer="RS Elisabeth" \
       description="PHP-FPM Application Image for RS Elisabeth CMS"
@@ -48,6 +48,7 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
         echo "upload_max_filesize = 64M"; \
         echo "post_max_size = 64M"; \
         echo "memory_limit = 256M"; \
+        echo "session.upload_progress.enabled = 0"; \
     } > "$PHP_INI_DIR/conf.d/uploads.ini"
 
 # 3. Install Composer dari official image
