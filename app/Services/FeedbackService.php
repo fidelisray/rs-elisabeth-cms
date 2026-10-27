@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Feedback;
 use App\Models\QuestionnaireResponse;
+use App\Support\QuestionnaireDefinition;
 use Illuminate\Support\Collection;
 
 /**
@@ -14,6 +15,22 @@ use Illuminate\Support\Collection;
  */
 class FeedbackService
 {
+    /**
+     * Daftar skala jawaban yang tergolong positif (dua tingkat tertinggi).
+     *
+     * @var list<string>
+     */
+    public const POSITIVE_SCALES = [
+        'Puas',
+        'Sangat Puas',
+        'Setuju',
+        'Sangat Setuju',
+        'Mudah',
+        'Sangat Mudah',
+        'Memadai',
+        'Sangat Memadai',
+    ];
+
     /**
      * Ringkasan feedback untuk dashboard.
      *
@@ -48,9 +65,9 @@ class FeedbackService
     }
 
     /**
-     * Ringkasan kuesioner per jenis: jumlah pengisian dan jumlah per kelompok usia.
+     * Ringkasan kuesioner per jenis: jumlah pengisian, kelompok usia, cara bayar, dan jenis kelamin.
      *
-     * @return array{total: int, by_age: array<string, int>}
+     * @return array{total: int, by_age: array<string, int>, by_payment: array<string, int>, by_gender: array<string, int>}
      */
     public function getQuestionnaireSummary(string $type): array
     {
@@ -63,9 +80,25 @@ class FeedbackService
             ->map(fn ($v) => (int) $v)
             ->all();
 
+        $byPayment = (clone $base)
+            ->selectRaw('payment_method, count(*) as total')
+            ->groupBy('payment_method')
+            ->pluck('total', 'payment_method')
+            ->map(fn ($v) => (int) $v)
+            ->all();
+
+        $byGender = (clone $base)
+            ->selectRaw('gender, count(*) as total')
+            ->groupBy('gender')
+            ->pluck('total', 'gender')
+            ->map(fn ($v) => (int) $v)
+            ->all();
+
         return [
             'total' => (clone $base)->count(),
             'by_age' => $byAge,
+            'by_payment' => $byPayment,
+            'by_gender' => $byGender,
         ];
     }
 
@@ -93,19 +126,98 @@ class FeedbackService
             ->where('questionnaire_type', $type)
             ->select('ratings')->cursor();
 
-        $positive = ['Puas', 'Sangat Puas', 'Setuju', 'Sangat Setuju', 'Mudah', 'Sangat Mudah', 'Memadai', 'Sangat Memadai'];
         $total = 0;
         $good = 0;
 
         foreach ($responses as $response) {
             foreach ((array) $response->ratings as $scale) {
                 $total++;
-                if (in_array($scale, $positive, true)) {
+                if (in_array($scale, self::POSITIVE_SCALES, true)) {
                     $good++;
                 }
             }
         }
 
         return $total === 0 ? 0 : (int) round($good / $total * 100);
+    }
+
+    /**
+     * Ringkasan per aspek pertanyaan untuk satu jenis layanan:
+     * mengembalikan hingga 3 aspek tertinggi dan 3 aspek yang paling perlu perhatian.
+     *
+     * @return array{highest: list<array{code: string, label: string, percent: int, positive: int, total: int}>, lowest: list<array{code: string, label: string, percent: int, positive: int, total: int}>}
+     */
+    public function getQuestionnaireAspectBreakdown(string $type): array
+    {
+        $responses = QuestionnaireResponse::query()
+            ->where('questionnaire_type', $type)
+            ->select('ratings')
+            ->cursor();
+
+        $stats = [];
+
+        foreach ($responses as $response) {
+            foreach ((array) $response->ratings as $code => $scale) {
+                if (! isset($stats[$code])) {
+                    $stats[$code] = ['positive' => 0, 'total' => 0];
+                }
+                $stats[$code]['total']++;
+                if (in_array($scale, self::POSITIVE_SCALES, true)) {
+                    $stats[$code]['positive']++;
+                }
+            }
+        }
+
+        if ($stats === []) {
+            return ['highest' => [], 'lowest' => []];
+        }
+
+        $items = [];
+        foreach ($stats as $code => $counts) {
+            $percent = $counts['total'] === 0 ? 0 : (int) round($counts['positive'] / $counts['total'] * 100);
+            $items[] = [
+                'code' => (string) $code,
+                'label' => QuestionnaireDefinition::label((string) $code),
+                'percent' => $percent,
+                'positive' => $counts['positive'],
+                'total' => $counts['total'],
+            ];
+        }
+
+        $highest = $items;
+        usort($highest, fn (array $a, array $b): int => ($b['percent'] <=> $a['percent']) ?: ($b['positive'] <=> $a['positive']));
+
+        $lowest = $items;
+        usort($lowest, fn (array $a, array $b): int => ($a['percent'] <=> $b['percent']) ?: ($b['total'] <=> $a['total']));
+
+        return [
+            'highest' => array_slice($highest, 0, 3),
+            'lowest' => array_slice($lowest, 0, 3),
+        ];
+    }
+
+    /**
+     * Hitung rasio jawaban positif untuk satu pengisian kuesioner.
+     *
+     * @param  array<string, mixed>  $ratings
+     * @return array{positive: int, total: int, percent: int}
+     */
+    public function calculateResponseScore(array $ratings): array
+    {
+        $total = 0;
+        $positive = 0;
+
+        foreach ($ratings as $scale) {
+            $total++;
+            if (in_array($scale, self::POSITIVE_SCALES, true)) {
+                $positive++;
+            }
+        }
+
+        return [
+            'positive' => $positive,
+            'total' => $total,
+            'percent' => $total === 0 ? 0 : (int) round($positive / $total * 100),
+        ];
     }
 }

@@ -33,14 +33,20 @@ class FeedbackSectionWidget extends Widget
 
         return [
             'summary' => $service->getFeedbackSummary(),
-            'latest' => $service->getLatestFeedback(10)->map(fn ($f) => [
-                'ticket' => $f->ticket_number,
-                'categories' => implode(', ', $f->categories ?? []),
-                'detail' => $f->complaint_detail,
-                'status' => $f->status,
-                'submitted' => optional($f->submitted_at)->format('d M Y, H:i'),
-                'url' => FeedbackResource::getUrl('view', ['record' => $f]),
-            ])->all(),
+            'latest' => $service->getLatestFeedback(10)->map(function ($f): array {
+                $categoryList = array_values(array_filter((array) ($f->categories ?? []), fn ($item) => is_string($item) && trim($item) !== ''));
+
+                return [
+                    'ticket' => $f->ticket_number,
+                    'categories' => implode(', ', $categoryList),
+                    'category_list' => $categoryList,
+                    'detail' => $f->complaint_detail,
+                    'status' => $f->status,
+                    'submitted' => optional($f->submitted_at)->format('d M Y, H:i'),
+                    'submitted_human' => optional($f->submitted_at)->diffForHumans(),
+                    'url' => FeedbackResource::getUrl('view', ['record' => $f]),
+                ];
+            })->all(),
         ];
     }
 }

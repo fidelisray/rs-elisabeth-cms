@@ -34,6 +34,7 @@ class QuestionnaireSectionWidget extends Widget
 
         foreach (QuestionnaireResponse::TYPES as $type => $label) {
             $summary = $service->getQuestionnaireSummary($type);
+            $aspects = $service->getQuestionnaireAspectBreakdown($type);
 
             $groups[] = [
                 'type' => $type,
@@ -41,13 +42,25 @@ class QuestionnaireSectionWidget extends Widget
                 'total' => $summary['total'],
                 'satisfaction' => $service->getSatisfactionPercent($type),
                 'by_age' => $summary['by_age'],
-                'latest' => $service->getLatestQuestionnaires($type, 5)->map(fn ($q) => [
-                    'age' => $q->age_group,
-                    'gender' => $q->gender,
-                    'payment' => $q->payment_method,
-                    'submitted' => optional($q->submitted_at)->format('d M Y, H:i'),
-                    'url' => QuestionnaireResource::getUrl('view', ['record' => $q]),
-                ])->all(),
+                'by_payment' => $summary['by_payment'],
+                'by_gender' => $summary['by_gender'],
+                'aspects' => $aspects,
+                'latest' => $service->getLatestQuestionnaires($type, 5)->map(function ($q) use ($service): array {
+                    $score = $service->calculateResponseScore((array) ($q->ratings ?? []));
+
+                    return [
+                        'age' => $q->age_group,
+                        'gender' => $q->gender,
+                        'payment' => $q->payment_method,
+                        'suggestions' => $q->suggestions,
+                        'score_percent' => $score['percent'],
+                        'score_positive' => $score['positive'],
+                        'score_total' => $score['total'],
+                        'submitted' => optional($q->submitted_at)->format('d M Y, H:i'),
+                        'submitted_human' => optional($q->submitted_at)->diffForHumans(),
+                        'url' => QuestionnaireResource::getUrl('view', ['record' => $q]),
+                    ];
+                })->all(),
             ];
         }
 

@@ -112,4 +112,34 @@ class FeedbackDashboardTest extends TestCase
         Livewire::test(QuestionnaireSectionWidget::class)->assertDontSee('Budi Santoso');
         Livewire::test(FeedbackSectionWidget::class)->assertDontSee('Budi Santoso');
     }
+
+    public function test_questionnaire_aspect_breakdown_and_enriched_widget_data_render_correctly(): void
+    {
+        QuestionnaireResponse::factory()->create([
+            'questionnaire_type' => 'igd',
+            'age_group' => '26-35',
+            'payment_method' => 'BPJS',
+            'suggestions' => 'Ruang tunggu IGD cukup bersih.',
+            'ratings' => [
+                'speed_triage_arrival' => 'Sangat Puas',
+                'triage_efficiency' => 'Puas',
+                'waiting_time_acceptable' => 'Tidak Setuju',
+            ],
+        ]);
+
+        $service = new FeedbackService;
+        $breakdown = $service->getQuestionnaireAspectBreakdown('igd');
+
+        $this->assertNotEmpty($breakdown['highest']);
+        $this->assertNotEmpty($breakdown['lowest']);
+        $this->assertSame('waiting_time_acceptable', $breakdown['lowest'][0]['code']);
+        $this->assertSame(0, $breakdown['lowest'][0]['percent']);
+
+        Livewire::test(QuestionnaireSectionWidget::class)
+            ->assertSee('Kecepatan penanganan saat tiba')
+            ->assertSee('Kewajaran waktu tunggu')
+            ->assertSee('Ruang tunggu IGD cukup bersih.')
+            ->assertSee('BPJS')
+            ->assertSee('Baca jawaban');
+    }
 }
