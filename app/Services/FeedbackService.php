@@ -145,7 +145,7 @@ class FeedbackService
      * Ringkasan per aspek pertanyaan untuk satu jenis layanan:
      * mengembalikan hingga 3 aspek tertinggi dan 3 aspek yang paling perlu perhatian.
      *
-     * @return array{highest: list<array{code: string, label: string, percent: int, positive: int, total: int}>, lowest: list<array{code: string, label: string, percent: int, positive: int, total: int}>}
+     * @return array{highest: list<array{code: string, label: string, percent: int, positive: int, total: int}>, lowest: list<array{code: string, label: string, percent: int, negative: int, positive: int, total: int}>}
      */
     public function getQuestionnaireAspectBreakdown(string $type): array
     {
@@ -174,21 +174,44 @@ class FeedbackService
 
         $items = [];
         foreach ($stats as $code => $counts) {
-            $percent = $counts['total'] === 0 ? 0 : (int) round($counts['positive'] / $counts['total'] * 100);
+            $positivePercent = $counts['total'] === 0 ? 0 : (int) round($counts['positive'] / $counts['total'] * 100);
+            $negative = $counts['total'] - $counts['positive'];
+            $negativePercent = $counts['total'] === 0 ? 0 : (int) round($negative / $counts['total'] * 100);
+
             $items[] = [
                 'code' => (string) $code,
                 'label' => QuestionnaireDefinition::label((string) $code),
-                'percent' => $percent,
+                'positive_percent' => $positivePercent,
+                'negative_percent' => $negativePercent,
                 'positive' => $counts['positive'],
+                'negative' => $negative,
                 'total' => $counts['total'],
             ];
         }
 
-        $highest = $items;
+        $highest = array_map(fn (array $item): array => [
+            'code' => $item['code'],
+            'label' => $item['label'],
+            'percent' => $item['positive_percent'],
+            'positive' => $item['positive'],
+            'total' => $item['total'],
+        ], $items);
         usort($highest, fn (array $a, array $b): int => ($b['percent'] <=> $a['percent']) ?: ($b['positive'] <=> $a['positive']));
 
-        $lowest = $items;
-        usort($lowest, fn (array $a, array $b): int => ($a['percent'] <=> $b['percent']) ?: ($b['total'] <=> $a['total']));
+        $lowest = array_map(fn (array $item): array => [
+            'code' => $item['code'],
+            'label' => $item['label'],
+            'percent' => $item['negative_percent'],
+            'negative' => $item['negative'],
+            'positive' => $item['positive'],
+            'total' => $item['total'],
+        ], $items);
+        usort($lowest, function (array $a, array $b): int {
+            return ($b['percent'] <=> $a['percent'])
+                ?: ($b['negative'] <=> $a['negative'])
+                ?: ($b['total'] <=> $a['total'])
+                ?: ($a['positive'] <=> $b['positive']);
+        });
 
         return [
             'highest' => array_slice($highest, 0, 3),

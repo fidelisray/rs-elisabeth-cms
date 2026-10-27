@@ -133,11 +133,13 @@ class FeedbackDashboardTest extends TestCase
         $this->assertNotEmpty($breakdown['highest']);
         $this->assertNotEmpty($breakdown['lowest']);
         $this->assertSame('waiting_time_acceptable', $breakdown['lowest'][0]['code']);
-        $this->assertSame(0, $breakdown['lowest'][0]['percent']);
+        $this->assertSame(100, $breakdown['lowest'][0]['percent']);
+        $this->assertSame(1, $breakdown['lowest'][0]['negative']);
 
         Livewire::test(QuestionnaireSectionWidget::class)
             ->assertSee('Kecepatan penanganan saat tiba')
             ->assertSee('Kewajaran waktu tunggu')
+            ->assertSee('100% (1/1)')
             ->assertSee('Ruang tunggu IGD cukup bersih.')
             ->assertSee('BPJS')
             ->assertSee('Baca jawaban');

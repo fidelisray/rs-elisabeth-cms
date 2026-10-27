@@ -559,15 +559,16 @@
                                     <div class="rse-qs-dist-list">
                                         @foreach ($lowestAspects as $aspect)
                                             @php
-                                                $isLow = $aspect['percent'] < 70;
+                                                $isLow = $aspect['percent'] >= 30;
                                                 $barColor = $isLow ? '#e11d48' : '#d97706';
                                                 $textColor = $isLow ? 'var(--rse-rose-text)' : 'var(--rse-amber-text)';
+                                                $negativeCount = $aspect['negative'] ?? ($aspect['total'] - ($aspect['positive'] ?? 0));
                                             @endphp
                                             <div>
                                                 <div class="rse-qs-dist-item-head">
                                                     <span style="font-weight: 600; color: var(--rse-text);">{{ $aspect['label'] }}</span>
                                                     <span style="font-weight: 700; color: {{ $textColor }};">
-                                                        {{ $aspect['percent'] }}% ({{ $aspect['positive'] }}/{{ $aspect['total'] }})
+                                                        {{ $aspect['percent'] }}% ({{ $negativeCount }}/{{ $aspect['total'] }})
                                                     </span>
                                                 </div>
                                                 <div class="rse-qs-bar-track" style="margin-top: 0.25rem; height: 0.375rem;">
