@@ -125,7 +125,12 @@ trait ValidatesTranslatableLocales
                     session()->put('spatie_translatable_active_locale', $targetLocale);
                 }
 
+                $recordAttributes = method_exists($this, 'getRecord')
+                    ? Arr::except($this->getRecord()->attributesToArray(), $translatableAttributes)
+                    : [];
+
                 $this->form->fill([
+                    ...$recordAttributes,
                     ...Arr::except($rawState, $translatableAttributes),
                     ...($this->otherLocaleData[$targetLocale] ?? []),
                 ]);
@@ -180,7 +185,16 @@ trait ValidatesTranslatableLocales
                 $target = $this->otherLocaleData[$locale] ?? [];
                 $this->otherLocaleData[$this->activeLocale] = Arr::only($this->data, $attributes);
                 $this->activeLocale = $locale;
-                $this->form->fill([...Arr::except($this->data, $attributes), ...$target]);
+
+                $recordAttributes = method_exists($this, 'getRecord')
+                    ? Arr::except($this->getRecord()->attributesToArray(), $attributes)
+                    : [];
+
+                $this->form->fill([
+                    ...$recordAttributes,
+                    ...Arr::except($this->data, $attributes),
+                    ...$target,
+                ]);
                 unset($this->otherLocaleData[$locale]);
 
                 if (filament('spatie-translatable')->getPersistLocale()) {
