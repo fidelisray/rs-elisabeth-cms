@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Doctor;
+use App\Support\DoctorSpecialtyScope;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -13,36 +14,31 @@ class DoctorSyncService
     ) {}
 
     /**
-     * Melakukan sinkronisasi data master dokter dari SIMRS MedInfras ke tabel doctors.
+     * Melakukan sinkronisasi data master dokter dari API internal RS ke tabel doctors.
      * Menjaga agar 4 field konten marketing yang telah diedit TIDAK pernah tertimpa.
      *
-     * @return array{created: int, updated: int, unchanged: int, total: int, status: string, failed_specialties: array}
+     * @return array{created: int, updated: int, unchanged: int, total: int, status: string, failed_specialties: array, excluded_specialties: array}
      */
     public function syncFromMedInfras(): array
     {
         if (! config('rsapi.enabled', true)) {
-            return ['created' => 0, 'updated' => 0, 'unchanged' => 0, 'total' => 0, 'status' => 'disabled', 'failed_specialties' => []];
+            return ['created' => 0, 'updated' => 0, 'unchanged' => 0, 'total' => 0, 'status' => 'disabled', 'failed_specialties' => [], 'excluded_specialties' => []];
         }
         $spesialisasi = $this->apiService->getDaftarSpesialisasi();
 
         if (empty($spesialisasi)) {
-            Log::warning('DoctorSyncService: Daftar spesialisasi kosong dari API MedInfras.');
+            Log::warning('DoctorSyncService: Daftar spesialisasi kosong dari API internal RS.');
 
-            return ['created' => 0, 'updated' => 0, 'unchanged' => 0, 'total' => 0, 'status' => 'failed', 'failed_specialties' => []];
+            return ['created' => 0, 'updated' => 0, 'unchanged' => 0, 'total' => 0, 'status' => 'failed', 'failed_specialties' => [], 'excluded_specialties' => []];
         }
 
         // Kumpulkan data dokter unik berdasarkan ParamedicCode
         $uniqueDoctors = [];
-        $failedSpecialties = [];
+        $selection = DoctorSpecialtyScope::select($spesialisasi);
+        $failedSpecialties = $selection['invalid_specialties'] > 0 ? ['invalid-specialty'] : [];
 
-        foreach ($spesialisasi as $spc) {
-            $specialty = (array) $spc;
-            $code = $specialty['Code'] ?? null;
-            if (! $code) {
-                $failedSpecialties[] = 'invalid-specialty';
-
-                continue;
-            }
+        foreach ($selection['specialties'] as $specialty) {
+            $code = $specialty['Code'];
 
             try {
                 $response = $this->apiService->getDokterBySpesialisasi($code);
@@ -141,6 +137,7 @@ class DoctorSyncService
             'total' => count($uniqueDoctors),
             'status' => $uniqueDoctors === [] ? 'failed' : ($failedSpecialties === [] ? 'success' : 'partial'),
             'failed_specialties' => array_values(array_unique($failedSpecialties)),
+            'excluded_specialties' => $selection['excluded_specialties'],
         ];
     }
 }

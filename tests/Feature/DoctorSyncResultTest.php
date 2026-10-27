@@ -22,6 +22,26 @@ class DoctorSyncResultTest extends TestCase
         Bus::fake();
     }
 
+    public function test_sync_never_fetches_excluded_specialty_or_changes_its_existing_profile(): void
+    {
+        config(['rsapi.blacklist_specialties' => ['KSM 37']]);
+        $existing = Doctor::create([
+            'paramedic_code' => 'EXISTING-37', 'name' => 'Dokter Existing', 'specialty_code' => 'KSM 37',
+            'bio' => ['id' => 'Bio marketing', 'en' => 'Marketing bio'], 'is_active' => true,
+        ]);
+        $before = $existing->fresh()->getRawOriginal();
+        $api = $this->getMockBuilder(DoctorApiService::class)->onlyMethods(['getDaftarSpesialisasi', 'getDokterBySpesialisasi'])->getMock();
+        $api->method('getDaftarSpesialisasi')->willReturn([(object) ['Code' => 'KSM 37'], (object) ['Code' => 'VALID']]);
+        $api->expects($this->once())->method('getDokterBySpesialisasi')->with('VALID')
+            ->willReturn(['Success' => true, 'ScheduleRoutine' => [(object) ['ParamedicCode' => 'NEW-1', 'ParamedicName' => 'Dokter Valid']]]);
+        $result = (new DoctorSyncService($api))->syncFromMedInfras();
+        $this->assertSame('success', $result['status']);
+        $this->assertSame(['KSM 37'], $result['excluded_specialties']);
+        $this->assertSame([], $result['failed_specialties']);
+        $this->assertSame(1, $result['created']);
+        $this->assertSame($before, $existing->fresh()->getRawOriginal());
+    }
+
     public function test_partial_sync_is_reported_and_does_not_overwrite_marketing_content(): void
     {
         $api = $this->partialApi();

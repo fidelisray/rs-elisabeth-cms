@@ -220,7 +220,9 @@ class DoctorPolicyAndFormTest extends TestCase
             'specialty_code' => 'SP-01',
             'specialty_name' => 'Umum',
             'is_active' => true,
-            'bio' => ['id' => 'Bio ID', 'en' => ''],
+            // Satu field bilingual terisi, tiga field lain masih NULL. Terjemahan
+            // satu bahasa tidak sah pada PostgreSQL dan bukan fixture profil parsial.
+            'bio' => ['id' => 'Bio ID', 'en' => 'Bio EN'],
         ]);
 
         $emptyDoctor = Doctor::create([

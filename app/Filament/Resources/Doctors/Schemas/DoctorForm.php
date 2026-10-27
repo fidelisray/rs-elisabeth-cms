@@ -14,8 +14,8 @@ class DoctorForm
     {
         return $schema
             ->components([
-                Section::make('Identitas Resmi Dokter (SIMRS MedInfras)')
-                    ->description('Data identitas bersumber dari SIMRS MedInfras (Read-Only) dan disinkronkan secara otomatis.')
+                Section::make('Identitas Resmi Dokter (API Internal RS)')
+                    ->description('Data identitas bersumber dari API internal RS (Read-Only) dan disinkronkan secara otomatis.')
                     ->columnSpanFull()
                     ->columns(2)
                     ->schema([

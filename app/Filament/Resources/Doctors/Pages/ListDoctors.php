@@ -22,13 +22,13 @@ class ListDoctors extends ListRecords
             LocaleSwitcher::make(),
 
             Action::make('syncMedin')
-                ->label('Sinkronisasi MedInfras')
+                ->label('Sinkronisasi API Internal RS')
                 ->icon('heroicon-o-arrow-path')
                 ->color('primary')
                 ->visible(fn (): bool => auth()->user()?->can('Update:Doctor') ?? false)
                 ->requiresConfirmation()
                 ->modalHeading('Sinkronisasi Data Dokter dari SIMRS')
-                ->modalDescription('Sistem akan menarik data dokter terbaru dari API MedInfras. Data profil marketing yang sudah Anda isi (Bio, Lokasi, Pengalaman, Pendidikan) dijamin aman dan tidak akan tertimpa.')
+                ->modalDescription('Sistem akan menarik data dokter terbaru dari API internal RS. Data profil marketing yang sudah Anda isi (Bio, Lokasi, Pengalaman, Pendidikan) dijamin aman dan tidak akan tertimpa.')
                 ->modalSubmitActionLabel('Mulai Sinkronisasi')
                 ->action(function (DoctorSyncService $syncService) {
                     $result = $syncService->syncFromMedInfras();
@@ -36,7 +36,7 @@ class ListDoctors extends ListRecords
                     $status = $result['status'] ?? 'failed';
                     $notification = Notification::make()
                         ->title($status === 'success' ? 'Sinkronisasi Selesai' : 'Sinkronisasi '.$status)
-                        ->body("{$result['total']} dokter valid diproses ({$result['created']} baru, {$result['updated']} diperbarui).".(! empty($result['failed_specialties']) ? ' Spesialisasi gagal: '.implode(', ', $result['failed_specialties']) : ''));
+                        ->body("{$result['total']} dokter valid diproses ({$result['created']} baru, {$result['updated']} diperbarui).".(! empty($result['failed_specialties']) ? ' Spesialisasi gagal: '.implode(', ', $result['failed_specialties']) : '').(! empty($result['excluded_specialties']) ? ' Spesialisasi dikecualikan: '.implode(', ', $result['excluded_specialties']) : ''));
                     if ($status === 'success') {
                         $notification->success();
                     } elseif ($status === 'partial') {
