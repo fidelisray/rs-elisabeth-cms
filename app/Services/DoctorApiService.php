@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\DoctorSpecialtyScope;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -86,15 +87,14 @@ class DoctorApiService
                     return is_array($data) ? $data : [];
                 }
 
-                Log::warning('API MedInfras gagal (getDaftarUnits)', [
+                Log::warning('API internal RS gagal (getDaftarUnits)', [
                     'status' => $response->status(),
-                    'body' => $response->body(),
                 ]);
 
                 return [];
             } catch (\Exception $e) {
-                Log::error('Gagal connect ke API MedInfras (getDaftarUnits)', [
-                    'error' => $e->getMessage(),
+                Log::error('Gagal terhubung ke API internal RS (getDaftarUnits)', [
+                    'exception_type' => get_class($e),
                 ]);
 
                 return [];
@@ -123,17 +123,16 @@ class DoctorApiService
                     return is_array($data) ? $data : [];
                 }
 
-                Log::warning('API MedInfras gagal (getDaftarDokterByUnitId)', [
+                Log::warning('API internal RS gagal (getDaftarDokterByUnitId)', [
                     'status' => $response->status(),
                     'unit_id' => $id,
-                    'body' => $response->body(),
                 ]);
 
                 return [];
             } catch (\Exception $e) {
-                Log::error('Gagal connect ke API MedInfras (getDaftarDokterByUnitId)', [
+                Log::error('Gagal terhubung ke API internal RS (getDaftarDokterByUnitId)', [
                     'unit_id' => $id,
-                    'error' => $e->getMessage(),
+                    'exception_type' => get_class($e),
                 ]);
 
                 return [];
@@ -162,15 +161,14 @@ class DoctorApiService
                     return is_array($data) ? $data : [];
                 }
 
-                Log::warning('API MedInfras gagal (getDaftarSpesialisasi)', [
+                Log::warning('API internal RS gagal (getDaftarSpesialisasi)', [
                     'status' => $response->status(),
-                    'body' => $response->body(),
                 ]);
 
                 return [];
             } catch (\Exception $e) {
-                Log::error('Gagal connect ke API MedInfras (getDaftarSpesialisasi)', [
-                    'error' => $e->getMessage(),
+                Log::error('Gagal terhubung ke API internal RS (getDaftarSpesialisasi)', [
+                    'exception_type' => get_class($e),
                 ]);
 
                 return [];
@@ -208,6 +206,10 @@ class DoctorApiService
      */
     public function getDokterBySpesialisasi(string $specialtyCode): array
     {
+        if (DoctorSpecialtyScope::isExcluded($specialtyCode)) {
+            // Sebelum membaca cache kegagalan lama atau menghubungi sumber.
+            return ['Success' => false, 'Excluded' => true, 'Message' => 'Spesialisasi dikecualikan melalui konfigurasi.'];
+        }
         $cacheKey = 'doctor_specialty_'.$specialtyCode;
         $ttl = (int) config('rsapi.cache_ttl.dokter_by_speciality', 3600);
 
@@ -227,25 +229,24 @@ class DoctorApiService
                     ];
                 }
 
-                Log::warning('API MedInfras gagal (getDokterBySpesialisasi)', [
+                Log::warning('API internal RS gagal (getDokterBySpesialisasi)', [
                     'status' => $response->status(),
                     'specialty' => $specialtyCode,
-                    'body' => $response->body(),
                 ]);
 
                 return [
                     'Success' => false,
-                    'Message' => "Data gagal diambil dari API Medin untuk spesialisasi {$specialtyCode}",
+                    'Message' => "Data gagal diambil dari API internal RS untuk spesialisasi {$specialtyCode}",
                 ];
             } catch (\Exception $e) {
-                Log::error('Gagal connect ke API MedInfras (getDokterBySpesialisasi)', [
+                Log::error('Gagal terhubung ke API internal RS (getDokterBySpesialisasi)', [
                     'specialty' => $specialtyCode,
-                    'error' => $e->getMessage(),
+                    'exception_type' => get_class($e),
                 ]);
 
                 return [
                     'Success' => false,
-                    'Message' => "Gagal connect ke API MedInfras untuk spesialisasi {$specialtyCode}",
+                    'Message' => "Gagal terhubung ke API internal RS untuk spesialisasi {$specialtyCode}",
                 ];
             }
         });
@@ -257,29 +258,39 @@ class DoctorApiService
      */
     public function fetchAndCacheAllDokter(): int
     {
-        $this->lastWarmupResult = ['status' => 'failed', 'total' => 0, 'failed_specialties' => []];
+        $previous = Cache::get('all_doctors_list');
+        $this->lastWarmupResult = [
+            'status' => 'failed', 'total' => 0, 'failed_specialties' => [],
+            'excluded_specialties' => [], 'source_specialties' => 0, 'requested_specialties' => 0,
+            'invalid_specialties' => 0, 'empty_specialties' => 0,
+            'cache_available' => is_array($previous) && $previous !== [], 'published' => false,
+        ];
         if (! config('rsapi.enabled', true)) {
             $this->lastWarmupResult['status'] = 'disabled';
+
             return 0;
         }
-        $spesialisasiList = [];
-
-        foreach ($this->getDaftarSpesialisasi() as $item) {
-            if (isset($item->Code)) {
-                $spesialisasiList[] = $item->Code;
-            } elseif (is_array($item) && isset($item['Code'])) {
-                $spesialisasiList[] = $item['Code'];
-            }
-        }
+        $selection = DoctorSpecialtyScope::select($this->getDaftarSpesialisasi());
+        $spesialisasiList = array_column($selection['specialties'], 'Code');
+        $this->lastWarmupResult = array_replace($this->lastWarmupResult, [
+            'source_specialties' => $selection['source_specialties'],
+            'requested_specialties' => count($spesialisasiList),
+            'excluded_specialties' => $selection['excluded_specialties'],
+            'invalid_specialties' => $selection['invalid_specialties'],
+        ]);
 
         if (empty($spesialisasiList)) {
-            Log::error('Gagal fetch daftar spesialisasi, fetchAndCacheAllDokter dibatalkan.');
+            if ($selection['excluded_specialties'] !== [] && $selection['invalid_specialties'] === 0) {
+                $this->lastWarmupResult['status'] = 'no_eligible_specialties';
+            }
+            Log::warning('Tidak ada spesialisasi dalam cakupan untuk warm-up dokter.');
 
             return 0;
         }
 
         $allDoctors = [];
-        $failed = [];
+        $failed = $selection['invalid_specialties'] > 0 ? ['invalid-specialty'] : [];
+        $empty = 0;
 
         foreach ($spesialisasiList as $code) {
             try {
@@ -287,12 +298,18 @@ class DoctorApiService
 
                 if (! ($data['Success'] ?? false)) {
                     $failed[] = $code;
+
                     continue;
                 }
 
                 if (! is_array($data['ScheduleRoutine'] ?? null)) {
                     $failed[] = $code;
+
                     continue;
+                }
+
+                if ($data['ScheduleRoutine'] === []) {
+                    $empty++;
                 }
 
                 if (! empty($data['ScheduleRoutine']) && is_array($data['ScheduleRoutine'])) {
@@ -309,14 +326,18 @@ class DoctorApiService
                 continue;
             }
 
-            sleep(1);
+            $delay = max(0, (int) config('rsapi.fetch_delay_microseconds', 1000000));
+            if ($delay > 0) {
+                usleep($delay);
+            }
         }
 
-        $this->lastWarmupResult = [
+        $this->lastWarmupResult = array_replace($this->lastWarmupResult, [
             'status' => count($allDoctors) === 0 ? 'failed' : ($failed === [] ? 'success' : 'partial'),
             'total' => count($allDoctors),
             'failed_specialties' => array_values(array_unique($failed)),
-        ];
+            'empty_specialties' => $empty,
+        ]);
         if ($failed !== [] || $allDoctors === []) {
             // Jangan menimpa cache lengkap yang lama dengan hasil parsial atau kosong.
             return 0;
@@ -326,6 +347,9 @@ class DoctorApiService
         Cache::put('all_doctors_grouped', collect($allDoctors)
             ->groupBy('SpecialityCode')
             ->toArray(), now()->addHours(12));
+
+        $this->lastWarmupResult['published'] = true;
+        $this->lastWarmupResult['cache_available'] = true;
 
         return count($allDoctors);
     }

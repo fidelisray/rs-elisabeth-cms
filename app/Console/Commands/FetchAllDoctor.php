@@ -36,10 +36,20 @@ class FetchAllDoctor extends Command
 
         $this->info('Memulai fetch data jadwal dokter...');
         $total = $apiService->fetchAndCacheAllDokter();
+        $result = $apiService->getLastWarmupResult();
+        $this->line('Spesialisasi dalam cakupan: '.($result['requested_specialties'] ?? 0));
+        if (! empty($result['excluded_specialties'])) {
+            $this->line('Spesialisasi dikecualikan: '.implode(', ', $result['excluded_specialties']));
+        }
+        if (! empty($result['failed_specialties'])) {
+            $this->line('Spesialisasi gagal: '.implode(', ', $result['failed_specialties']));
+        }
 
         if ($total === 0) {
-            $result = $apiService->getLastWarmupResult();
-            $this->error('Warm-up '.$result['status'].'. Cache lengkap sebelumnya dipertahankan.');
+            $this->error('Warm-up '.$result['status'].'. Snapshot baru tidak dipublikasikan.');
+            $this->line(($result['cache_available'] ?? false)
+                ? 'Cache lengkap sebelumnya dipertahankan.'
+                : 'Cache agregat belum tersedia; tidak ada snapshot lama sebagai fallback.');
 
             return Command::FAILURE;
         }

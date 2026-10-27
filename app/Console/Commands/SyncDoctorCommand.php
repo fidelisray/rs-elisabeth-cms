@@ -19,16 +19,19 @@ class SyncDoctorCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Sinkronisasi data master dokter dari SIMRS MedInfras ke database CMS';
+    protected $description = 'Sinkronisasi data master dokter dari API internal RS ke database CMS';
 
     /**
      * Execute the console command.
      */
     public function handle(DoctorSyncService $syncService): int
     {
-        $this->info('Memulai sinkronisasi data dokter dari SIMRS MedInfras...');
+        $this->info('Memulai sinkronisasi data dokter dari API internal RS...');
 
         $result = $syncService->syncFromMedInfras();
+        if (! empty($result['excluded_specialties'])) {
+            $this->line('Spesialisasi dikecualikan: '.implode(', ', $result['excluded_specialties']));
+        }
 
         $status = $result['status'] ?? ($result['total'] === 0 ? 'failed' : 'success');
         if ($status !== 'success') {

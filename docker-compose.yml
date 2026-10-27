@@ -6,8 +6,8 @@ services:
     build:
       context: .
       target: fpm_app
-    image: fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
-    # image: 172.17.12.17:5051/fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
+    # image: fidelisray/rs-elisabeth-cms:latest
+    image: 172.17.12.17:5051/fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
     container_name: rses_cms_app
     restart: unless-stopped
     env_file:
@@ -45,8 +45,8 @@ services:
   # 1b. CMS QUEUE WORKER (Memproses job webhook & antrean lainnya)
   # ---------------------------------------------------------
   cms_worker:
-    image: fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
-    # image: 172.17.12.17:5051/fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
+    # image: fidelisray/rs-elisabeth-cms:latest
+    image: 172.17.12.17:5051/fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
     container_name: rses_cms_worker
     restart: unless-stopped
     env_file:
@@ -80,8 +80,8 @@ services:
   # 1c. CMS SCHEDULER (Menjalankan jadwal Laravel)
   # ---------------------------------------------------------
   cms_scheduler:
-    image: fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
-    # image: 172.17.12.17:5051/fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
+    # image: fidelisray/rs-elisabeth-cms:latest
+    image: 172.17.12.17:5051/fidelisray/rs-elisabeth-cms/rs-elisabeth-cms-app:latest
     container_name: rses_cms_scheduler
     restart: unless-stopped
     init: true
