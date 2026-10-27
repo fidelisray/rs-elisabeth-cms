@@ -134,6 +134,54 @@ class DoctorPolicyAndFormTest extends TestCase
         $this->assertNull($doctor->fresh()->getTranslation('bio', 'en', false));
     }
 
+    public function test_edit_doctor_preserves_readonly_identity_fields_when_switching_locale(): void
+    {
+        $marketing = User::where('email', 'marketing@rs-elisabeth.com')->firstOrFail();
+        $marketing->update(['must_change_password' => false]);
+        $this->actingAs($marketing);
+
+        $doctor = Doctor::create([
+            'paramedic_code' => 'DOC-LOCALE-1',
+            'name' => 'dr. Caecilia Nancy S, Msi.Med, Sp.A',
+            'specialty_code' => 'SP-ANAK',
+            'specialty_name' => 'Spesialis Anak',
+            'service_unit_name' => 'Poliklinik Anak',
+            'bio' => ['id' => 'Biografi ID', 'en' => 'Biography EN'],
+            'location' => ['id' => 'Semarang', 'en' => 'Semarang City'],
+            'experience' => ['id' => '5 Tahun', 'en' => '5 Years'],
+            'education' => ['id' => 'Universitas Diponegoro', 'en' => 'Stanford University'],
+            'is_active' => true,
+        ]);
+
+        $component = Livewire::test(EditDoctor::class, ['record' => $doctor->getKey()])
+            ->assertFormSet([
+                'name' => 'dr. Caecilia Nancy S, Msi.Med, Sp.A',
+                'paramedic_code' => 'DOC-LOCALE-1',
+                'specialty_name' => 'Spesialis Anak',
+                'service_unit_name' => 'Poliklinik Anak',
+                'bio' => 'Biografi ID',
+            ])
+            ->set('activeLocale', 'en')
+            ->assertFormSet([
+                'name' => 'dr. Caecilia Nancy S, Msi.Med, Sp.A',
+                'paramedic_code' => 'DOC-LOCALE-1',
+                'specialty_name' => 'Spesialis Anak',
+                'service_unit_name' => 'Poliklinik Anak',
+                'bio' => 'Biography EN',
+                'location' => 'Semarang City',
+                'experience' => '5 Years',
+                'education' => 'Stanford University',
+            ])
+            ->set('activeLocale', 'id')
+            ->assertFormSet([
+                'name' => 'dr. Caecilia Nancy S, Msi.Med, Sp.A',
+                'paramedic_code' => 'DOC-LOCALE-1',
+                'specialty_name' => 'Spesialis Anak',
+                'service_unit_name' => 'Poliklinik Anak',
+                'bio' => 'Biografi ID',
+            ]);
+    }
+
     public function test_doctor_sync_persists_dirty_attributes_on_restored_doctor(): void
     {
         $doctor = Doctor::create([
