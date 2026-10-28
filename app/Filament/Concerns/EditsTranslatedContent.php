@@ -42,8 +42,9 @@ trait EditsTranslatedContent
                 $translatableAttributes
             );
 
-            $recordAttributes = method_exists($this, 'getRecord')
-                ? Arr::except($this->getRecord()->attributesToArray(), $translatableAttributes)
+            $record = method_exists($this, 'getRecord') ? $this->getRecord() : null;
+            $recordAttributes = $record
+                ? Arr::except($record->attributesToArray(), $translatableAttributes)
                 : [];
 
             $this->form->fill([

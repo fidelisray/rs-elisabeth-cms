@@ -125,8 +125,9 @@ trait ValidatesTranslatableLocales
                     session()->put('spatie_translatable_active_locale', $targetLocale);
                 }
 
-                $recordAttributes = method_exists($this, 'getRecord')
-                    ? Arr::except($this->getRecord()->attributesToArray(), $translatableAttributes)
+                $record = method_exists($this, 'getRecord') ? $this->getRecord() : null;
+                $recordAttributes = $record
+                    ? Arr::except($record->attributesToArray(), $translatableAttributes)
                     : [];
 
                 $this->form->fill([
@@ -186,8 +187,9 @@ trait ValidatesTranslatableLocales
                 $this->otherLocaleData[$this->activeLocale] = Arr::only($this->data, $attributes);
                 $this->activeLocale = $locale;
 
-                $recordAttributes = method_exists($this, 'getRecord')
-                    ? Arr::except($this->getRecord()->attributesToArray(), $attributes)
+                $record = method_exists($this, 'getRecord') ? $this->getRecord() : null;
+                $recordAttributes = $record
+                    ? Arr::except($record->attributesToArray(), $attributes)
                     : [];
 
                 $this->form->fill([
@@ -217,7 +219,11 @@ trait ValidatesTranslatableLocales
         return array_values(array_filter(
             static::getResource()::getTranslatableAttributes(),
             function (string $attribute): bool {
-                if (! in_array($attribute, ['wa_link_text', 'wa_prefilled_message', 'whatsapp_text', 'bio', 'location', 'experience', 'education'], true)) {
+                if (! in_array($attribute, [
+                    'wa_link_text', 'wa_prefilled_message', 'whatsapp_text',
+                    'bio', 'location', 'experience', 'education',
+                    'description', 'category',
+                ], true)) {
                     return true;
                 }
 

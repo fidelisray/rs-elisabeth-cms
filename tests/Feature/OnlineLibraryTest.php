@@ -2,9 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\OnlineLibraries\Pages\CreateOnlineLibrary;
 use App\Models\OnlineLibrary;
+use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class OnlineLibraryTest extends TestCase
@@ -63,5 +69,77 @@ class OnlineLibraryTest extends TestCase
 
         $this->assertDatabaseHas('online_libraries', ['id' => $doc->id, 'is_published' => 1]);
         $this->assertTrue($doc->fresh()->is_published);
+    }
+
+    private function actAsMarketing(): User
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $user = User::where('email', 'marketing@rs-elisabeth.com')->first();
+        $user->update(['must_change_password' => false]);
+        $this->actingAs($user);
+
+        return $user;
+    }
+
+    public function test_creating_online_library_with_only_indonesian_halts_and_switches_to_en(): void
+    {
+        $this->actAsMarketing();
+        config(['filesystems.media_disk' => 'media-test']);
+        Storage::fake('media-test');
+
+        $initialCount = OnlineLibrary::count();
+        $file = UploadedFile::fake()->create('panduan.pdf', 100, 'application/pdf');
+
+        Livewire::test(CreateOnlineLibrary::class)
+            ->fillForm([
+                'title' => 'Safety Working',
+                'slug' => 'kesehatan-kerja',
+                'category' => 'SOP',
+                'description' => '<p>Kesehatan Kerja</p>',
+                'file_path' => $file,
+                'is_published' => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors()
+            ->assertNotified()
+            ->assertSet('activeLocale', 'en');
+
+        $this->assertSame($initialCount, OnlineLibrary::count());
+    }
+
+    public function test_creating_online_library_with_both_locales_succeeds(): void
+    {
+        $this->actAsMarketing();
+        config(['filesystems.media_disk' => 'media-test']);
+        Storage::fake('media-test');
+
+        $file = UploadedFile::fake()->create('panduan.pdf', 100, 'application/pdf');
+
+        Livewire::test(CreateOnlineLibrary::class)
+            ->fillForm([
+                'title' => 'Safety Working ID',
+                'slug' => 'kesehatan-kerja-id',
+                'category' => 'SOP',
+                'description' => '<p>Kesehatan Kerja</p>',
+                'file_path' => $file,
+                'is_published' => true,
+            ])
+            ->set('activeLocale', 'en')
+            ->fillForm([
+                'title' => 'Safety Working EN',
+                'slug' => 'safety-working-en',
+                'category' => 'SOP EN',
+                'description' => '<p>Occupational Health</p>',
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $library = OnlineLibrary::where('slug->id', 'kesehatan-kerja-id')->first();
+        $this->assertNotNull($library);
+        $this->assertSame('Safety Working ID', $library->getTranslation('title', 'id'));
+        $this->assertSame('Safety Working EN', $library->getTranslation('title', 'en'));
+        $this->assertSame('kesehatan-kerja-id', $library->getTranslation('slug', 'id'));
+        $this->assertSame('safety-working-en', $library->getTranslation('slug', 'en'));
     }
 }
