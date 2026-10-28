@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Cms\DoctorApiController;
 use App\Http\Controllers\Api\Cms\FacilityServiceApiController;
 use App\Http\Controllers\Api\Cms\FeedbackApiController;
 use App\Http\Controllers\Api\Cms\NewsApiController;
+use App\Http\Controllers\Api\Cms\OnlineLibraryApiController;
 use App\Http\Controllers\Api\Cms\PromotionApiController;
 use App\Http\Controllers\Api\Cms\QuestionnaireApiController;
 use App\Http\Controllers\Api\Cms\RoomFacilityApiController;
@@ -43,6 +44,10 @@ Route::prefix('v1/cms')
         // Doctors (Profil Dokter)
         Route::get('/doctors', [DoctorApiController::class, 'index']);
         Route::get('/doctors/{paramedicCode}', [DoctorApiController::class, 'show']);
+
+        // Perpustakaan Online (Online Library Documents)
+        Route::get('/online-libraries', [OnlineLibraryApiController::class, 'index']);
+        Route::get('/online-libraries/{identifier}', [OnlineLibraryApiController::class, 'show']);
 
         // Kritik dan saran pasien (Web Frontend, POST). Body ikut ditandatangani HMAC.
         Route::post('/feedbacks', [FeedbackApiController::class, 'store']);

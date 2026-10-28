@@ -8,7 +8,7 @@ use InvalidArgumentException;
 
 class TranslatedSlugIndexes
 {
-    private const TABLES = ['news', 'articles', 'promotions', 'facility_services', 'room_facilities', 'banner_promotions'];
+    private const TABLES = ['news', 'articles', 'promotions', 'facility_services', 'room_facilities', 'banner_promotions', 'online_libraries'];
 
     public static function add(string $table): void
     {
