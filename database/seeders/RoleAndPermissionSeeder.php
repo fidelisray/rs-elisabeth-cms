@@ -43,6 +43,7 @@ class RoleAndPermissionSeeder extends Seeder
         'BannerPromotion',
         'FacilityService',
         'RoomFacility',
+        'OnlineLibrary',
     ];
 
     /**
@@ -74,6 +75,7 @@ class RoleAndPermissionSeeder extends Seeder
         'Doctor',
         'User',
         'Role',
+        'OnlineLibrary',
     ];
 
     /**

@@ -32,9 +32,10 @@ class ApiCacheInvalidator
         'facilities' => 'rs_web_cms_api_facility_services',
         'room_facilities' => 'rs_web_cms_api_room_facilities',
         'doctors' => 'rs_web_cms_api_doctors',
+        'online_libraries' => 'rs_web_cms_api_online_libraries',
     ];
 
-    private const PAGINATED_MODULES = ['news', 'articles', 'promotions'];
+    private const PAGINATED_MODULES = ['news', 'articles', 'promotions', 'online_libraries'];
 
     public static function keyForModule(string $module, ?string $locale = null): string
     {
