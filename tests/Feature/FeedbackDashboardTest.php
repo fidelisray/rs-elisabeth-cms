@@ -143,5 +143,21 @@ class FeedbackDashboardTest extends TestCase
             ->assertSee('Ruang tunggu IGD cukup bersih.')
             ->assertSee('BPJS')
             ->assertSee('Baca jawaban');
+
+        Feedback::factory()->create([
+            'categories' => ['Fasilitas & Sarana Prasarana'],
+            'status' => 'diproses',
+        ]);
+
+        Livewire::test(FeedbackSectionWidget::class)
+            ->assertSee('Filter Kelompok Kategori')
+            ->assertSee('Semua Kategori')
+            ->assertSee('Fasilitas & Sarana')
+            ->assertSee('Kode')
+            ->assertSee('Lihat')
+            ->assertDontSee('Distribusi Penyelesaian Tiket')
+            ->assertDontSee('Menunggu triase awal')
+            ->assertDontSee('Buka Tiket')
+            ->assertDontSee('<th>Status</th>', false);
     }
 }

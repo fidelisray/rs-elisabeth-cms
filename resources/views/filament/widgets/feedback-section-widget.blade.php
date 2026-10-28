@@ -10,6 +10,52 @@
         $selesaiPct = $totalCount > 0 ? (int) round(($selesaiCount / $totalCount) * 100) : 0;
 
         $indexUrl = \App\Filament\Resources\Feedbacks\FeedbackResource::getUrl('index');
+
+        $categoryGroups = [
+            [
+                'key' => 'Pelayanan Medis (Tindakan medis, penegakan diagnosis, penundaan pelayanan, dll)',
+                'label' => 'Pelayanan Medis',
+            ],
+            [
+                'key' => 'Pelayanan Non Medis (Prosedur pendaftaran, pembayaran, klaim asuransi, dll)',
+                'label' => 'Pelayanan Non Medis',
+            ],
+            [
+                'key' => 'Fasilitas & Sarana Prasarana',
+                'label' => 'Fasilitas & Sarana',
+            ],
+            [
+                'key' => 'Tarif dan biaya pemeriksaan',
+                'label' => 'Tarif & Biaya',
+            ],
+            [
+                'key' => 'Etika dan perilaku petugas',
+                'label' => 'Etika & Perilaku',
+            ],
+            [
+                'key' => 'Lainnya',
+                'label' => 'Lainnya',
+            ],
+        ];
+
+        $categoryCounts = [];
+        foreach ($categoryGroups as $groupItem) {
+            $categoryCounts[$groupItem['key']] = 0;
+        }
+
+        foreach ($latest as $latestRow) {
+            $rowCategories = $latestRow['category_list'] ?? array_filter(array_map('trim', explode(',', (string) ($latestRow['categories'] ?? ''))));
+            foreach ($rowCategories as $catName) {
+                if (! array_key_exists($catName, $categoryCounts)) {
+                    $categoryCounts[$catName] = 0;
+                    $categoryGroups[] = [
+                        'key' => $catName,
+                        'label' => $catName,
+                    ];
+                }
+                $categoryCounts[$catName]++;
+            }
+        }
     @endphp
 
     <style>
@@ -122,11 +168,104 @@
 
         .rse-fb-cta-link:focus-visible,
         .rse-fb-kpi-card:focus-visible,
+        .rse-fb-filter-pill:focus-visible,
         .rse-fb-reset-btn:focus-visible,
         .rse-fb-ticket-link:focus-visible,
         .rse-fb-action-btn:focus-visible {
             outline: 2px solid var(--rse-focus);
             outline-offset: 2px;
+        }
+
+        .rse-fb-filter-box {
+            padding: 1rem;
+            border-radius: 0.625rem;
+            background-color: var(--rse-surface-muted);
+            border: 1px solid var(--rse-border);
+            margin-bottom: 1.25rem;
+        }
+
+        .rse-fb-filter-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .rse-fb-filter-title {
+            font-size: 0.8125rem;
+            font-weight: 700;
+            color: var(--rse-text);
+        }
+
+        .rse-fb-filter-subtitle {
+            font-size: 0.75rem;
+            color: var(--rse-text-secondary);
+        }
+
+        .rse-fb-filter-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .rse-fb-filter-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-height: 44px;
+            padding: 0.4375rem 0.875rem;
+            border-radius: 0.5rem;
+            background-color: var(--rse-surface);
+            border: 1px solid var(--rse-border);
+            color: var(--rse-text);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+        }
+
+        .rse-fb-filter-pill:hover {
+            border-color: var(--rse-focus);
+        }
+
+        .rse-fb-filter-pill[aria-pressed="true"] {
+            background-color: #b45309;
+            border-color: #b45309;
+            color: #ffffff;
+        }
+
+        .dark .rse-fb-filter-pill[aria-pressed="true"] {
+            background-color: #fbbf24;
+            border-color: #fbbf24;
+            color: #0f172a;
+        }
+
+        .rse-fb-filter-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 1.375rem;
+            padding: 0.0625rem 0.375rem;
+            border-radius: 0.25rem;
+            background-color: var(--rse-surface-muted);
+            border: 1px solid var(--rse-border);
+            color: var(--rse-text-secondary);
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .rse-fb-filter-pill[aria-pressed="true"] .rse-fb-filter-count {
+            background-color: #92400e;
+            border-color: transparent;
+            color: #ffffff;
+        }
+
+        .dark .rse-fb-filter-pill[aria-pressed="true"] .rse-fb-filter-count {
+            background-color: #f59e0b;
+            border-color: transparent;
+            color: #0f172a;
         }
 
         .rse-fb-kpi-grid {
@@ -373,6 +512,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 0.375rem;
             min-height: 44px;
             padding: 0.375rem 0.75rem;
             border-radius: 0.375rem;
@@ -404,7 +544,7 @@
             Ringkasan dari formulir kritik dan saran di website. Nama dan nomor telepon pasien tidak ditampilkan di sini.
         </x-slot>
 
-        <div class="rse-fb-root" x-data="{ statusFilter: 'all' }">
+        <div class="rse-fb-root" x-data="{ statusFilter: 'all', categoryFilter: 'all', categoryLabel: 'Semua Kategori' }">
             <div class="rse-fb-topbar">
                 <div class="rse-fb-privacy-pill">
                     <span>Data pribadi pelapor & pasien disamarkan pada tampilan ringkasan ini</span>
@@ -414,6 +554,7 @@
                 </a>
             </div>
 
+            {{--
             <div class="rse-fb-kpi-grid" role="group" aria-label="Filter ringkasan status kritik dan saran">
                 <button
                     type="button"
@@ -491,6 +632,50 @@
                     </div>
                 </div>
             @endif
+            --}}
+
+            <div class="rse-fb-filter-box" role="group" aria-label="Filter kelompok kategori kritik dan saran">
+                <div class="rse-fb-filter-head">
+                    <div>
+                        <p class="rse-fb-filter-title">Filter Kelompok Kategori</p>
+                        <p class="rse-fb-filter-subtitle">Pilih kelompok kategori untuk menyaring daftar kritik dan saran pasien di bawah ini.</p>
+                    </div>
+                    <span class="rse-fb-privacy-pill" style="padding: 0.25rem 0.625rem;">
+                        Total laporan tersimpan: <strong>{{ $totalCount }}</strong>
+                    </span>
+                </div>
+
+                <div class="rse-fb-filter-list">
+                    <button
+                        type="button"
+                        class="rse-fb-filter-pill"
+                        :aria-pressed="categoryFilter === 'all' ? 'true' : 'false'"
+                        @click="categoryFilter = 'all'; categoryLabel = 'Semua Kategori'"
+                    >
+                        <span>Semua Kategori</span>
+                        <span class="rse-fb-filter-count">{{ count($latest) }}</span>
+                    </button>
+
+                    @foreach ($categoryGroups as $catGroup)
+                        @php
+                            $catKey = $catGroup['key'];
+                            $catNameLabel = $catGroup['label'];
+                            $catCount = $categoryCounts[$catKey] ?? 0;
+                        @endphp
+                        <button
+                            type="button"
+                            class="rse-fb-filter-pill"
+                            data-cat-key="{{ $catKey }}"
+                            data-cat-label="{{ $catNameLabel }}"
+                            :aria-pressed="categoryFilter === $el.dataset.catKey ? 'true' : 'false'"
+                            @click="if (categoryFilter === $el.dataset.catKey) { categoryFilter = 'all'; categoryLabel = 'Semua Kategori'; } else { categoryFilter = $el.dataset.catKey; categoryLabel = $el.dataset.catLabel; }"
+                        >
+                            <span>{{ $catNameLabel }}</span>
+                            <span class="rse-fb-filter-count">{{ $catCount }}</span>
+                        </button>
+                    @endforeach
+                </div>
+            </div>
 
             @if (count($latest) === 0)
                 <div class="rse-fb-empty">
@@ -498,17 +683,32 @@
                         Belum ada kritik dan saran masuk.
                     </p>
                     <p style="font-size: 0.8125rem; color: var(--rse-text-secondary);">
-                        Laporan yang dikirim pasien melalui formulir website akan otomatis muncul di daftar triase ini.
+                        Laporan yang dikirim pasien melalui formulir website akan otomatis muncul di daftar ini.
                     </p>
                 </div>
             @else
                 <div class="rse-fb-toolbar">
                     <div style="font-size: 0.875rem; font-weight: 600; color: var(--rse-text);">
                         <span>10 Laporan Terbaru</span>
+                        <span x-show="categoryFilter !== 'all'" x-cloak style="font-weight: 500; color: var(--rse-text-secondary);">
+                            (Kategori: <span x-text="categoryLabel"></span>)
+                        </span>
+                        {{--
                         <span x-show="statusFilter !== 'all'" x-cloak style="font-weight: 500; color: var(--rse-text-secondary);">
                             (Filter aktif: <span x-text="statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)"></span>)
                         </span>
+                        --}}
                     </div>
+                    <button
+                        type="button"
+                        x-show="categoryFilter !== 'all'"
+                        x-cloak
+                        class="rse-fb-reset-btn"
+                        @click="categoryFilter = 'all'; categoryLabel = 'Semua Kategori'"
+                    >
+                        Tampilkan semua kategori
+                    </button>
+                    {{--
                     <button
                         type="button"
                         x-show="statusFilter !== 'all'"
@@ -518,16 +718,18 @@
                     >
                         Tampilkan semua status
                     </button>
+                    --}}
                 </div>
 
                 <div class="rse-fb-table-wrap">
                     <table class="rse-fb-table">
                         <thead>
                             <tr>
-                                <th>Tiket</th>
+                                <th>Kode</th>
+                                {{-- <th>Tiket</th> --}}
                                 <th>Kategori</th>
                                 <th>Keluhan</th>
-                                <th>Status</th>
+                                {{-- <th>Status</th> --}}
                                 <th>Waktu</th>
                                 <th>Tindakan</th>
                             </tr>
@@ -546,9 +748,12 @@
                                         'diproses' => '#0284c7',
                                         default => '#d97706',
                                     };
-                                    $categories = $row['category_list'] ?? array_filter(array_map('trim', explode(',', (string) ($row['categories'] ?? ''))));
+                                    $categories = array_values($row['category_list'] ?? array_filter(array_map('trim', explode(',', (string) ($row['categories'] ?? '')))));
                                 @endphp
-                                <tr x-show="statusFilter === 'all' || statusFilter === '{{ $rowStatus }}'">
+                                <tr
+                                    data-categories="{{ json_encode($categories) }}"
+                                    x-show="categoryFilter === 'all' || JSON.parse($el.dataset.categories || '[]').includes(categoryFilter)"
+                                >
                                     <td style="white-space: nowrap;">
                                         <a class="rse-fb-ticket-link" href="{{ $row['url'] }}">
                                             {{ $row['ticket'] }}
@@ -568,12 +773,14 @@
                                     <td style="max-width: 28rem; line-height: 1.45;">
                                         {{ \Illuminate\Support\Str::limit($row['detail'], 140) }}
                                     </td>
+                                    {{--
                                     <td>
                                         <span class="rse-fb-status-badge {{ $statusClass }}">
                                             <span class="rse-fb-status-dot" style="background-color: {{ $dotColor }};"></span>
                                             {{ ucfirst($row['status']) }}
                                         </span>
                                     </td>
+                                    --}}
                                     <td style="white-space: nowrap;">
                                         <div style="font-weight: 600;">{{ $row['submitted'] }}</div>
                                         @if (! empty($row['submitted_human']))
@@ -584,7 +791,12 @@
                                     </td>
                                     <td style="white-space: nowrap;">
                                         <a class="rse-fb-action-btn" href="{{ $row['url'] }}">
-                                            Buka Tiket
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width: 16px; height: 16px; flex-shrink: 0;">
+                                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                                <circle cx="12" cy="12" r="3"/>
+                                            </svg>
+                                            <span>Lihat</span>
+                                            {{-- Buka Tiket --}}
                                         </a>
                                     </td>
                                 </tr>
