@@ -20,40 +20,109 @@ class NewsForm
     {
         return $schema
             ->components([
-                Section::make('Konten Utama Berita')
+                Section::make('Konten Berita - Bahasa Indonesia (ID)')
+                    ->description('Lengkapi judul, kategori, ringkasan, dan isi berita dalam Bahasa Indonesia.')
                     ->columnSpanFull()
                     ->columns(3)
                     ->schema([
 
-                        TextInput::make('title')
-                            ->label('Headline Berita')
+                        TextInput::make('title.id')
+                            ->label('Headline Berita (Indonesia)')
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Set $set, Get $get, ?string $operation, ?string $state) {
-                                if (($operation === 'create' || empty($get('slug'))) && filled($state)) {
-                                    $set('slug', Str::slug($state));
+                                if (($operation === 'create' || empty($get('slug.id'))) && filled($state)) {
+                                    $set('slug.id', Str::slug($state));
                                 }
                             }),
 
-                        TextInput::make('slug')
-                            ->label('Identifier')
+                        TextInput::make('slug.id')
+                            ->label('Identifier / Slug (Indonesia)')
                             ->placeholder('Klik pada form dan teks akan terisi otomatis')
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
-                            ->unique(column: fn ($livewire = null): string => 'slug->'.($livewire?->activeLocale ?? app()->getLocale()), ignoreRecord: true)
+                            ->unique(column: 'slug->id', ignoreRecord: true)
                             ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
                             ->helperText('Dapat diedit jika diperlukan'),
 
-                        TextInput::make('category')
-                            ->label('Kategori')
+                        TextInput::make('category.id')
+                            ->label('Kategori (Indonesia)')
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
-                            ->placeholder('Masukkan kategori sesuai bahasa yang dipilih'),
+                            ->placeholder('Masukkan kategori dalam Bahasa Indonesia'),
 
+                        Textarea::make('shorts.id')
+                            ->label('Ringkasan Berita (Indonesia)')
+                            ->placeholder('Ringkasan singkat yang akan muncul di bawah headline')
+                            ->required()
+                            ->clearErrorOnInput()
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+
+                        RichEditor::make('content.id')
+                            ->label('Isi Konten Berita (Indonesia)')
+                            ->required()
+                            ->clearErrorOnInput()
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Konten Berita - Bahasa Inggris (EN)')
+                    ->description('Lengkapi judul, kategori, ringkasan, dan isi berita dalam Bahasa Inggris.')
+                    ->columnSpanFull()
+                    ->columns(3)
+                    ->schema([
+
+                        TextInput::make('title.en')
+                            ->label('Headline Berita (English)')
+                            ->required()
+                            ->clearErrorOnInput()
+                            ->maxLength(255)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (Set $set, Get $get, ?string $operation, ?string $state) {
+                                if (($operation === 'create' || empty($get('slug.en'))) && filled($state)) {
+                                    $set('slug.en', Str::slug($state));
+                                }
+                            }),
+
+                        TextInput::make('slug.en')
+                            ->label('Identifier / Slug (English)')
+                            ->placeholder('Klik pada form dan teks akan terisi otomatis')
+                            ->required()
+                            ->clearErrorOnInput()
+                            ->maxLength(255)
+                            ->unique(column: 'slug->en', ignoreRecord: true)
+                            ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
+                            ->helperText('Dapat diedit jika diperlukan'),
+
+                        TextInput::make('category.en')
+                            ->label('Kategori (English)')
+                            ->required()
+                            ->clearErrorOnInput()
+                            ->maxLength(255)
+                            ->placeholder('Masukkan kategori dalam Bahasa Inggris'),
+
+                        Textarea::make('shorts.en')
+                            ->label('Ringkasan Berita (English)')
+                            ->placeholder('Short summary displayed below the headline')
+                            ->required()
+                            ->clearErrorOnInput()
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+
+                        RichEditor::make('content.en')
+                            ->label('Isi Konten Berita (English)')
+                            ->required()
+                            ->clearErrorOnInput()
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Penulis & Thumbnail Berita')
+                    ->columnSpanFull()
+                    ->schema([
                         TextInput::make('author')
                             ->label('Author')
                             ->required()
@@ -61,24 +130,6 @@ class NewsForm
                             ->maxLength(25)
                             ->columnSpanFull(),
 
-                        Textarea::make('shorts')
-                            ->label('Ringkasan Berita')
-                            ->placeholder('Ringkasan singkat yang akan muncul di bawah headline')
-                            ->required()
-                            ->clearErrorOnInput()
-                            ->maxLength(255)
-                            ->columnSpanFull(),
-
-                        RichEditor::make('content')
-                            ->label('Isi Konten Berita')
-                            ->required()
-                            ->clearErrorOnInput()
-                            ->columnSpanFull(),
-                    ]),
-
-                Section::make('Thumbnail Berita')
-                    ->columnSpanFull()
-                    ->schema([
                         FileUpload::make('image_path')
                             ->label('Gambar')
                             ->required()
@@ -88,13 +139,10 @@ class NewsForm
                             ->image()
                             ->imageEditor()
                             ->imageEditorAspectRatioOptions(['16:9'])
-                            // ->imageAspectRatio('16:9')
-                            // ->automaticallyCropImagesToAspectRatio()
-
                             ->automaticallyResizeImagesToWidth(1920)
                             ->automaticallyResizeImagesToHeight(1080)
                             ->automaticallyResizeImagesMode('cover')
-                            ->maxSize(5120) // 5 MB
+                            ->maxSize(5120)
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                             ->helperText('Upload gambar berita dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB'),
                     ]),

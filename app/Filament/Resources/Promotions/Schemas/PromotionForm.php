@@ -22,48 +22,98 @@ class PromotionForm
     {
         return $schema
             ->components([
-                Section::make('Informasi Promosi')
+                Section::make('Informasi Promosi - Bahasa Indonesia (ID)')
+                    ->description('Lengkapi nama, ringkasan, dan deskripsi promosi dalam Bahasa Indonesia.')
                     ->columnSpanFull()
                     ->columns(2)
                     ->schema([
 
-                        TextInput::make('title')
-                            ->label('Nama Promosi')
+                        TextInput::make('title.id')
+                            ->label('Nama Promosi (Indonesia)')
                             ->placeholder('Promo Terbaru, Promo Perawatan..')
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Set $set, Get $get, ?string $operation, ?string $state) {
-                                if (($operation === 'create' || empty($get('slug'))) && filled($state)) {
-                                    $set('slug', Str::slug($state));
+                                if (($operation === 'create' || empty($get('slug.id'))) && filled($state)) {
+                                    $set('slug.id', Str::slug($state));
                                 }
                             }),
 
-                        TextInput::make('slug')
-                            ->label('Identifier')
+                        TextInput::make('slug.id')
+                            ->label('Identifier / Slug (Indonesia)')
                             ->placeholder('Klik pada form dan teks akan terisi otomatis')
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(100)
-                            ->unique(column: fn ($livewire = null): string => 'slug->'.($livewire?->activeLocale ?? app()->getLocale()), ignoreRecord: true)
+                            ->unique(column: 'slug->id', ignoreRecord: true)
                             ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
                             ->helperText('Dapat diedit jika diperlukan'),
 
-                        Textarea::make('shorts')
-                            ->label('Deskripsi Singkat')
+                        Textarea::make('shorts.id')
+                            ->label('Deskripsi Singkat (Indonesia)')
                             ->placeholder('Deskripsi singkat mengenai promosi')
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
                             ->columnSpanFull(),
 
-                        RichEditor::make('description')
-                            ->label('Deskripsi')
+                        RichEditor::make('description.id')
+                            ->label('Deskripsi (Indonesia)')
                             ->required()
                             ->clearErrorOnInput()
                             ->columnSpanFull(),
+                    ]),
 
+                Section::make('Informasi Promosi - Bahasa Inggris (EN)')
+                    ->description('Lengkapi nama, ringkasan, dan deskripsi promosi dalam Bahasa Inggris.')
+                    ->columnSpanFull()
+                    ->columns(2)
+                    ->schema([
+
+                        TextInput::make('title.en')
+                            ->label('Nama Promosi (English)')
+                            ->placeholder('Latest Promo, Care Package Promo..')
+                            ->required()
+                            ->clearErrorOnInput()
+                            ->maxLength(255)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (Set $set, Get $get, ?string $operation, ?string $state) {
+                                if (($operation === 'create' || empty($get('slug.en'))) && filled($state)) {
+                                    $set('slug.en', Str::slug($state));
+                                }
+                            }),
+
+                        TextInput::make('slug.en')
+                            ->label('Identifier / Slug (English)')
+                            ->placeholder('Klik pada form dan teks akan terisi otomatis')
+                            ->required()
+                            ->clearErrorOnInput()
+                            ->maxLength(100)
+                            ->unique(column: 'slug->en', ignoreRecord: true)
+                            ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
+                            ->helperText('Dapat diedit jika diperlukan'),
+
+                        Textarea::make('shorts.en')
+                            ->label('Deskripsi Singkat (English)')
+                            ->placeholder('Short summary about the promotion')
+                            ->required()
+                            ->clearErrorOnInput()
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+
+                        RichEditor::make('description.en')
+                            ->label('Deskripsi (English)')
+                            ->required()
+                            ->clearErrorOnInput()
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Periode & Poster Promosi')
+                    ->columnSpanFull()
+                    ->columns(2)
+                    ->schema([
                         DatePicker::make('start_date')
                             ->label('Tanggal Promo Dimulai')
                             ->helperText('Boleh dikosongkan: promo langsung berlaku sejak diaktifkan.'),
@@ -80,8 +130,6 @@ class PromotionForm
                             ->visible(fn (Get $get): bool => blank($get('end_date')))
                             ->columnSpanFull(),
 
-                        // Konfirmasi wajib saat tanggal berakhir kosong. Bukan kolom database
-                        // (dehydrated false); divalidasi di server, bukan hanya di browser.
                         Checkbox::make('confirm_no_end_date')
                             ->label('Saya memahami promo ini akan tampil terus sampai saya menonaktifkannya secara manual lewat toggle Aktif.')
                             ->visible(fn (Get $get): bool => blank($get('end_date')))
@@ -89,11 +137,7 @@ class PromotionForm
                             ->validationMessages(['accepted' => 'Centang konfirmasi ini bila tanggal berakhir dikosongkan.'])
                             ->dehydrated(false)
                             ->columnSpanFull(),
-                    ]),
 
-                Section::make('Poster Promosi')
-                    ->columnSpanFull()
-                    ->schema([
                         FileUpload::make('image_path')
                             ->label('Poster')
                             ->required()
@@ -103,14 +147,13 @@ class PromotionForm
                             ->image()
                             ->imageEditor()
                             ->imageEditorAspectRatioOptions(['4:5', '3:4'])
-                        // ->imageAspectRatio('4:5')
-                        // ->automaticallyCropImagesToAspectRatio()
                             ->automaticallyResizeImagesToWidth(1200)
                             ->automaticallyResizeImagesToHeight(1500)
                             ->automaticallyResizeImagesMode('cover')
-                            ->maxSize(5120) // 5 MB
+                            ->maxSize(5120)
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                            ->helperText('Upload poster promosi dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB'),
+                            ->helperText('Upload poster promosi dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB')
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Publish')

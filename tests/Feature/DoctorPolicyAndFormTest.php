@@ -126,7 +126,7 @@ class DoctorPolicyAndFormTest extends TestCase
         // Filling only Indonesian bio without English should halt
         $component = Livewire::test(EditDoctor::class, ['record' => $doctor->getKey()])
             ->fillForm([
-                'bio' => 'Biografi dokter bahasa Indonesia saja',
+                'bio.id' => 'Biografi dokter bahasa Indonesia saja',
             ])
             ->call('save');
 
@@ -153,32 +153,20 @@ class DoctorPolicyAndFormTest extends TestCase
             'is_active' => true,
         ]);
 
-        $component = Livewire::test(EditDoctor::class, ['record' => $doctor->getKey()])
+        Livewire::test(EditDoctor::class, ['record' => $doctor->getKey()])
             ->assertFormSet([
                 'name' => 'dr. Caecilia Nancy S, Msi.Med, Sp.A',
                 'paramedic_code' => 'DOC-LOCALE-1',
                 'specialty_name' => 'Spesialis Anak',
                 'service_unit_name' => 'Poliklinik Anak',
-                'bio' => 'Biografi ID',
-            ])
-            ->set('activeLocale', 'en')
-            ->assertFormSet([
-                'name' => 'dr. Caecilia Nancy S, Msi.Med, Sp.A',
-                'paramedic_code' => 'DOC-LOCALE-1',
-                'specialty_name' => 'Spesialis Anak',
-                'service_unit_name' => 'Poliklinik Anak',
-                'bio' => 'Biography EN',
-                'location' => 'Semarang City',
-                'experience' => '5 Years',
-                'education' => 'Stanford University',
-            ])
-            ->set('activeLocale', 'id')
-            ->assertFormSet([
-                'name' => 'dr. Caecilia Nancy S, Msi.Med, Sp.A',
-                'paramedic_code' => 'DOC-LOCALE-1',
-                'specialty_name' => 'Spesialis Anak',
-                'service_unit_name' => 'Poliklinik Anak',
-                'bio' => 'Biografi ID',
+                'bio.id' => 'Biografi ID',
+                'location.id' => 'Semarang',
+                'experience.id' => '5 Tahun',
+                'education.id' => 'Universitas Diponegoro',
+                'bio.en' => 'Biography EN',
+                'location.en' => 'Semarang City',
+                'experience.en' => '5 Years',
+                'education.en' => 'Stanford University',
             ]);
     }
 

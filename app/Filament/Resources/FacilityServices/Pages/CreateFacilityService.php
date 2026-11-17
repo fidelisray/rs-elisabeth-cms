@@ -5,7 +5,6 @@ namespace App\Filament\Resources\FacilityServices\Pages;
 use App\Filament\Concerns\CreatesTranslatedContent;
 use App\Filament\Resources\FacilityServices\FacilityServiceResource;
 use Filament\Resources\Pages\CreateRecord;
-use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
 
 class CreateFacilityService extends CreateRecord
 {
@@ -15,9 +14,7 @@ class CreateFacilityService extends CreateRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            LocaleSwitcher::make(),
-        ];
+        return [];
     }
 
     protected function getRedirectUrl(): string

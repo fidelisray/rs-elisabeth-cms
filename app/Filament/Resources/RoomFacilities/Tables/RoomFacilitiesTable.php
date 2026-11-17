@@ -32,6 +32,9 @@ class RoomFacilitiesTable
                 // Nama ruangan
                 TextColumn::make('name')
                     ->label('Nama Ruangan')
+                    ->description(fn ($record): ?string => filled($record->getTranslation('name', 'en', false))
+                        ? 'EN: '.$record->getTranslation('name', 'en', false)
+                        : null)
                     ->searchable()
                     ->sortable(query: TranslatedContentOrder::column('name'))
                     ->weight('bold'),

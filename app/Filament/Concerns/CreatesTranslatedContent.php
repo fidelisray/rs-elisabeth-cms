@@ -3,17 +3,24 @@
 namespace App\Filament\Concerns;
 
 use Illuminate\Database\Eloquent\Model;
-use LaraZeus\SpatieTranslatable\Resources\Pages\CreateRecord\Concerns\Translatable;
 
 trait CreatesTranslatedContent
 {
-    use Translatable {
-        handleRecordCreation as protected createTranslatedRecord;
-    }
     use ValidatesTranslatableLocales;
 
     protected function handleRecordCreation(array $data): Model
     {
-        return $this->withTranslatedSlugGuard(fn () => $this->createTranslatedRecord($data));
+        return $this->withTranslatedSlugGuard(function () use ($data): Model {
+            $record = new ($this->getModel())();
+            $this->applyTranslatedAttributes($record, $data);
+
+            if ($parentRecord = $this->getParentRecord()) {
+                return $this->associateRecordWithParent($record, $parentRecord);
+            }
+
+            $record->save();
+
+            return $record;
+        });
     }
 }

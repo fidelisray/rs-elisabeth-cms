@@ -229,10 +229,14 @@ class PromotionDateRuleTest extends TestCase
     private function validForm(array $overrides = []): array
     {
         return array_merge([
-            'title' => 'Promo Form',
-            'slug' => 'promo-form',
-            'shorts' => 'Ringkas',
-            'description' => '<p>Deskripsi</p>',
+            'title.id' => 'Promo Form',
+            'slug.id' => 'promo-form',
+            'shorts.id' => 'Ringkas',
+            'description.id' => '<p>Deskripsi</p>',
+            'title.en' => 'Promo Form EN',
+            'slug.en' => 'promo-form-en',
+            'shorts.en' => 'Short EN',
+            'description.en' => '<p>Description EN</p>',
             'start_date' => '2026-10-20',
             'end_date' => '2026-10-31',
             'image_path' => UploadedFile::fake()->image('poster.png', 400, 500),
@@ -288,14 +292,6 @@ class PromotionDateRuleTest extends TestCase
 
         Livewire::test(CreatePromotion::class)
             ->fillForm($this->validForm(['end_date' => null, 'confirm_no_end_date' => true]))
-            ->set('activeLocale', 'en')
-            ->fillForm([
-                'title' => 'Promo Form EN',
-                'slug' => 'promo-form-en',
-                'shorts' => 'Short EN',
-                'description' => '<p>Description EN</p>',
-                'confirm_no_end_date' => true,
-            ])
             ->call('create')
             ->assertHasNoFormErrors();
 
@@ -320,14 +316,6 @@ class PromotionDateRuleTest extends TestCase
 
         Livewire::test(CreatePromotion::class)
             ->fillForm($this->validForm(['end_date' => null, 'confirm_no_end_date' => true]))
-            ->set('activeLocale', 'en')
-            ->fillForm([
-                'title' => 'Promo Form EN',
-                'slug' => 'promo-form-en',
-                'shorts' => 'Short EN',
-                'description' => '<p>Description EN</p>',
-                'confirm_no_end_date' => true,
-            ])
             ->call('create')
             ->assertHasNoFormErrors();
 

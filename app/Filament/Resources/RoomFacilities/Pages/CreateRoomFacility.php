@@ -6,7 +6,6 @@ use App\Filament\Concerns\CreatesTranslatedContent;
 use App\Filament\Resources\RoomFacilities\RoomFacilityResource;
 use App\Support\RoomNestedContent;
 use Filament\Resources\Pages\CreateRecord;
-use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
 
 class CreateRoomFacility extends CreateRecord
 {
@@ -31,9 +30,7 @@ class CreateRoomFacility extends CreateRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            LocaleSwitcher::make(),
-        ];
+        return [];
     }
 
     protected function getRedirectUrl(): string

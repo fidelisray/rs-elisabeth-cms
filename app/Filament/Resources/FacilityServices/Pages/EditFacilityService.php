@@ -6,7 +6,6 @@ use App\Filament\Concerns\EditsTranslatedContent;
 use App\Filament\Resources\FacilityServices\FacilityServiceResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
-use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
 
 class EditFacilityService extends EditRecord
 {
@@ -17,7 +16,6 @@ class EditFacilityService extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            LocaleSwitcher::make(),
             DeleteAction::make(),
         ];
     }

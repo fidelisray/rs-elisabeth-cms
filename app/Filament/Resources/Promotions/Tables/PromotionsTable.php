@@ -27,6 +27,9 @@ class PromotionsTable
 
                 TextColumn::make('title')
                     ->label('Judul Promosi')
+                    ->description(fn (Promotion $record): ?string => filled($record->getTranslation('title', 'en', false))
+                        ? 'EN: '.$record->getTranslation('title', 'en', false)
+                        : null)
                     ->sortable(query: TranslatedContentOrder::column('title'))
                     ->searchable(),
 

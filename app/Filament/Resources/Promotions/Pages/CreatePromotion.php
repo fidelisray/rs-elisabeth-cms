@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Promotions\Pages;
 use App\Filament\Concerns\CreatesTranslatedContent;
 use App\Filament\Resources\Promotions\PromotionResource;
 use Filament\Resources\Pages\CreateRecord;
-use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
 
 class CreatePromotion extends CreateRecord
 {
@@ -15,9 +14,7 @@ class CreatePromotion extends CreateRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            LocaleSwitcher::make(),
-        ];
+        return [];
     }
 
     protected function getRedirectUrl(): string

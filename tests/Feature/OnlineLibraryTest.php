@@ -93,17 +93,16 @@ class OnlineLibraryTest extends TestCase
 
         Livewire::test(CreateOnlineLibrary::class)
             ->fillForm([
-                'title' => 'Safety Working',
-                'slug' => 'kesehatan-kerja',
-                'category' => 'SOP',
-                'description' => '<p>Kesehatan Kerja</p>',
+                'title.id' => 'Safety Working',
+                'slug.id' => 'kesehatan-kerja',
+                'category.id' => 'SOP',
+                'description.id' => '<p>Kesehatan Kerja</p>',
                 'file_path' => $file,
                 'is_published' => true,
             ])
             ->call('create')
-            ->assertHasNoFormErrors()
-            ->assertNotified()
-            ->assertSet('activeLocale', 'en');
+            ->assertHasFormErrors(['title.en', 'slug.en'])
+            ->assertNotified();
 
         $this->assertSame($initialCount, OnlineLibrary::count());
     }
@@ -118,19 +117,16 @@ class OnlineLibraryTest extends TestCase
 
         Livewire::test(CreateOnlineLibrary::class)
             ->fillForm([
-                'title' => 'Safety Working ID',
-                'slug' => 'kesehatan-kerja-id',
-                'category' => 'SOP',
-                'description' => '<p>Kesehatan Kerja</p>',
+                'title.id' => 'Safety Working ID',
+                'slug.id' => 'kesehatan-kerja-id',
+                'category.id' => 'SOP',
+                'description.id' => '<p>Kesehatan Kerja</p>',
+                'title.en' => 'Safety Working EN',
+                'slug.en' => 'safety-working-en',
+                'category.en' => 'SOP EN',
+                'description.en' => '<p>Occupational Health</p>',
                 'file_path' => $file,
                 'is_published' => true,
-            ])
-            ->set('activeLocale', 'en')
-            ->fillForm([
-                'title' => 'Safety Working EN',
-                'slug' => 'safety-working-en',
-                'category' => 'SOP EN',
-                'description' => '<p>Occupational Health</p>',
             ])
             ->call('create')
             ->assertHasNoFormErrors();

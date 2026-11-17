@@ -50,8 +50,8 @@ class SlugStabilityTest extends TestCase
         $room = $this->room();
 
         Livewire::test(EditRoomFacility::class, ['record' => $room->getRouteKey()])
-            ->fillForm(['name' => 'Kamar VIP Deluxe Baru'])
-            ->assertFormSet(['slug' => 'kamar-vip']);
+            ->fillForm(['name.id' => 'Kamar VIP Deluxe Baru'])
+            ->assertFormSet(['slug.id' => 'kamar-vip']);
     }
 
     public function test_slug_in_database_is_unchanged_after_saving_a_renamed_room(): void
@@ -60,7 +60,7 @@ class SlugStabilityTest extends TestCase
         $room = $this->room();
 
         Livewire::test(EditRoomFacility::class, ['record' => $room->getRouteKey()])
-            ->fillForm(['name' => 'Nama Yang Sama Sekali Berbeda'])
+            ->fillForm(['name.id' => 'Nama Yang Sama Sekali Berbeda'])
             ->call('save')
             ->assertHasNoFormErrors();
 
@@ -73,8 +73,8 @@ class SlugStabilityTest extends TestCase
         $this->actAsMarketing();
 
         Livewire::test(CreateRoomFacility::class)
-            ->fillForm(['name' => 'President Suite'])
-            ->assertFormSet(['slug' => 'president-suite']);
+            ->fillForm(['name.id' => 'President Suite'])
+            ->assertFormSet(['slug.id' => 'president-suite']);
     }
 
     public function test_editing_a_room_that_has_an_empty_slug_fills_it_from_the_name(): void
@@ -82,9 +82,9 @@ class SlugStabilityTest extends TestCase
         $this->actAsMarketing();
         $room = $this->room(['slug' => ['id' => 'sementara', 'en' => 'sementara-en']]);
         Livewire::test(EditRoomFacility::class, ['record' => $room->getRouteKey()])
-            ->set('data.slug', '')
-            ->fillForm(['name' => 'Nama Untuk Slug Kosong'])
-            ->assertFormSet(['slug' => 'nama-untuk-slug-kosong']);
+            ->set('data.slug.id', '')
+            ->fillForm(['name.id' => 'Nama Untuk Slug Kosong'])
+            ->assertFormSet(['slug.id' => 'nama-untuk-slug-kosong']);
     }
 
     public function test_slug_can_still_be_edited_manually_when_needed(): void
@@ -93,8 +93,8 @@ class SlugStabilityTest extends TestCase
         $room = $this->room();
 
         Livewire::test(EditRoomFacility::class, ['record' => $room->getRouteKey()])
-            ->fillForm(['slug' => 'slug-manual-baru'])
-            ->assertFormSet(['slug' => 'slug-manual-baru']);
+            ->fillForm(['slug.id' => 'slug-manual-baru'])
+            ->assertFormSet(['slug.id' => 'slug-manual-baru']);
     }
 
     public function test_every_content_form_uses_the_create_only_slug_rule(): void

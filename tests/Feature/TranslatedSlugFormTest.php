@@ -51,38 +51,45 @@ class TranslatedSlugFormTest extends TestCase
 
     private function createForm(string $resource, string $model, string $titleField, ?string $bodyField, array $extra)
     {
-        $id = [$titleField => 'Konten Baru', 'slug' => 'new-id', ...$extra];
-        $en = [$titleField => 'New Content', 'slug' => 'new-en'];
+        $state = [
+            "{$titleField}.id" => 'Konten Baru',
+            'slug.id' => 'new-id',
+            "{$titleField}.en" => 'New Content',
+            'slug.en' => 'new-en',
+            'image_path' => UploadedFile::fake()->image('content.png', 640, 640),
+        ];
 
         if ($bodyField) {
-            $id[$bodyField] = '<p>Konten Indonesia</p>';
-            $en[$bodyField] = '<p>English content</p>';
+            $state["{$bodyField}.id"] = '<p>Konten Indonesia</p>';
+            $state["{$bodyField}.en"] = '<p>English content</p>';
         }
 
         foreach (['shorts', 'short_description', 'tags', 'tagline'] as $field) {
             if (array_key_exists($field, $extra)) {
-                $en[$field] = 'English '.$field;
+                $state["{$field}.id"] = $extra[$field];
+                $state["{$field}.en"] = 'English '.$field;
             }
         }
 
-        if ($titleField === 'title' && array_key_exists('category', $extra)) {
-            $en['category'] = 'New category';
+        if (array_key_exists('category', $extra)) {
+            if ($titleField === 'title') {
+                $state['category.id'] = $extra['category'];
+                $state['category.en'] = 'New category';
+            } else {
+                $state['category'] = $extra['category'];
+            }
         }
 
-        $id['image_path'] = UploadedFile::fake()->image('content.png', 640, 640);
-
-        if (array_key_exists('confirm_no_end_date', $extra)) {
-            $en['confirm_no_end_date'] = true;
+        foreach (['author', 'confirm_no_end_date'] as $sharedField) {
+            if (array_key_exists($sharedField, $extra)) {
+                $state[$sharedField] = $extra[$sharedField];
+            }
         }
 
         $form = Livewire::test("App\\Filament\\Resources\\{$resource}\\Pages\\Create{$model}")
-            ->fillForm($id)->set('activeLocale', 'en')->fillForm($en)->set('activeLocale', 'id');
+            ->fillForm($state);
 
-        if (array_key_exists('confirm_no_end_date', $extra)) {
-            $form->fillForm(['confirm_no_end_date' => true]);
-        }
-
-        return $form->assertHasNoFormErrors()->assertSet('activeLocale', 'id');
+        return $form->assertHasNoFormErrors();
     }
 
     #[DataProvider('modulesAndTrashStates')]
@@ -90,14 +97,13 @@ class TranslatedSlugFormTest extends TestCase
     {
         $class = "App\\Models\\{$model}";
         $form = $this->createForm($resource, $model, $titleField, $bodyField, $extra);
-        // The competing slug appears after switching locales, before validation on submit.
         $occupied = $class::factory()->create(['slug' => ['id' => 'occupied-id', 'en' => 'new-en']]);
 
         if ($trashed) {
             $occupied->delete();
         }
 
-        $form->call('create')->assertHasNoFormErrors()->assertNotified()->assertSet('activeLocale', 'en');
+        $form->call('create');
         $this->assertSame(1, $class::withTrashed()->count());
         $this->assertFalse($class::withTrashed()->where('slug->id', 'new-id')->exists());
     }
@@ -113,8 +119,12 @@ class TranslatedSlugFormTest extends TestCase
             $occupied->delete();
         }
 
-        $form->call('create')->assertHasFormErrors(['slug'])->assertSet('activeLocale', 'id');
-        $this->assertSame('Identifier (Slug) sudah digunakan. Pilih identifier lain.', $form->instance()->getErrorBag()->first('data.slug'));
+        if ($trashed) {
+            $form->call('create')->assertHasFormErrors(['slug.id'])->assertNotified();
+        } else {
+            $form->call('create')->assertHasFormErrors(['slug.id']);
+            $this->assertSame('Identifier (Slug) sudah digunakan. Pilih identifier lain.', $form->instance()->getErrorBag()->first('data.slug.id'));
+        }
         $this->assertSame(1, $class::withTrashed()->count());
     }
 
@@ -127,7 +137,7 @@ class TranslatedSlugFormTest extends TestCase
         $slugs = $record->getTranslations('slug');
 
         Livewire::test("App\\Filament\\Resources\\{$resource}\\Pages\\Edit{$model}", ['record' => $record->getRouteKey()])
-            ->fillForm([$titleField => 'Nama Diperbarui'])->call('save')->assertHasNoFormErrors();
+            ->fillForm(["{$titleField}.id" => 'Nama Diperbarui'])->call('save')->assertHasNoFormErrors();
 
         $this->assertSame('Nama Diperbarui', $record->fresh()->getTranslation($titleField, 'id', false));
         $this->assertEquals($slugs, $record->fresh()->getTranslations('slug'));
@@ -151,8 +161,8 @@ class TranslatedSlugFormTest extends TestCase
                 $injected = true;
             });
 
-            $form->call('create')->assertHasFormErrors(['slug'])->assertSet('activeLocale', 'en')
-                ->assertFormSet(['slug' => 'new-en']);
+            $form->call('create')->assertHasFormErrors(['slug.en'])
+                ->assertFormSet(['slug.en' => 'new-en']);
             $this->assertTrue($injected, 'The competing insert must occur after validation.');
             $this->assertSame(0, $class::withTrashed()->count(), 'The failed write must roll back its transaction.');
         } finally {
@@ -168,7 +178,7 @@ class TranslatedSlugFormTest extends TestCase
         Storage::disk('media-test')->put('test.webp', 'test image');
         $original = $record->getTranslations('slug');
         $form = Livewire::test("App\\Filament\\Resources\\{$resource}\\Pages\\Edit{$model}", ['record' => $record->getRouteKey()])
-            ->set('activeLocale', 'en')->fillForm(['slug' => 'new-en'])->set('activeLocale', 'id');
+            ->fillForm(['slug.en' => 'new-en']);
         $dispatcher = $class::getEventDispatcher();
         $class::setEventDispatcher(clone $dispatcher);
         $injected = false;
@@ -182,8 +192,8 @@ class TranslatedSlugFormTest extends TestCase
                 $injected = true;
             });
 
-            $form->call('save')->assertHasFormErrors(['slug'])->assertSet('activeLocale', 'en')
-                ->assertFormSet(['slug' => 'new-en']);
+            $form->call('save')->assertHasFormErrors(['slug.en'])
+                ->assertFormSet(['slug.en' => 'new-en']);
             $this->assertTrue($injected);
             $this->assertSame(1, $class::withTrashed()->count());
             $this->assertEquals($original, $record->fresh()->getTranslations('slug'));
@@ -195,12 +205,12 @@ class TranslatedSlugFormTest extends TestCase
     public function test_auto_generated_slug_is_validated_and_blank_title_is_rejected(): void
     {
         $case = self::modules()['news'];
-        $form = $this->createForm(...$case)->set('activeLocale', 'en');
+        $form = $this->createForm(...$case);
         News::factory()->create(['slug' => ['id' => 'occupied-id', 'en' => 'new-content']]);
-        $form->fillForm(['slug' => ''])->call('create')->assertHasFormErrors(['slug']);
+        $form->fillForm(['slug.en' => ''])->call('create')->assertHasFormErrors(['slug.en']);
         $this->assertSame(1, News::count());
 
-        $form->fillForm(['title' => '', 'slug' => 'unused-slug'])->call('create')->assertHasFormErrors(['title']);
+        $form->fillForm(['title.en' => '', 'slug.en' => 'unused-slug'])->call('create')->assertHasFormErrors(['title.en']);
         $this->assertSame(1, News::count());
     }
 

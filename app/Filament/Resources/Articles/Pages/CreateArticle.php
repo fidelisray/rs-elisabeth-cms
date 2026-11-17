@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Articles\Pages;
 use App\Filament\Concerns\CreatesTranslatedContent;
 use App\Filament\Resources\Articles\ArticleResource;
 use Filament\Resources\Pages\CreateRecord;
-use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
 
 class CreateArticle extends CreateRecord
 {
@@ -15,9 +14,7 @@ class CreateArticle extends CreateRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            LocaleSwitcher::make(),
-        ];
+        return [];
     }
 
     protected function getRedirectUrl(): string

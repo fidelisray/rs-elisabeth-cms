@@ -24,7 +24,6 @@ class FilamentMultiLocaleValidationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Uploads must use the fake media disk, not the deployment's S3 configuration.
         config(['filesystems.media_disk' => 'media-test']);
         Storage::fake('media-test');
     }
@@ -51,21 +50,19 @@ class FilamentMultiLocaleValidationTest extends TestCase
 
         Livewire::test(CreateArticle::class)
             ->fillForm([
-                'title' => 'Judul Artikel Hanya ID',
-                'slug' => 'judul-artikel-hanya-id',
-                'tags' => 'Artikel Kesehatan',
+                'title.id' => 'Judul Artikel Hanya ID',
+                'slug.id' => 'judul-artikel-hanya-id',
+                'tags.id' => 'Artikel Kesehatan',
                 'author' => 'Dr. Elisabeth',
-                'shorts' => 'Ringkasan artikel dalam bahasa Indonesia.',
-                'content' => '<p>Konten artikel lengkap bahasa Indonesia.</p>',
+                'shorts.id' => 'Ringkasan artikel dalam bahasa Indonesia.',
+                'content.id' => '<p>Konten artikel lengkap bahasa Indonesia.</p>',
                 'image_path' => $file,
                 'is_active' => true,
             ])
             ->call('create')
-            ->assertHasNoFormErrors()
-            ->assertNotified()
-            ->assertSet('activeLocale', 'en');
+            ->assertHasFormErrors(['title.en', 'slug.en', 'tags.en', 'shorts.en', 'content.en'])
+            ->assertNotified();
 
-        // Pastikan tidak ada data yang tersimpan ke database
         $this->assertSame($initialCount, Article::count());
     }
 
@@ -77,28 +74,21 @@ class FilamentMultiLocaleValidationTest extends TestCase
         $file = UploadedFile::fake()->image('thumbnail.jpg', 1920, 1080);
 
         Livewire::test(CreateArticle::class)
-            // 1. Isi bahasa Indonesia terlebih dahulu
             ->fillForm([
-                'title' => 'Judul Artikel Lengkap ID',
-                'slug' => 'judul-artikel-lengkap-id',
-                'tags' => 'Artikel Kesehatan',
+                'title.id' => 'Judul Artikel Lengkap ID',
+                'slug.id' => 'judul-artikel-lengkap-id',
+                'tags.id' => 'Artikel Kesehatan',
+                'shorts.id' => 'Ringkasan artikel dalam bahasa Indonesia.',
+                'content.id' => '<p>Konten artikel lengkap bahasa Indonesia.</p>',
+                'title.en' => 'Complete Article Title EN',
+                'slug.en' => 'complete-article-title-en',
+                'tags.en' => 'Health Articles',
+                'shorts.en' => 'Short summary of the article in English.',
+                'content.en' => '<p>Full content of the article in English.</p>',
                 'author' => 'Dr. Elisabeth',
-                'shorts' => 'Ringkasan artikel dalam bahasa Indonesia.',
-                'content' => '<p>Konten artikel lengkap bahasa Indonesia.</p>',
                 'image_path' => $file,
                 'is_active' => true,
             ])
-            // 2. Beralih ke tab English (EN)
-            ->set('activeLocale', 'en')
-            // 3. Isi terjemahan bahasa Inggris
-            ->fillForm([
-                'title' => 'Complete Article Title EN',
-                'slug' => 'complete-article-title-en',
-                'tags' => 'Health Articles',
-                'shorts' => 'Short summary of the article in English.',
-                'content' => '<p>Full content of the article in English.</p>',
-            ])
-            // 4. Klik simpan
             ->call('create')
             ->assertHasNoFormErrors();
 
@@ -121,23 +111,19 @@ class FilamentMultiLocaleValidationTest extends TestCase
 
         Livewire::test(CreateArticle::class)
             ->fillForm([
-                'title' => 'Judul Artikel Medis',
-                'slug' => 'judul-artikel-medis',
-                'tags' => 'Artikel Kesehatan',
+                'title.id' => 'Judul Artikel Medis',
+                'slug.id' => 'judul-artikel-medis',
+                'tags.id' => 'Artikel Kesehatan',
+                'shorts.id' => 'Ringkasan artikel dalam bahasa Indonesia.',
+                'content.id' => '<p>Konten artikel lengkap bahasa Indonesia.</p>',
+                'title.en' => 'Medical Article Title',
+                'tags.en' => 'Health Articles',
+                'slug.en' => '',
+                'shorts.en' => 'English summary.',
+                'content.en' => '<p>English content.</p>',
                 'author' => 'Dr. Elisabeth',
-                'shorts' => 'Ringkasan artikel dalam bahasa Indonesia.',
-                'content' => '<p>Konten artikel lengkap bahasa Indonesia.</p>',
                 'image_path' => $file,
                 'is_active' => true,
-            ])
-            ->set('activeLocale', 'en')
-            ->fillForm([
-                'title' => 'Medical Article Title',
-                'tags' => 'Health Articles',
-                // slug sengaja tidak diisi pada form
-                'slug' => '',
-                'shorts' => 'English summary.',
-                'content' => '<p>English content.</p>',
             ])
             ->call('create')
             ->assertHasNoFormErrors();
@@ -154,7 +140,6 @@ class FilamentMultiLocaleValidationTest extends TestCase
         Storage::fake($mediaDisk);
         Storage::disk($mediaDisk)->put('articles/test.webp', 'fake image content');
 
-        // Start from a valid bilingual record; remove English in form state, not in the DB.
         $article = Article::withoutEvents(fn () => Article::create([
             'title' => ['id' => 'Judul Asli ID', 'en' => 'Original Title'],
             'slug' => ['id' => 'judul-asli-id', 'en' => 'original-title'],
@@ -167,13 +152,10 @@ class FilamentMultiLocaleValidationTest extends TestCase
         ]));
 
         Livewire::test(EditArticle::class, ['record' => $article->getRouteKey()])
-            ->set('activeLocale', 'en')
-            ->fillForm(['title' => ''])
+            ->fillForm(['title.en' => ''])
             ->call('save')
-            ->assertHasFormErrors(['title'])
-            ->assertSet('activeLocale', 'en');
+            ->assertHasFormErrors(['title.en']);
 
-        // The invalid form must not overwrite the existing English translation.
         $fresh = $article->fresh();
         $this->assertSame('Original Title', $fresh->getTranslation('title', 'en', false));
     }
@@ -186,41 +168,35 @@ class FilamentMultiLocaleValidationTest extends TestCase
 
         $file = UploadedFile::fake()->image('promo.jpg', 1200, 1500);
 
-        // Hanya isi ID
         Livewire::test(CreatePromotion::class)
             ->fillForm([
-                'title' => 'Promo Medical Checkup ID',
-                'slug' => 'promo-mcu-id',
-                'shorts' => 'Diskon 20% pemeriksaan MCU.',
-                'description' => '<p>Deskripsi promo lengkap ID.</p>',
+                'title.id' => 'Promo Medical Checkup ID',
+                'slug.id' => 'promo-mcu-id',
+                'shorts.id' => 'Diskon 20% pemeriksaan MCU.',
+                'description.id' => '<p>Deskripsi promo lengkap ID.</p>',
                 'image_path' => $file,
                 'confirm_no_end_date' => true,
                 'is_active' => true,
             ])
             ->call('create')
-            ->assertNotified()
-            ->assertSet('activeLocale', 'en');
+            ->assertHasFormErrors(['title.en', 'slug.en', 'shorts.en', 'description.en'])
+            ->assertNotified();
 
         $this->assertNull(Promotion::where('slug->id', 'promo-mcu-id')->first());
 
-        // Sekarang lengkapi EN dan simpan
         Livewire::test(CreatePromotion::class)
             ->fillForm([
-                'title' => 'Promo Medical Checkup ID',
-                'slug' => 'promo-mcu-id',
-                'shorts' => 'Diskon 20% pemeriksaan MCU.',
-                'description' => '<p>Deskripsi promo lengkap ID.</p>',
+                'title.id' => 'Promo Medical Checkup ID',
+                'slug.id' => 'promo-mcu-id',
+                'shorts.id' => 'Diskon 20% pemeriksaan MCU.',
+                'description.id' => '<p>Deskripsi promo lengkap ID.</p>',
+                'title.en' => 'Medical Checkup Promo EN',
+                'slug.en' => 'mcu-promo-en',
+                'shorts.en' => '20% off comprehensive MCU.',
+                'description.en' => '<p>Full promo description EN.</p>',
                 'image_path' => $file,
                 'confirm_no_end_date' => true,
                 'is_active' => true,
-            ])
-            ->set('activeLocale', 'en')
-            ->fillForm([
-                'title' => 'Medical Checkup Promo EN',
-                'slug' => 'mcu-promo-en',
-                'shorts' => '20% off comprehensive MCU.',
-                'description' => '<p>Full promo description EN.</p>',
-                'confirm_no_end_date' => true,
             ])
             ->call('create')
             ->assertHasNoFormErrors();
@@ -243,34 +219,31 @@ class FilamentMultiLocaleValidationTest extends TestCase
 
         Livewire::test(CreateRoomFacility::class)
             ->fillForm([
-                'name' => 'Kamar Super VIP',
-                'slug' => 'kamar-super-vip',
-                'tagline' => 'Tagline ruangan terbaik.',
-                'description' => 'Deskripsi lengkap kamar super VIP.',
+                'name.id' => 'Kamar Super VIP',
+                'slug.id' => 'kamar-super-vip',
+                'tagline.id' => 'Tagline ruangan terbaik.',
+                'description.id' => 'Deskripsi lengkap kamar super VIP.',
                 'image_path' => $file,
                 'is_active' => true,
             ])
             ->call('create')
-            ->assertNotified()
-            ->assertSet('activeLocale', 'en');
+            ->assertHasFormErrors(['name.en', 'slug.en', 'tagline.en', 'description.en'])
+            ->assertNotified();
 
         $this->assertNull(RoomFacility::where('slug->id', 'kamar-super-vip')->first());
 
         Livewire::test(CreateRoomFacility::class)
             ->fillForm([
-                'name' => 'Kamar Super VIP',
-                'slug' => 'kamar-super-vip',
-                'tagline' => 'Tagline ruangan terbaik.',
-                'description' => 'Deskripsi lengkap kamar super VIP.',
+                'name.id' => 'Kamar Super VIP',
+                'slug.id' => 'kamar-super-vip',
+                'tagline.id' => 'Tagline ruangan terbaik.',
+                'description.id' => 'Deskripsi lengkap kamar super VIP.',
+                'name.en' => 'Super VIP Room',
+                'slug.en' => 'super-vip-room',
+                'tagline.en' => 'Best room tagline.',
+                'description.en' => 'Comprehensive description of super VIP room.',
                 'image_path' => $file,
                 'is_active' => true,
-            ])
-            ->set('activeLocale', 'en')
-            ->fillForm([
-                'name' => 'Super VIP Room',
-                'slug' => 'super-vip-room',
-                'tagline' => 'Best room tagline.',
-                'description' => 'Comprehensive description of super VIP room.',
             ])
             ->call('create')
             ->assertHasNoFormErrors();

@@ -44,22 +44,34 @@ class ContentTranslationFormTest extends TestCase
 
     private function states(string $titleField, ?string $bodyField, array $extra): array
     {
-        $id = [$titleField => 'Konten Indonesia', 'slug' => 'konten-indonesia', ...$extra];
-        $en = [$titleField => 'English Content', 'slug' => 'english-content'];
+        $id = ["{$titleField}.id" => 'Konten Indonesia', 'slug.id' => 'konten-indonesia'];
+        $en = ["{$titleField}.en" => 'English Content', 'slug.en' => 'english-content'];
 
         if ($bodyField) {
-            $id[$bodyField] = '<p>Konten Indonesia</p>';
-            $en[$bodyField] = '<p>English content</p>';
+            $id["{$bodyField}.id"] = '<p>Konten Indonesia</p>';
+            $en["{$bodyField}.en"] = '<p>English content</p>';
         }
 
         foreach (['shorts', 'tags', 'tagline', 'short_description'] as $field) {
             if (array_key_exists($field, $extra)) {
-                $en[$field] = 'English '.$field;
+                $id["{$field}.id"] = $extra[$field];
+                $en["{$field}.en"] = 'English '.$field;
             }
         }
 
-        if (array_key_exists('category', $extra) && $titleField === 'title') {
-            $en['category'] = 'New free-text category';
+        if (array_key_exists('category', $extra)) {
+            if ($titleField === 'title') {
+                $id['category.id'] = $extra['category'];
+                $en['category.en'] = 'New free-text category';
+            } else {
+                $id['category'] = $extra['category'];
+            }
+        }
+
+        foreach (['author', 'confirm_no_end_date'] as $sharedField) {
+            if (array_key_exists($sharedField, $extra)) {
+                $id[$sharedField] = $extra[$sharedField];
+            }
         }
 
         $id['image_path'] = UploadedFile::fake()->image('content.png', 640, 640);
@@ -75,7 +87,8 @@ class ContentTranslationFormTest extends TestCase
         [$id, $en] = $this->states($titleField, $bodyField, $extra);
 
         $component = Livewire::test($page)->fillForm($id)->call('create')
-            ->assertNotified()->assertSet('activeLocale', 'en');
+            ->assertHasFormErrors(["{$titleField}.en", 'slug.en'])
+            ->assertNotified();
 
         $this->assertSame(0, $modelClass::count());
 
@@ -86,8 +99,8 @@ class ContentTranslationFormTest extends TestCase
 
         foreach (['tags', 'category'] as $field) {
             if ($record->isTranslatableAttribute($field)) {
-                $this->assertSame($id[$field], $record->getTranslation($field, 'id', false));
-                $this->assertSame($en[$field], $record->getTranslation($field, 'en', false));
+                $this->assertSame($id["{$field}.id"], $record->getTranslation($field, 'id', false));
+                $this->assertSame($en["{$field}.en"], $record->getTranslation($field, 'en', false));
             }
         }
     }
@@ -102,17 +115,14 @@ class ContentTranslationFormTest extends TestCase
         $original = $record->getTranslations($titleField);
 
         Livewire::test($page, ['record' => $record->getRouteKey()])
-            ->set('activeLocale', 'en')
-            ->fillForm([$titleField => ''])
+            ->fillForm(["{$titleField}.en" => ''])
             ->call('save')
-            ->assertHasFormErrors([$titleField])
-            ->assertSet('activeLocale', 'en');
+            ->assertHasFormErrors(["{$titleField}.en"]);
 
         $this->assertEquals($original, $record->fresh()->getTranslations($titleField));
 
         Livewire::test($page, ['record' => $record->getRouteKey()])
-            ->set('activeLocale', 'en')
-            ->fillForm([$titleField => 'Updated English Content'])
+            ->fillForm(["{$titleField}.en" => 'Updated English Content'])
             ->call('save')
             ->assertHasNoFormErrors();
 
@@ -140,16 +150,16 @@ class ContentTranslationFormTest extends TestCase
     public function test_optional_whatsapp_text_requires_both_languages_when_used(): void
     {
         [$id, $en] = $this->states('name', 'description', ['short_description' => 'Ringkasan', 'category' => 'Layanan Medis']);
-        $id['wa_link_text'] = 'Hubungi Kami';
-        $id['wa_prefilled_message'] = 'Mohon informasi layanan';
+        $id['wa_link_text.id'] = 'Hubungi Kami';
+        $id['wa_prefilled_message.id'] = 'Mohon informasi layanan';
 
         $component = Livewire::test(CreateFacilityService::class)
-            ->fillForm($id)->set('activeLocale', 'en')->fillForm($en)->call('create')
+            ->fillForm([...$id, ...$en])->call('create')
             ->assertNotified();
 
         $this->assertSame(0, FacilityService::count());
 
-        $component->fillForm(['wa_link_text' => 'Contact Us', 'wa_prefilled_message' => 'Please send service information'])
+        $component->fillForm(['wa_link_text.en' => 'Contact Us', 'wa_prefilled_message.en' => 'Please send service information'])
             ->call('create')->assertHasNoFormErrors();
 
         $record = FacilityService::query()->sole();

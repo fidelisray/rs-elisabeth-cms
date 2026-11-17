@@ -25,6 +25,9 @@ class ArticlesTable
                     ->height(50),
                 TextColumn::make('title')
                     ->label('Judul')
+                    ->description(fn ($record): ?string => filled($record->getTranslation('title', 'en', false))
+                        ? 'EN: '.$record->getTranslation('title', 'en', false)
+                        : null)
                     ->sortable(query: TranslatedContentOrder::column('title'))
                     ->searchable(),
                 TextColumn::make('slug')
