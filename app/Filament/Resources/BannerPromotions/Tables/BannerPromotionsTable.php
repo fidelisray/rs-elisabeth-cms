@@ -34,6 +34,9 @@ class BannerPromotionsTable
 
                 TextColumn::make('title')
                     ->label('Judul Banner')
+                    ->description(fn ($record): ?string => filled($record->getTranslation('title', 'en', false))
+                        ? 'EN: '.$record->getTranslation('title', 'en', false)
+                        : null)
                     ->searchable()
                     ->sortable(query: TranslatedContentOrder::column('title'))
                     ->limit(50),

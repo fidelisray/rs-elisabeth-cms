@@ -14,28 +14,68 @@ use Illuminate\Validation\ValidationException;
 
 trait ValidatesTranslatableLocales
 {
+    public ?string $activeLocale = 'id';
+
     /**
-     * Hook yang dieksekusi sebelum validasi form Filament berjalan.
-     * Mengisi slug otomatis jika judul/nama terisi namun slug masih kosong.
+     * Daftar locale yang didukung pada modul translatable.
+     *
+     * @return array<int, string>
+     */
+    protected function getSupportedLocales(): array
+    {
+        $resource = static::getResource();
+
+        return method_exists($resource, 'getTranslatableLocales')
+            ? $resource::getTranslatableLocales()
+            : config('app.supported_locales', ['id', 'en']);
+    }
+
+    /**
+     * Mengisi slug otomatis per bahasa sebelum validasi form Filament berjalan
+     * apabila judul/nama bahasa tersebut sudah diisi namun slug masih kosong.
      */
     protected function beforeValidate(): void
     {
-        $activeSlug = data_get($this, 'data.slug');
-        $titleOrName = data_get($this, 'data.title') ?? data_get($this, 'data.name');
+        foreach ($this->getSupportedLocales() as $locale) {
+            $slug = data_get($this, "data.slug.{$locale}");
+            $titleOrName = data_get($this, "data.title.{$locale}") ?? data_get($this, "data.name.{$locale}");
 
-        if ($this->isTranslatableAttributeBlank($activeSlug) && filled($titleOrName)) {
-            data_set($this, 'data.slug', Str::slug($titleOrName));
+            if ($this->isTranslatableAttributeBlank($slug) && filled($titleOrName)) {
+                data_set($this, "data.slug.{$locale}", Str::slug($titleOrName));
+            }
         }
     }
 
     /**
-     * Hook yang dieksekusi setelah form aktif lolos validasi bawaan Filament.
      * Memastikan seluruh bahasa yang didukung (ID dan EN) terisi lengkap
-     * pada setiap field yang required sebelum record disimpan ke database.
+     * dan memiliki slug unik sebelum record disimpan ke database.
      */
     protected function afterValidate(): void
     {
         $this->validateTranslatableLocalesCompleteness();
+    }
+
+    protected function onValidationError(ValidationException $exception): void
+    {
+        $resource = static::getResource();
+        $translatableAttributes = method_exists($resource, 'getTranslatableAttributes')
+            ? $resource::getTranslatableAttributes()
+            : [];
+
+        foreach (array_keys($exception->errors()) as $errorKey) {
+            foreach ($translatableAttributes as $attribute) {
+                if (str_starts_with($errorKey, "data.{$attribute}.")) {
+                    Notification::make()
+                        ->title('Data Multi-Bahasa Belum Lengkap')
+                        ->body('Semua field wajib diisi untuk seluruh bahasa (Indonesia & English) sebelum data dapat disimpan.')
+                        ->danger()
+                        ->persistent()
+                        ->send();
+
+                    return;
+                }
+            }
+        }
     }
 
     /**
@@ -44,9 +84,7 @@ trait ValidatesTranslatableLocales
     protected function validateTranslatableLocalesCompleteness(): void
     {
         $resource = static::getResource();
-        $locales = method_exists($resource, 'getTranslatableLocales')
-            ? $resource::getTranslatableLocales()
-            : config('app.supported_locales', ['id', 'en']);
+        $locales = $this->getSupportedLocales();
 
         $translatableAttributes = method_exists($resource, 'getTranslatableAttributes')
             ? $resource::getTranslatableAttributes()
@@ -58,87 +96,61 @@ trait ValidatesTranslatableLocales
 
         $requiredAttributes = $this->getRequiredTranslatableAttributes();
         $activeState = $this->form->getState();
-        $rawState = method_exists($this->form, 'getRawState') ? $this->form->getRawState() : $activeState;
-
-        // Simpan state aktif saat ini ke otherLocaleData agar data tidak hilang
-        $this->otherLocaleData[$this->activeLocale] = Arr::only($activeState, $translatableAttributes);
 
         $missingByLocale = [];
         $slugErrors = [];
 
         foreach ($locales as $locale) {
-            $localeData = $this->otherLocaleData[$locale] ?? [];
+            $titleOrName = data_get($activeState, "title.{$locale}")
+                ?? data_get($activeState, "name.{$locale}")
+                ?? data_get($this->data, "title.{$locale}")
+                ?? data_get($this->data, "name.{$locale}");
 
-            // Auto-generate slug jika title/name ada tetapi slug kosong
-            $titleOrName = $localeData['title'] ?? $localeData['name'] ?? null;
-            if (filled($titleOrName) && $this->isTranslatableAttributeBlank($localeData['slug'] ?? null)) {
+            $currentSlug = data_get($activeState, "slug.{$locale}") ?? data_get($this->data, "slug.{$locale}");
+
+            if (filled($titleOrName) && $this->isTranslatableAttributeBlank($currentSlug) && in_array('slug', $translatableAttributes, true)) {
                 $generatedSlug = Str::slug($titleOrName);
-                $localeData['slug'] = $generatedSlug;
-                $this->otherLocaleData[$locale]['slug'] = $generatedSlug;
-
-                if ($locale === $this->activeLocale) {
-                    $this->form->fill(['slug' => $generatedSlug]);
-                }
+                data_set($activeState, "slug.{$locale}", $generatedSlug);
+                data_set($this->data, "slug.{$locale}", $generatedSlug);
+                $currentSlug = $generatedSlug;
             }
 
-            // Periksa setiap field translatable yang required
             $missingInLocale = [];
             foreach ($requiredAttributes as $attribute) {
-                $value = $localeData[$attribute] ?? null;
+                $value = data_get($activeState, "{$attribute}.{$locale}") ?? data_get($this->data, "{$attribute}.{$locale}");
 
                 if ($this->isTranslatableAttributeBlank($value)) {
                     $missingInLocale[] = $attribute;
+                    $this->addError(
+                        "data.{$attribute}.{$locale}",
+                        $this->getTranslatableAttributeLabel($attribute).' wajib diisi untuk '.$this->getTranslatableLocaleLabel($locale).'.'
+                    );
                 }
             }
 
             if (! empty($missingInLocale)) {
                 $missingByLocale[$locale] = $missingInLocale;
-            } else {
-                // Jika slug ada, pastikan unik di database untuk locale ini
-                $slug = $localeData['slug'] ?? null;
-                if (filled($slug) && in_array('slug', $translatableAttributes, true)) {
-                    $modelClass = static::getModel();
-                    $record = method_exists($this, 'getRecord') ? $this->getRecord() : null;
-                    $recordId = $record?->getKey();
-                    $keyName = $record?->getKeyName() ?? (new $modelClass)->getKeyName();
+            } elseif (filled($currentSlug) && in_array('slug', $translatableAttributes, true)) {
+                $modelClass = static::getModel();
+                $record = method_exists($this, 'getRecord') ? $this->getRecord() : null;
+                $recordId = $record?->getKey();
+                $keyName = $record?->getKeyName() ?? (new $modelClass)->getKeyName();
 
-                    $isDuplicate = $modelClass::withTrashed()->where("slug->{$locale}", $slug)
-                        ->when($recordId, fn ($q) => $q->where($keyName, '!=', $recordId))
-                        ->exists();
+                $isDuplicate = $modelClass::withTrashed()->where("slug->{$locale}", $currentSlug)
+                    ->when($recordId, fn ($q) => $q->where($keyName, '!=', $recordId))
+                    ->exists();
 
-                    if ($isDuplicate) {
-                        $slugErrors[$locale] = "Identifier (Slug) '{$slug}' sudah digunakan pada ".$this->getTranslatableLocaleLabel($locale).'.';
-                    }
+                if ($isDuplicate) {
+                    $slugErrors[$locale] = "Identifier (Slug) '{$currentSlug}' sudah digunakan pada ".$this->getTranslatableLocaleLabel($locale).'.';
+                    $this->addError(
+                        "data.slug.{$locale}",
+                        'Identifier (Slug) sudah digunakan. Pilih identifier lain.'
+                    );
                 }
             }
         }
 
-        // Jika terdapat field yang belum lengkap atau terjadi duplikasi slug
         if (! empty($missingByLocale) || ! empty($slugErrors)) {
-            $targetLocale = array_key_first($missingByLocale) ?? array_key_first($slugErrors);
-
-            // Alihkan tab form ke bahasa yang belum terisi agar admin langsung diarahkan ke form yang perlu diisi
-            if ($targetLocale && $targetLocale !== $this->activeLocale) {
-                $this->activeLocale = $targetLocale;
-
-                if (function_exists('filament') && filament('spatie-translatable')->getPersistLocale()) {
-                    session()->put('spatie_translatable_active_locale', $targetLocale);
-                }
-
-                $record = method_exists($this, 'getRecord') ? $this->getRecord() : null;
-                $recordAttributes = $record
-                    ? Arr::except($record->attributesToArray(), $translatableAttributes)
-                    : [];
-
-                $this->form->fill([
-                    ...$recordAttributes,
-                    ...Arr::except($rawState, $translatableAttributes),
-                    ...($this->otherLocaleData[$targetLocale] ?? []),
-                ]);
-
-                unset($this->otherLocaleData[$targetLocale]);
-            }
-
             $messages = [];
             foreach ($missingByLocale as $loc => $fields) {
                 $locLabel = $this->getTranslatableLocaleLabel($loc);
@@ -164,9 +176,40 @@ trait ValidatesTranslatableLocales
 
             $this->halt(shouldRollbackDatabaseTransaction: true);
         }
+    }
 
-        // Bersihkan locale aktif dari otherLocaleData agar konsisten dengan Spatie translatable driver
-        unset($this->otherLocaleData[$this->activeLocale]);
+    /**
+     * Menyimpan seluruh atribut non-translatable dan translatable (ID & EN) ke model.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    protected function applyTranslatedAttributes(Model $record, array $data): void
+    {
+        $resource = static::getResource();
+        $translatableAttributes = method_exists($resource, 'getTranslatableAttributes')
+            ? $resource::getTranslatableAttributes()
+            : [];
+        $locales = $this->getSupportedLocales();
+
+        $record->fill(Arr::except($data, $translatableAttributes));
+
+        foreach ($translatableAttributes as $attribute) {
+            if (! array_key_exists($attribute, $data)) {
+                continue;
+            }
+
+            $value = $data[$attribute];
+
+            if (is_array($value)) {
+                foreach ($locales as $locale) {
+                    if (array_key_exists($locale, $value)) {
+                        $record->setTranslation($attribute, $locale, $value[$locale]);
+                    }
+                }
+            } else {
+                $record->setTranslation($attribute, $this->activeLocale ?? 'id', $value);
+            }
+        }
     }
 
     protected function withTranslatedSlugGuard(Closure $write): Model
@@ -180,45 +223,28 @@ trait ValidatesTranslatableLocales
                 throw $exception;
             }
 
-            // Rollback has completed before changing the form or issuing any further queries.
-            if ($locale !== $this->activeLocale) {
-                $attributes = static::getResource()::getTranslatableAttributes();
-                $target = $this->otherLocaleData[$locale] ?? [];
-                $this->otherLocaleData[$this->activeLocale] = Arr::only($this->data, $attributes);
-                $this->activeLocale = $locale;
-
-                $record = method_exists($this, 'getRecord') ? $this->getRecord() : null;
-                $recordAttributes = $record
-                    ? Arr::except($record->attributesToArray(), $attributes)
-                    : [];
-
-                $this->form->fill([
-                    ...$recordAttributes,
-                    ...Arr::except($this->data, $attributes),
-                    ...$target,
-                ]);
-                unset($this->otherLocaleData[$locale]);
-
-                if (filament('spatie-translatable')->getPersistLocale()) {
-                    session()->put('spatie_translatable_active_locale', $locale);
-                }
-            }
+            $message = 'Identifier (Slug) sudah digunakan pada '.$this->getTranslatableLocaleLabel($locale).'. Pilih identifier lain.';
 
             throw ValidationException::withMessages([
-                'data.slug' => 'Identifier (Slug) sudah digunakan pada '.$this->getTranslatableLocaleLabel($locale).'. Pilih identifier lain.',
+                "data.slug.{$locale}" => $message,
             ]);
         }
     }
 
     /**
      * Menentukan field translatable apa saja yang wajib diisi.
-     * Default: seluruh atribut translatable pada modul adalah required.
+     * Default: seluruh atribut translatable pada modul adalah required,
+     * kecuali atribut opsional yang baru wajib diisi keduanya bila salah satu bahasa diisi.
+     *
+     * @return array<int, string>
      */
     protected function getRequiredTranslatableAttributes(): array
     {
+        $locales = $this->getSupportedLocales();
+
         return array_values(array_filter(
             static::getResource()::getTranslatableAttributes(),
-            function (string $attribute): bool {
+            function (string $attribute) use ($locales): bool {
                 if (! in_array($attribute, [
                     'wa_link_text', 'wa_prefilled_message', 'whatsapp_text',
                     'bio', 'location', 'experience', 'education',
@@ -227,11 +253,13 @@ trait ValidatesTranslatableLocales
                     return true;
                 }
 
-                // Optional CTA or doctor marketing text may be absent; if provided in either locale, require both.
-                return ! $this->isTranslatableAttributeBlank(data_get($this->data, $attribute))
-                    || collect($this->otherLocaleData)->contains(
-                        fn ($state): bool => ! $this->isTranslatableAttributeBlank($state[$attribute] ?? null)
-                    );
+                foreach ($locales as $locale) {
+                    if (! $this->isTranslatableAttributeBlank(data_get($this->data, "{$attribute}.{$locale}"))) {
+                        return true;
+                    }
+                }
+
+                return false;
             }
         ));
     }
@@ -253,7 +281,13 @@ trait ValidatesTranslatableLocales
         }
 
         if (is_array($value)) {
-            return empty($value);
+            foreach ($value as $item) {
+                if (! $this->isTranslatableAttributeBlank($item)) {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         return blank($value);

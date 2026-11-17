@@ -33,6 +33,9 @@ class FacilityServiceTable
 
                 TextColumn::make('name')
                     ->label('Nama Fasilitas')
+                    ->description(fn ($record): ?string => filled($record->getTranslation('name', 'en', false))
+                        ? 'EN: '.$record->getTranslation('name', 'en', false)
+                        : null)
                     ->searchable()
                     ->sortable(query: TranslatedContentOrder::column('name')),
 

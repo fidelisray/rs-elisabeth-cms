@@ -24,13 +24,14 @@ class RoomFacilityForm
         return $schema
             ->components([
 
-                Section::make('Informasi Utama')
+                Section::make('Konten Ruangan - Bahasa Indonesia (ID)')
+                    ->description('Informasi utama, deskripsi, dan pesan WhatsApp ruangan dalam Bahasa Indonesia.')
                     ->columnSpanFull()
                     ->columns(2)
                     ->schema([
 
-                        TextInput::make('name')
-                            ->label('Nama Ruangan')
+                        TextInput::make('name.id')
+                            ->label('Nama Ruangan (Indonesia)')
                             ->placeholder('President Suite, VIP, Kelas I...')
                             ->required()
                             ->clearErrorOnInput()
@@ -40,41 +41,99 @@ class RoomFacilityForm
                                 // Slug hanya dibuat otomatis saat membuat data baru (atau bila slug
                                 // kosong). Slug adalah bagian URL publik, jadi mengedit nama record
                                 // lama tidak boleh mengubahnya (link web, bookmark, dan SEO).
-                                if (($operation === 'create' || empty($get('slug'))) && filled($state)) {
-                                    $set('slug', Str::slug($state));
+                                if (($operation === 'create' || empty($get('slug.id'))) && filled($state)) {
+                                    $set('slug.id', Str::slug($state));
                                 }
                             }),
 
-                        TextInput::make('slug')
-                            ->label('Identifier')
-                            ->placeholder('Klik pada form teks akan terisi otomatis')
+                        TextInput::make('slug.id')
+                            ->label('Identifier / Slug (Indonesia)')
+                            ->placeholder('Klik pada form, teks akan terisi otomatis')
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(100)
-                            ->unique(column: fn ($livewire = null): string => 'slug->'.($livewire?->activeLocale ?? app()->getLocale()), ignoreRecord: true)
+                            ->unique(column: 'slug->id', ignoreRecord: true)
                             ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
                             ->helperText('Dapat diedit jika diperlukan'),
-                    ]),
 
-                Section::make('Deskripsi Ruangan')
-                    ->columnSpanFull()
-                    ->schema([
-
-                        Textarea::make('tagline')
-                            ->label('Tagline / Deskripsi Singkat')
+                        Textarea::make('tagline.id')
+                            ->label('Tagline / Deskripsi Singkat (Indonesia)')
                             ->required()
                             ->clearErrorOnInput()
-                            ->placeholder('Deskripsi singkat sebagai Highlight untuk ruangan ini...')
+                            ->placeholder('Deskripsi singkat sebagai highlight untuk ruangan ini...')
                             ->maxLength(500)
                             ->rows(3)
                             ->columnSpanFull(),
 
-                        Textarea::make('description')
-                            ->label('Deskripsi Lengkap')
+                        Textarea::make('description.id')
+                            ->label('Deskripsi Lengkap (Indonesia)')
                             ->required()
                             ->clearErrorOnInput()
                             ->placeholder('Deskripsi lengkap ruangan terkait fasilitas, keunggulan, atau layanan lainnya...')
                             ->rows(5)
+                            ->columnSpanFull(),
+
+                        TextInput::make('whatsapp_text.id')
+                            ->label('Pesan Otomatis WhatsApp (Indonesia - Opsional)')
+                            ->placeholder('Contoh: Halo, saya ingin informasi Ruangan President Suite')
+                            ->maxLength(255)
+                            ->clearErrorOnInput()
+                            ->helperText('Isi kedua bahasa (Indonesia & English) jika pesan otomatis digunakan, atau kosongkan keduanya.')
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('Konten Ruangan - Bahasa Inggris (EN)')
+                    ->description('Informasi utama, deskripsi, dan pesan WhatsApp ruangan dalam Bahasa Inggris.')
+                    ->columnSpanFull()
+                    ->columns(2)
+                    ->schema([
+
+                        TextInput::make('name.en')
+                            ->label('Nama Ruangan (English)')
+                            ->placeholder('President Suite, VIP Room, Class I...')
+                            ->required()
+                            ->clearErrorOnInput()
+                            ->maxLength(100)
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (Set $set, Get $get, ?string $operation, ?string $state) {
+                                if (($operation === 'create' || empty($get('slug.en'))) && filled($state)) {
+                                    $set('slug.en', Str::slug($state));
+                                }
+                            }),
+
+                        TextInput::make('slug.en')
+                            ->label('Identifier / Slug (English)')
+                            ->placeholder('Klik pada form, teks akan terisi otomatis')
+                            ->required()
+                            ->clearErrorOnInput()
+                            ->maxLength(100)
+                            ->unique(column: 'slug->en', ignoreRecord: true)
+                            ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
+                            ->helperText('Dapat diedit jika diperlukan'),
+
+                        Textarea::make('tagline.en')
+                            ->label('Tagline / Deskripsi Singkat (English)')
+                            ->required()
+                            ->clearErrorOnInput()
+                            ->placeholder('Short highlight description for this room...')
+                            ->maxLength(500)
+                            ->rows(3)
+                            ->columnSpanFull(),
+
+                        Textarea::make('description.en')
+                            ->label('Deskripsi Lengkap (English)')
+                            ->required()
+                            ->clearErrorOnInput()
+                            ->placeholder('Comprehensive description of room facilities, advantages, and services...')
+                            ->rows(5)
+                            ->columnSpanFull(),
+
+                        TextInput::make('whatsapp_text.en')
+                            ->label('Pesan Otomatis WhatsApp (English - Opsional)')
+                            ->placeholder('Contoh: Hello, I would like information about the President Suite room')
+                            ->maxLength(255)
+                            ->clearErrorOnInput()
+                            ->helperText('Isi kedua bahasa (Indonesia & English) jika pesan otomatis digunakan, atau kosongkan keduanya.')
                             ->columnSpanFull(),
                     ]),
 
@@ -90,13 +149,10 @@ class RoomFacilityForm
                             ->image()
                             ->imageEditor()
                             ->imageEditorAspectRatioOptions(['16:9'])
-                            // ->imageAspectRatio('16:9')
-                            // ->automaticallyCropImagesToAspectRatio()
-
                             ->automaticallyResizeImagesToWidth(1920)
                             ->automaticallyResizeImagesToHeight(1080)
                             ->automaticallyResizeImagesMode('cover')
-                            ->maxSize(5120) // 5 MB
+                            ->maxSize(5120)
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                             ->required()
                             ->clearErrorOnChange()
@@ -292,19 +348,6 @@ class RoomFacilityForm
                             ->suffix('Orang')
                             ->placeholder('Contoh: 2')
                             ->maxValue(99),
-                    ]),
-
-                Section::make('Pesan Whatsapp')
-                    // ->description('Pesan default yang akan dikirim oleh pengunjung ke admin WhatsApp')
-                    ->schema([
-
-                        TextInput::make('whatsapp_text')
-                            ->label('Pesan Otomatis Yang Dikirim Pengunjung ke Admin')
-                            ->placeholder('Contoh: Halo, saya ingin informasi Ruangan President Suite')
-                            ->maxLength(255)
-                            ->clearErrorOnInput()
-                            // ->helperText('Pesan ini akan menjadi default message saat pengunjung mengklik tombol WhatsApp di halaman ruangan ini.')
-                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Publish')

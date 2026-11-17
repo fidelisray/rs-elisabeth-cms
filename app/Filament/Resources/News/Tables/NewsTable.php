@@ -29,6 +29,9 @@ class NewsTable
 
                 TextColumn::make('title')
                     ->label('Judul Berita')
+                    ->description(fn (News $record): ?string => filled($record->getTranslation('title', 'en', false))
+                        ? 'EN: '.$record->getTranslation('title', 'en', false)
+                        : null)
                     ->sortable(query: TranslatedContentOrder::column('title'))
                     ->searchable(),
 

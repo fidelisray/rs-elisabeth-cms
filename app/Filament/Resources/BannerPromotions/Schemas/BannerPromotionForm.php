@@ -19,33 +19,60 @@ class BannerPromotionForm
         return $schema
             ->components([
 
-                Section::make('Informasi Dasar Banner Promosi')
+                Section::make('Informasi Banner - Bahasa Indonesia (ID)')
+                    ->description('Judul dan identifier banner dalam Bahasa Indonesia.')
                     ->columnSpanFull()
                     ->columns(2)
                     ->schema([
-                        TextInput::make('title')
-                            ->label('Judul Banner')
-                            // ->helperText('Digunakan sebagai atribut alt="" pada gambar (untuk SEO & aksesibilitas).')
+                        TextInput::make('title.id')
+                            ->label('Judul Banner (Indonesia)')
                             ->maxLength(255)
                             ->required()
                             ->clearErrorOnInput()
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Set $set, Get $get, ?string $operation, ?string $state) {
-                                if (($operation === 'create' || empty($get('slug'))) && filled($state)) {
-                                    $set('slug', Str::slug($state));
+                                if (($operation === 'create' || empty($get('slug.id'))) && filled($state)) {
+                                    $set('slug.id', Str::slug($state));
                                 }
                             }),
 
-                        TextInput::make('slug')
-                            ->label('Identifier')
+                        TextInput::make('slug.id')
+                            ->label('Identifier / Slug (Indonesia)')
                             ->placeholder('Klik pada form dan teks akan terisi otomatis')
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
-                            ->unique(column: fn ($livewire = null): string => 'slug->'.($livewire?->activeLocale ?? app()->getLocale()), ignoreRecord: true)
+                            ->unique(column: 'slug->id', ignoreRecord: true)
                             ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
                             ->helperText('Dapat diedit jika diperlukan'),
+                    ]),
 
+                Section::make('Informasi Banner - Bahasa Inggris (EN)')
+                    ->description('Judul dan identifier banner dalam Bahasa Inggris.')
+                    ->columnSpanFull()
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('title.en')
+                            ->label('Judul Banner (English)')
+                            ->maxLength(255)
+                            ->required()
+                            ->clearErrorOnInput()
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (Set $set, Get $get, ?string $operation, ?string $state) {
+                                if (($operation === 'create' || empty($get('slug.en'))) && filled($state)) {
+                                    $set('slug.en', Str::slug($state));
+                                }
+                            }),
+
+                        TextInput::make('slug.en')
+                            ->label('Identifier / Slug (English)')
+                            ->placeholder('Klik pada form dan teks akan terisi otomatis')
+                            ->required()
+                            ->clearErrorOnInput()
+                            ->maxLength(255)
+                            ->unique(column: 'slug->en', ignoreRecord: true)
+                            ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
+                            ->helperText('Dapat diedit jika diperlukan'),
                     ]),
 
                 Section::make('Gambar Banner')
@@ -59,13 +86,10 @@ class BannerPromotionForm
                             ->image()
                             ->imageEditor()
                             ->imageEditorAspectRatioOptions(['16:9'])
-                            // ->imageAspectRatio('16:9')
-                            // ->automaticallyCropImagesToAspectRatio()
-
                             ->automaticallyResizeImagesToWidth(1920)
                             ->automaticallyResizeImagesToHeight(1080)
                             ->automaticallyResizeImagesMode('cover')
-                            ->maxSize(5120) // 5 MB
+                            ->maxSize(5120)
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                             ->required()
                             ->clearErrorOnChange()

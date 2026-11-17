@@ -5,7 +5,6 @@ namespace App\Filament\Resources\BannerPromotions\Pages;
 use App\Filament\Concerns\CreatesTranslatedContent;
 use App\Filament\Resources\BannerPromotions\BannerPromotionResource;
 use Filament\Resources\Pages\CreateRecord;
-use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
 
 class CreateBannerPromotion extends CreateRecord
 {
@@ -15,9 +14,7 @@ class CreateBannerPromotion extends CreateRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            LocaleSwitcher::make(),
-        ];
+        return [];
     }
 
     protected function getRedirectUrl(): string

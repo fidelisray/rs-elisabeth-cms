@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Doctors\Pages;
 use App\Filament\Concerns\EditsTranslatedContent;
 use App\Filament\Resources\Doctors\DoctorResource;
 use Filament\Resources\Pages\EditRecord;
-use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
 
 class EditDoctor extends EditRecord
 {
@@ -15,9 +14,7 @@ class EditDoctor extends EditRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            LocaleSwitcher::make(),
-        ];
+        return [];
     }
 
     protected function getRedirectUrl(): ?string

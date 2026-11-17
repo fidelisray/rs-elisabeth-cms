@@ -69,16 +69,16 @@ class RoomNestedTranslationsTest extends TestCase
         $split = RoomNestedContent::splitAmenities($payload['amenities'] ?? []);
 
         return Livewire::test(CreateRoomFacility::class)->fillForm([
-            'name' => 'Kamar Uji', 'slug' => 'kamar-uji', 'tagline' => 'Tagline ID', 'description' => 'Deskripsi ID',
+            'name.id' => 'Kamar Uji', 'slug.id' => 'kamar-uji', 'tagline.id' => 'Tagline ID', 'description.id' => 'Deskripsi ID',
+            'name.en' => 'Test Room', 'slug.en' => 'test-room', 'tagline.en' => 'EN tagline', 'description.en' => 'EN description',
             'bed_count' => 1, 'max_companion' => 2,
             'image_path' => UploadedFile::fake()->image('room.png', 640, 360),
             'main_amenities' => $split['main'],
             'additional_amenities' => $split['additional'],
             'highlight_tags' => $payload['highlight_tags'],
-            'whatsapp_text' => $payload['whatsapp_text']['id'] ?? null, 'is_active' => true,
-        ])->set('activeLocale', 'en')->fillForm([
-            'name' => 'Test Room', 'slug' => 'test-room', 'tagline' => 'EN tagline', 'description' => 'EN description',
-            'whatsapp_text' => $payload['whatsapp_text']['en'] ?? null,
+            'whatsapp_text.id' => $payload['whatsapp_text']['id'] ?? null,
+            'whatsapp_text.en' => $payload['whatsapp_text']['en'] ?? null,
+            'is_active' => true,
         ]);
     }
 
@@ -114,9 +114,10 @@ class RoomNestedTranslationsTest extends TestCase
     public function test_create_form_preserves_shared_structure_across_locale_switches_and_saves_both_languages(): void
     {
         $component = $this->createForm();
-        $component->set('activeLocale', 'id')->assertFormSet(['whatsapp_text' => $this->nested()['whatsapp_text']['id']])
-            ->set('activeLocale', 'en')->assertFormSet(['whatsapp_text' => $this->nested()['whatsapp_text']['en']])
-            ->call('create')->assertHasNoFormErrors();
+        $component->assertFormSet([
+            'whatsapp_text.id' => $this->nested()['whatsapp_text']['id'],
+            'whatsapp_text.en' => $this->nested()['whatsapp_text']['en'],
+        ])->call('create')->assertHasNoFormErrors();
 
         $room = RoomFacility::query()->sole();
         $this->assertEquals($this->nested()['amenities'][0], $room->amenities[0]);
@@ -221,9 +222,13 @@ class RoomNestedTranslationsTest extends TestCase
         $payload['highlight_tags'] = [$payload['highlight_tags'][1]];
 
         Livewire::test(EditRoomFacility::class, ['record' => $room->getRouteKey()])
-            ->fillForm(['main_amenities' => $split['main'], 'additional_amenities' => $split['additional'], 'highlight_tags' => $payload['highlight_tags']])
-            ->set('activeLocale', 'en')->fillForm(['whatsapp_text' => 'Updated English message'])
-            ->set('activeLocale', 'id')->call('save')->assertHasNoFormErrors();
+            ->fillForm([
+                'main_amenities' => $split['main'],
+                'additional_amenities' => $split['additional'],
+                'highlight_tags' => $payload['highlight_tags'],
+                'whatsapp_text.en' => 'Updated English message',
+            ])
+            ->call('save')->assertHasNoFormErrors();
 
         $fresh = $room->fresh();
         $this->assertSame('Fasilitas Utama', $fresh->amenities[0]['group']['id']);
@@ -266,9 +271,8 @@ class RoomNestedTranslationsTest extends TestCase
         $groups[0]['items'] = [$groups[0]['items'][0]];
 
         Livewire::test(EditRoomFacility::class, ['record' => $room->getRouteKey()])
-            ->fillForm(['main_amenities' => $groups[0]['items'], 'additional_amenities' => [], 'highlight_tags' => [], 'whatsapp_text' => ''])
-            ->set('activeLocale', 'en')->fillForm(['whatsapp_text' => ''])
-            ->set('activeLocale', 'id')->call('save')->assertHasNoFormErrors();
+            ->fillForm(['main_amenities' => $groups[0]['items'], 'additional_amenities' => [], 'highlight_tags' => [], 'whatsapp_text.id' => '', 'whatsapp_text.en' => ''])
+            ->call('save')->assertHasNoFormErrors();
 
         $fresh = $room->fresh();
         $this->assertCount(1, $fresh->amenities);
@@ -304,7 +308,7 @@ class RoomNestedTranslationsTest extends TestCase
         $payload['whatsapp_text']['en'] = '';
         $component = $this->createForm($payload)->call('create')->assertNotified();
         $this->assertSame(0, RoomFacility::count());
-        $component->fillForm(['whatsapp_text' => 'English message'])->call('create')->assertHasNoFormErrors();
+        $component->fillForm(['whatsapp_text.en' => 'English message'])->call('create')->assertHasNoFormErrors();
         $this->assertSame('English message', RoomFacility::query()->sole()->getTranslation('whatsapp_text', 'en', false));
     }
 
@@ -352,8 +356,10 @@ class RoomNestedTranslationsTest extends TestCase
         $this->actAsMarketing();
 
         Livewire::test(CreateRoomFacility::class)->fillForm([
-            'name' => 'Kamar Tanpa Fasilitas Utama', 'slug' => 'kamar-tanpa-fasilitas-utama',
-            'tagline' => 'Tagline', 'description' => 'Deskripsi',
+            'name.id' => 'Kamar Tanpa Fasilitas Utama', 'slug.id' => 'kamar-tanpa-fasilitas-utama',
+            'tagline.id' => 'Tagline', 'description.id' => 'Deskripsi',
+            'name.en' => 'Room Without Primary', 'slug.en' => 'room-without-primary',
+            'tagline.en' => 'Tagline EN', 'description.en' => 'Description EN',
             'bed_count' => 1, 'max_companion' => 1,
             'main_amenities' => [],
             'additional_amenities' => [

@@ -7,7 +7,6 @@ use App\Filament\Resources\RoomFacilities\RoomFacilityResource;
 use App\Support\RoomNestedContent;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
-use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
 
 class EditRoomFacility extends EditRecord
 {
@@ -44,7 +43,6 @@ class EditRoomFacility extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            LocaleSwitcher::make(),
             DeleteAction::make(),
         ];
     }

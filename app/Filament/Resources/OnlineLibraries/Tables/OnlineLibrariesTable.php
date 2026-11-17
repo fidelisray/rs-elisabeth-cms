@@ -26,6 +26,9 @@ class OnlineLibrariesTable
             ->columns([
                 TextColumn::make('title')
                     ->label('Judul Dokumen')
+                    ->description(fn (OnlineLibrary $record): ?string => filled($record->getTranslation('title', 'en', false))
+                        ? 'EN: '.$record->getTranslation('title', 'en', false)
+                        : null)
                     ->sortable(query: TranslatedContentOrder::column('title'))
                     ->searchable(),
 
@@ -37,13 +40,13 @@ class OnlineLibrariesTable
                 TextColumn::make('file_name')
                     ->label('Nama File')
                     ->searchable()
-                    ->placeholder('—'),
+                    ->placeholder('-'),
 
                 TextColumn::make('file_size')
                     ->label('Ukuran File')
                     ->formatStateUsing(function (?int $state): string {
                         if (! $state) {
-                            return '—';
+                            return '-';
                         }
                         if ($state >= 1048576) {
                             return number_format($state / 1048576, 2).' MB';

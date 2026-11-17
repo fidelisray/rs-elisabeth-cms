@@ -6,7 +6,6 @@ use App\Filament\Concerns\EditsTranslatedContent;
 use App\Filament\Resources\News\NewsResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
-use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
 
 class EditNews extends EditRecord
 {
@@ -17,7 +16,6 @@ class EditNews extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            LocaleSwitcher::make(),
             DeleteAction::make(),
         ];
     }

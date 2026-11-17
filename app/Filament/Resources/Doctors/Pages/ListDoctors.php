@@ -7,7 +7,6 @@ use App\Services\DoctorSyncService;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
-use LaraZeus\SpatieTranslatable\Actions\LocaleSwitcher;
 use LaraZeus\SpatieTranslatable\Resources\Pages\ListRecords\Concerns\Translatable;
 
 class ListDoctors extends ListRecords
@@ -19,8 +18,6 @@ class ListDoctors extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            LocaleSwitcher::make(),
-
             Action::make('syncMedin')
                 ->label('Sinkronisasi API Internal RS')
                 ->icon('heroicon-o-arrow-path')
