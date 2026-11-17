@@ -7,6 +7,7 @@ use App\Filament\Resources\RoomFacilities\Pages\EditRoomFacility;
 use App\Jobs\SendCacheInvalidationWebhookJob;
 use App\Models\RoomFacility;
 use App\Models\User;
+use App\Support\RoomNestedContent;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -37,11 +38,11 @@ class RoomNestedTranslationsTest extends TestCase
     {
         return [
             'amenities' => [
-                ['group' => ['id' => 'Fasilitas Kamar', 'en' => 'Room Facilities'], 'items' => [
+                ['group' => ['id' => 'Fasilitas Utama', 'en' => 'Primary Facilities'], 'items' => [
                     ['name' => ['id' => 'Tempat Tidur', 'en' => 'Bed'], 'value' => ['id' => 'Elektrik', 'en' => 'Electric'], 'show_in_comparison' => true],
                     ['name' => ['id' => 'Televisi', 'en' => 'Television'], 'value' => null, 'show_in_comparison' => false],
                 ]],
-                ['group' => ['id' => 'Fasilitas Tambahan', 'en' => 'Additional Facilities'], 'items' => [
+                ['group' => ['id' => 'Fasilitas Tambahan', 'en' => 'Supplementary Facilities'], 'items' => [
                     ['name' => ['id' => 'Kursi', 'en' => 'Chair'], 'value' => ['id' => '', 'en' => ''], 'show_in_comparison' => false],
                 ]],
             ],
@@ -65,12 +66,15 @@ class RoomNestedTranslationsTest extends TestCase
     {
         $this->actAsMarketing();
         $payload ??= $this->nested();
+        $split = RoomNestedContent::splitAmenities($payload['amenities'] ?? []);
 
         return Livewire::test(CreateRoomFacility::class)->fillForm([
             'name' => 'Kamar Uji', 'slug' => 'kamar-uji', 'tagline' => 'Tagline ID', 'description' => 'Deskripsi ID',
-            'room_size' => 40, 'bed_count' => 1, 'max_companion' => 2,
+            'bed_count' => 1, 'max_companion' => 2,
             'image_path' => UploadedFile::fake()->image('room.png', 640, 360),
-            'amenities' => $payload['amenities'], 'highlight_tags' => $payload['highlight_tags'],
+            'main_amenities' => $split['main'],
+            'additional_amenities' => $split['additional'],
+            'highlight_tags' => $payload['highlight_tags'],
             'whatsapp_text' => $payload['whatsapp_text']['id'] ?? null, 'is_active' => true,
         ])->set('activeLocale', 'en')->fillForm([
             'name' => 'Test Room', 'slug' => 'test-room', 'tagline' => 'EN tagline', 'description' => 'EN description',
@@ -85,7 +89,7 @@ class RoomNestedTranslationsTest extends TestCase
         foreach (['en', 'id', 'en'] as $locale) {
             $response = $this->withHmac()->getJson('/api/v1/cms/room-facilities?lang='.$locale)->assertOk();
             $detail = $this->withHmac()->getJson('/api/v1/cms/room-facilities/'.$room->getTranslation('slug', $locale, false).'?lang='.$locale)->assertOk();
-            $group = $locale === 'id' ? 'Fasilitas Kamar' : 'Room Facilities';
+            $group = $locale === 'id' ? 'Fasilitas Utama' : 'Primary Facilities';
             $name = $locale === 'id' ? 'Tempat Tidur' : 'Bed';
             $value = $locale === 'id' ? 'Elektrik' : 'Electric';
 
@@ -118,7 +122,7 @@ class RoomNestedTranslationsTest extends TestCase
         $this->assertEquals($this->nested()['amenities'][0], $room->amenities[0]);
         $this->assertEquals($this->nested()['highlight_tags'], $room->highlight_tags);
         $this->assertEquals($this->nested()['whatsapp_text'], $room->getTranslations('whatsapp_text'));
-        $this->assertSame('40', (string) $room->room_size);
+        $this->assertNull($room->room_size);
         $this->assertSame('1', (string) $room->bed_count);
     }
 
@@ -176,11 +180,11 @@ class RoomNestedTranslationsTest extends TestCase
         Storage::disk('media-test')->put('rooms/test.webp', 'test image');
         $room = RoomFacility::factory()->create([...$this->nested(), 'image_path' => 'rooms/test.webp']);
         $before = $room->amenities;
-        $payload = $before;
-        $payload[0]['group']['en'] = '';
+        $split = RoomNestedContent::splitAmenities($before);
+        $split['main'][0]['name']['en'] = '';
 
         Livewire::test(EditRoomFacility::class, ['record' => $room->getRouteKey()])
-            ->fillForm(['amenities' => $payload])->call('save')->assertHasFormErrors();
+            ->fillForm(['main_amenities' => $split['main']])->call('save')->assertHasFormErrors();
 
         $this->assertEquals($before, $room->fresh()->amenities);
     }
@@ -211,20 +215,19 @@ class RoomNestedTranslationsTest extends TestCase
         Storage::disk('media-test')->put('rooms/test.webp', 'test image');
         $room = RoomFacility::factory()->create([...$this->nested(), 'image_path' => 'rooms/test.webp']);
         $payload = $this->nested();
-        $payload['amenities'] = array_reverse($payload['amenities']);
-        $payload['amenities'][1]['items'] = array_reverse($payload['amenities'][1]['items']);
-        $payload['amenities'][0]['items'][] = ['name' => ['id' => 'Meja', 'en' => 'Desk'], 'value' => null, 'show_in_comparison' => true];
+        $split = RoomNestedContent::splitAmenities($payload['amenities']);
+        $split['main'] = array_reverse($split['main']);
+        $split['main'][] = ['name' => ['id' => 'Meja', 'en' => 'Desk'], 'value' => null, 'show_in_comparison' => true];
         $payload['highlight_tags'] = [$payload['highlight_tags'][1]];
 
         Livewire::test(EditRoomFacility::class, ['record' => $room->getRouteKey()])
-            ->fillForm(['amenities' => $payload['amenities'], 'highlight_tags' => $payload['highlight_tags']])
+            ->fillForm(['main_amenities' => $split['main'], 'additional_amenities' => $split['additional'], 'highlight_tags' => $payload['highlight_tags']])
             ->set('activeLocale', 'en')->fillForm(['whatsapp_text' => 'Updated English message'])
             ->set('activeLocale', 'id')->call('save')->assertHasNoFormErrors();
 
         $fresh = $room->fresh();
-        $this->assertSame('Fasilitas Tambahan', $fresh->amenities[0]['group']['id']);
-        $this->assertSame('Desk', $fresh->amenities[0]['items'][1]['name']['en']);
-        $this->assertSame('Television', $fresh->amenities[1]['items'][0]['name']['en']);
+        $this->assertSame('Fasilitas Utama', $fresh->amenities[0]['group']['id']);
+        $this->assertSame('Desk', $fresh->amenities[0]['items'][2]['name']['en']);
         $this->assertCount(1, $fresh->highlight_tags);
         $this->assertSame('Updated English message', $fresh->getTranslation('whatsapp_text', 'en', false));
         $this->assertSame($this->nested()['whatsapp_text']['id'], $fresh->getTranslation('whatsapp_text', 'id', false));
@@ -263,7 +266,7 @@ class RoomNestedTranslationsTest extends TestCase
         $groups[0]['items'] = [$groups[0]['items'][0]];
 
         Livewire::test(EditRoomFacility::class, ['record' => $room->getRouteKey()])
-            ->fillForm(['amenities' => $groups, 'highlight_tags' => [], 'whatsapp_text' => ''])
+            ->fillForm(['main_amenities' => $groups[0]['items'], 'additional_amenities' => [], 'highlight_tags' => [], 'whatsapp_text' => ''])
             ->set('activeLocale', 'en')->fillForm(['whatsapp_text' => ''])
             ->set('activeLocale', 'id')->call('save')->assertHasNoFormErrors();
 
@@ -313,12 +316,89 @@ class RoomNestedTranslationsTest extends TestCase
         }
         Bus::fake();
         $payload = $room->amenities;
-        $payload[0]['group']['en'] = 'Updated Room Facilities';
+        $payload[0]['group']['en'] = 'Updated Primary Facilities';
         $room->update(['amenities' => $payload]);
         $this->assertFalse(Cache::has('rs_web_cms_api_room_facilities_id'));
         $this->assertFalse(Cache::has('rs_web_cms_api_room_facilities_en'));
         Bus::assertDispatchedTimes(SendCacheInvalidationWebhookJob::class, 1);
         $this->withHmac()->getJson('/api/v1/cms/room-facilities?lang=en')->assertOk()
-            ->assertJsonPath('data.0.amenities.0.group', 'Updated Room Facilities');
+            ->assertJsonPath('data.0.amenities.0.group', 'Updated Primary Facilities');
+    }
+
+    public function test_create_room_with_only_primary_facilities_succeeds_and_room_size_is_null(): void
+    {
+        $payload = [
+            'amenities' => [
+                ['group' => ['id' => 'Fasilitas Utama', 'en' => 'Primary Facilities'], 'items' => [
+                    ['name' => ['id' => 'Oksigen', 'en' => 'Oxygen'], 'value' => null, 'show_in_comparison' => true],
+                ]],
+            ],
+            'highlight_tags' => [],
+            'whatsapp_text' => null,
+        ];
+
+        $component = $this->createForm($payload);
+        $component->call('create')->assertHasNoFormErrors();
+
+        $room = RoomFacility::query()->sole();
+        $this->assertNull($room->room_size);
+        $this->assertCount(1, $room->amenities);
+        $this->assertSame('Fasilitas Utama', $room->amenities[0]['group']['id']);
+        $this->assertSame('Primary Facilities', $room->amenities[0]['group']['en']);
+    }
+
+    public function test_create_room_without_primary_facilities_fails_validation(): void
+    {
+        $this->actAsMarketing();
+
+        Livewire::test(CreateRoomFacility::class)->fillForm([
+            'name' => 'Kamar Tanpa Fasilitas Utama', 'slug' => 'kamar-tanpa-fasilitas-utama',
+            'tagline' => 'Tagline', 'description' => 'Deskripsi',
+            'bed_count' => 1, 'max_companion' => 1,
+            'main_amenities' => [],
+            'additional_amenities' => [
+                ['name' => ['id' => 'Kursi', 'en' => 'Chair'], 'value' => null, 'show_in_comparison' => false],
+            ],
+            'highlight_tags' => [],
+            'is_active' => true,
+        ])->call('create')->assertHasFormErrors(['main_amenities']);
+
+        $this->assertSame(0, RoomFacility::count());
+    }
+
+    public function test_edit_form_smart_maps_legacy_group_names(): void
+    {
+        $this->actAsMarketing();
+        Storage::disk('media-test')->put('rooms/test.webp', 'test image');
+        $legacyAmenities = [
+            ['group' => ['id' => 'Grup A', 'en' => 'Group A'], 'items' => [
+                ['name' => ['id' => 'Item 1', 'en' => 'Item 1 EN'], 'value' => null, 'show_in_comparison' => true],
+            ]],
+            ['group' => ['id' => 'Grup B', 'en' => 'Group B'], 'items' => [
+                ['name' => ['id' => 'Item 2', 'en' => 'Item 2 EN'], 'value' => null, 'show_in_comparison' => false],
+            ]],
+        ];
+        $room = RoomFacility::factory()->create(['amenities' => $legacyAmenities, 'image_path' => 'rooms/test.webp']);
+
+        $edit = Livewire::test(EditRoomFacility::class, ['record' => $room->getRouteKey()]);
+
+        // First group should map to main_amenities, second group to additional_amenities
+        $mainValues = collect($edit->get('data.main_amenities'))->pluck('name.id')->all();
+        $this->assertContains('Item 1', $mainValues);
+
+        $additionalValues = collect($edit->get('data.additional_amenities'))->pluck('name.id')->all();
+        $this->assertContains('Item 2', $additionalValues);
+
+        // Saving updates structure to fixed groups and nullifies room_size
+        $edit->call('save')->assertHasNoFormErrors();
+
+        $fresh = $room->fresh();
+        $this->assertSame('Fasilitas Utama', $fresh->amenities[0]['group']['id']);
+        $this->assertSame('Primary Facilities', $fresh->amenities[0]['group']['en']);
+        $this->assertSame('Item 1', $fresh->amenities[0]['items'][0]['name']['id']);
+        $this->assertSame('Fasilitas Tambahan', $fresh->amenities[1]['group']['id']);
+        $this->assertSame('Supplementary Facilities', $fresh->amenities[1]['group']['en']);
+        $this->assertSame('Item 2', $fresh->amenities[1]['items'][0]['name']['id']);
+        $this->assertNull($fresh->room_size);
     }
 }

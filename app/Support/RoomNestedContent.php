@@ -6,6 +6,92 @@ use Illuminate\Support\Facades\Validator;
 
 class RoomNestedContent
 {
+    public const MAIN_GROUP = [
+        'id' => 'Fasilitas Utama',
+        'en' => 'Primary Facilities',
+    ];
+
+    public const ADDITIONAL_GROUP = [
+        'id' => 'Fasilitas Tambahan',
+        'en' => 'Supplementary Facilities',
+    ];
+
+    public static function combineAmenities(array $mainItems, array $additionalItems = []): array
+    {
+        if (empty($mainItems) && empty($additionalItems)) {
+            return [];
+        }
+
+        $amenities = [
+            [
+                'group' => self::MAIN_GROUP,
+                'items' => array_values($mainItems),
+            ],
+        ];
+
+        if (! empty($additionalItems)) {
+            $amenities[] = [
+                'group' => self::ADDITIONAL_GROUP,
+                'items' => array_values($additionalItems),
+            ];
+        }
+
+        return $amenities;
+    }
+
+    public static function splitAmenities(?array $amenities): array
+    {
+        $main = [];
+        $additional = [];
+
+        if (empty($amenities)) {
+            return ['main' => [], 'additional' => []];
+        }
+
+        $hasKnownGroup = false;
+        foreach ($amenities as $group) {
+            $groupId = $group['group']['id'] ?? '';
+            $groupEn = $group['group']['en'] ?? '';
+
+            if (in_array($groupId, ['Fasilitas Utama', 'Fasilitas Kamar'], true)
+                || in_array($groupEn, ['Primary Facilities', 'Main Facilities', 'Room Facilities'], true)
+                || in_array($groupId, ['Fasilitas Tambahan'], true)
+                || in_array($groupEn, ['Supplementary Facilities', 'Additional Facilities'], true)) {
+                $hasKnownGroup = true;
+                break;
+            }
+        }
+
+        if ($hasKnownGroup) {
+            foreach ($amenities as $group) {
+                $groupId = $group['group']['id'] ?? '';
+                $groupEn = $group['group']['en'] ?? '';
+                $items = is_array($group['items'] ?? null) ? $group['items'] : [];
+
+                if (in_array($groupId, ['Fasilitas Utama', 'Fasilitas Kamar'], true)
+                    || in_array($groupEn, ['Primary Facilities', 'Main Facilities', 'Room Facilities'], true)) {
+                    $main = array_merge($main, $items);
+                } else {
+                    $additional = array_merge($additional, $items);
+                }
+            }
+        } else {
+            foreach ($amenities as $index => $group) {
+                $items = is_array($group['items'] ?? null) ? $group['items'] : [];
+                if ($index === 0) {
+                    $main = array_merge($main, $items);
+                } else {
+                    $additional = array_merge($additional, $items);
+                }
+            }
+        }
+
+        return [
+            'main' => array_values($main),
+            'additional' => array_values($additional),
+        ];
+    }
+
     public static function prepare(array $data): array
     {
         $data = self::trimStrings($data);
@@ -47,7 +133,8 @@ class RoomNestedContent
             'amenities.*.group' => ['required', 'array:id,en'],
             'amenities.*.group.id' => ['required', 'string', 'max:100'],
             'amenities.*.group.en' => ['required', 'string', 'max:100'],
-            'amenities.*.items' => ['required', 'array', 'list', 'min:1'],
+            'amenities.*.items' => ['present', 'array', 'list'],
+            'amenities.0.items' => ['required_with:amenities.0', 'array', 'list', 'min:1'],
             'amenities.*.items.*' => ['required', 'array:name,value,show_in_comparison'],
             'amenities.*.items.*.name' => ['required', 'array:id,en'],
             'amenities.*.items.*.name.id' => ['required', 'string', 'max:100'],

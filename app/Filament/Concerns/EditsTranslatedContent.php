@@ -50,7 +50,7 @@ trait EditsTranslatedContent
             $this->form->fill([
                 ...$recordAttributes,
                 ...Arr::except($rawState, $translatableAttributes),
-                ...($this->otherLocaleData[$this->activeLocale] ?? []),
+                ...Arr::only($this->otherLocaleData[$this->activeLocale] ?? [], $translatableAttributes),
             ]);
 
             unset($this->otherLocaleData[$this->activeLocale]);

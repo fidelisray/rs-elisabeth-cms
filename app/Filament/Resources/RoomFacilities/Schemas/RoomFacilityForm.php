@@ -104,35 +104,28 @@ class RoomFacilityForm
                             ->columnSpanFull(),
                     ]),
 
+                // Kelompok fasilitas menggunakan grup tetap:
+                // Nama Grup — Indonesia: Fasilitas Utama & Fasilitas Tambahan
+                // Nama Grup — English: Primary Facilities & Supplementary Facilities
                 Section::make('Daftar Fasilitas')
-                    ->description('Struktur fasilitas berlaku untuk kedua bahasa. Lengkapi teks ID dan EN pada setiap grup/item; pergantian bahasa tidak membuat salinan grup.')
+                    ->description('Kelompok fasilitas terbagi atas Fasilitas Utama (wajib min. 1 item jika fasilitas diisi) dan Fasilitas Tambahan (opsional).')
+                    ->columnSpanFull()
                     ->schema([
 
-                        Repeater::make('amenities')
-                            ->label('Grup Fasilitas')
-                            ->rules([new ValidRoomNestedContent('amenities')])
+                        Section::make('Fasilitas Utama')
+                            ->description('Fasilitas pokok yang wajib tersedia pada ruangan ini.')
                             ->schema([
-
-                                TextInput::make('group.id')
-                                    ->label('Nama Grup — Indonesia')
-                                    ->placeholder('Contoh: Kamar & Ruangan')
-                                    ->required()
-                                    ->clearErrorOnInput()
-                                    ->maxLength(100)
-                                    ->columnSpanFull(),
-
-                                TextInput::make('group.en')
-                                    ->label('Nama Grup — English')
-                                    ->required()
-                                    ->clearErrorOnInput()
-                                    ->maxLength(100)
-                                    ->columnSpanFull(),
-
-                                Repeater::make('items')
-                                    ->required()
-                                    ->label('Item Fasilitas')
+                                Repeater::make('main_amenities')
+                                    ->label('Item Fasilitas Utama')
+                                    ->rule(function (Get $get) {
+                                        return function (string $attribute, $value, \Closure $fail) use ($get) {
+                                            $additional = $get('additional_amenities');
+                                            if (! empty($additional) && empty($value)) {
+                                                $fail('Fasilitas Utama wajib diisi minimal 1 item jika Fasilitas Tambahan diisi.');
+                                            }
+                                        };
+                                    })
                                     ->schema([
-
                                         TextInput::make('name.id')
                                             ->label('Nama Fasilitas — Indonesia')
                                             ->placeholder('Contoh: Air Conditioner (AC)')
@@ -142,6 +135,7 @@ class RoomFacilityForm
 
                                         TextInput::make('name.en')
                                             ->label('Nama Fasilitas — English')
+                                            ->placeholder('Contoh: Air Conditioner (AC)')
                                             ->required()
                                             ->clearErrorOnInput()
                                             ->maxLength(100),
@@ -149,7 +143,6 @@ class RoomFacilityForm
                                         TextInput::make('value.id')
                                             ->label('Spesifikasi — Indonesia (Opsional)')
                                             ->placeholder('contoh: 55" Smart TV, Central')
-                                            // ->helperText('Biarkan kosong jika ini hanya fasilitas standar (tampil sebagai centang)')
                                             ->maxLength(255),
 
                                         TextInput::make('value.en')
@@ -164,15 +157,54 @@ class RoomFacilityForm
                                             ->helperText('Aktifkan agar fasilitas ini ikut muncul di tabel perbandingan antar-ruangan'),
                                     ])
                                     ->columns(2)
-                                    ->addActionLabel('+ Tambah Item')
+                                    ->addActionLabel('+ Tambah Fasilitas Utama')
                                     ->defaultItems(0)
                                     ->collapsible()
                                     ->columnSpanFull(),
-                            ])
-                            ->addActionLabel('+ Tambah Grup')
-                            ->defaultItems(0)
-                            ->collapsible()
-                            ->columnSpanFull(),
+                            ]),
+
+                        Section::make('Fasilitas Tambahan')
+                            ->description('Fasilitas pelengkap atau ekstra (opsional).')
+                            ->schema([
+                                Repeater::make('additional_amenities')
+                                    ->label('Item Fasilitas Tambahan')
+                                    ->schema([
+                                        TextInput::make('name.id')
+                                            ->label('Nama Fasilitas — Indonesia')
+                                            ->placeholder('Contoh: Kursi Penunggu')
+                                            ->required()
+                                            ->clearErrorOnInput()
+                                            ->maxLength(100),
+
+                                        TextInput::make('name.en')
+                                            ->label('Nama Fasilitas — English')
+                                            ->placeholder('Contoh: Companion Chair')
+                                            ->required()
+                                            ->clearErrorOnInput()
+                                            ->maxLength(100),
+
+                                        TextInput::make('value.id')
+                                            ->label('Spesifikasi — Indonesia (Opsional)')
+                                            ->placeholder('contoh: Meja Kerja')
+                                            ->maxLength(255),
+
+                                        TextInput::make('value.en')
+                                            ->label('Spesifikasi — English (Opsional)')
+                                            ->helperText('Isi kedua bahasa jika spesifikasi digunakan, atau kosongkan keduanya.')
+                                            ->maxLength(255),
+
+                                        Toggle::make('show_in_comparison')
+                                            ->columnSpanFull()
+                                            ->label('Highlight Fasilitas')
+                                            ->default(false)
+                                            ->helperText('Aktifkan agar fasilitas ini ikut muncul di tabel perbandingan antar-ruangan'),
+                                    ])
+                                    ->columns(2)
+                                    ->addActionLabel('+ Tambah Fasilitas Tambahan')
+                                    ->defaultItems(0)
+                                    ->collapsible()
+                                    ->columnSpanFull(),
+                            ]),
                     ]),
 
                 Section::make('Highlight Tags')
@@ -239,15 +271,13 @@ class RoomFacilityForm
                     ]),
 
                 Section::make('Spesifikasi Kamar')
-                    ->columns(3)
+                    ->columns(2)
                     ->schema([
 
-                        TextInput::make('room_size')
-                            ->label('Luas Kamar')
-                            ->numeric()
-                            ->suffix('m²')
-                            ->placeholder('Contoh: 40')
-                            ->maxValue(999),
+                        // Field room_size (sebelumnya suffix('m²')) disembunyikan dan diset null.
+                        Hidden::make('room_size')
+                            ->default(null)
+                            ->dehydrateStateUsing(fn () => null),
 
                         TextInput::make('bed_count')
                             ->label('Jumlah Tempat Tidur')

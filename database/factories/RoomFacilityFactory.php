@@ -16,16 +16,16 @@ class RoomFacilityFactory extends Factory
             'slug' => ['id' => Str::slug($name.'-'.Str::random(4)), 'en' => Str::slug($name.' en-'.Str::random(4))],
             'tagline' => ['id' => $this->faker->sentence(), 'en' => $this->faker->sentence()],
             'description' => ['id' => '<p>'.implode('</p><p>', $this->faker->paragraphs(2)).'</p>', 'en' => '<p>'.implode('</p><p>', $this->faker->paragraphs(2)).'</p>'],
-            'room_size' => $this->faker->numberBetween(15, 50),
+            'room_size' => null,
             'bed_count' => $this->faker->numberBetween(1, 4),
             'max_companion' => $this->faker->numberBetween(1, 2),
             'image_path' => null,
             'amenities' => [
-                ['group' => ['id' => 'Fasilitas Medis', 'en' => 'Medical Facilities'], 'items' => [
+                ['group' => ['id' => 'Fasilitas Utama', 'en' => 'Primary Facilities'], 'items' => [
                     ['name' => ['id' => 'Oksigen Sentral', 'en' => 'Central Oxygen'], 'value' => null, 'show_in_comparison' => false],
                     ['name' => ['id' => 'Panggilan Perawat', 'en' => 'Nurse Call'], 'value' => null, 'show_in_comparison' => false],
                 ]],
-                ['group' => ['id' => 'Fasilitas Umum', 'en' => 'General Facilities'], 'items' => [
+                ['group' => ['id' => 'Fasilitas Tambahan', 'en' => 'Supplementary Facilities'], 'items' => [
                     ['name' => ['id' => 'AC', 'en' => 'Air Conditioning'], 'value' => null, 'show_in_comparison' => true],
                     ['name' => ['id' => 'Televisi', 'en' => 'Television'], 'value' => null, 'show_in_comparison' => false],
                 ]],

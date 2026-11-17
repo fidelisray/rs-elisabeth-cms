@@ -72,6 +72,21 @@ class RoomFacility extends Model
         'sort_order' => 'integer',
     ];
 
+    protected $appends = [
+        'main_amenities',
+        'additional_amenities',
+    ];
+
+    public function getMainAmenitiesAttribute(): array
+    {
+        return RoomNestedContent::splitAmenities($this->amenities)['main'];
+    }
+
+    public function getAdditionalAmenitiesAttribute(): array
+    {
+        return RoomNestedContent::splitAmenities($this->amenities)['additional'];
+    }
+
     /**
      * Auto-generate slug from name on creating, if slug is empty.
      */
