@@ -16,3 +16,10 @@ Schedule::command('dokter:refresh')
     ->timezone('Asia/Jakarta')
     ->withoutOverlapping()
     ->onOneServer();
+
+// Bersihkan unggahan sementara form dinamis yang kedaluwarsa setiap hari pukul 02:30 WIB.
+Schedule::command('app:dynamic-forms:cleanup-uploads')
+    ->dailyAt('02:30')
+    ->timezone('Asia/Jakarta')
+    ->withoutOverlapping()
+    ->onOneServer();

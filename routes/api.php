@@ -3,6 +3,9 @@
 use App\Http\Controllers\Api\Cms\ArticleApiController;
 use App\Http\Controllers\Api\Cms\BannerPromotionApiController;
 use App\Http\Controllers\Api\Cms\DoctorApiController;
+use App\Http\Controllers\Api\Cms\DynamicFormApiController;
+use App\Http\Controllers\Api\Cms\DynamicFormSubmissionApiController;
+use App\Http\Controllers\Api\Cms\DynamicFormUploadApiController;
 use App\Http\Controllers\Api\Cms\FacilityServiceApiController;
 use App\Http\Controllers\Api\Cms\FeedbackApiController;
 use App\Http\Controllers\Api\Cms\NewsApiController;
@@ -55,4 +58,10 @@ Route::prefix('v1/cms')
         // Kuesioner kepuasan pasien. Jenis kuesioner dari URL: igd, rawat-jalan, rawat-inap.
         Route::post('/questionnaires/{type}', [QuestionnaireApiController::class, 'store'])
             ->where('type', 'igd|rawat-jalan|rawat-inap');
+
+        // Formulir dinamis (Dynamic Forms: Kuesioner & Feedback Dinamis).
+        Route::get('/forms', [DynamicFormApiController::class, 'index']);
+        Route::get('/forms/{slug}', [DynamicFormApiController::class, 'show']);
+        Route::post('/forms/{slug}/uploads', [DynamicFormUploadApiController::class, 'store']);
+        Route::post('/forms/{slug}/submissions', [DynamicFormSubmissionApiController::class, 'store']);
     });

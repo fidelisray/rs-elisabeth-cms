@@ -28,14 +28,16 @@ class SeederPermissionPreservationTest extends TestCase
 
         $marketing = Role::findByName('marketing', 'web');
 
-        // 7 modul konten x (ViewAny, View, Create, Update, Delete, DeleteAny) = 42,
-        // + Reorder untuk 3 modul, + View untuk 2 widget = 47 (I18N-9.1),
-        // + Doctor: ViewAny, View, Update = 3; + baca Feedback/Kuesioner = 4 -> 54.
+        // 8 modul konten x (ViewAny, View, Create, Update, Delete, DeleteAny) = 48,
+        // + Reorder untuk 3 modul, + View untuk 3 widget = 54,
+        // + Doctor: ViewAny, View, Update = 3; + baca Feedback/Kuesioner/DynamicFormSubmission = 6 -> 63.
         $this->assertTrue($marketing->hasPermissionTo('Update:News'));
         $this->assertTrue($marketing->hasPermissionTo('Delete:News'));
         $this->assertTrue($marketing->hasPermissionTo('DeleteAny:News'));
         $this->assertTrue($marketing->hasPermissionTo('Update:OnlineLibrary'));
-        $this->assertCount(54, $marketing->permissions);
+        $this->assertTrue($marketing->hasPermissionTo('Update:DynamicForm'));
+        $this->assertTrue($marketing->hasPermissionTo('View:DynamicFormSubmission'));
+        $this->assertCount(63, $marketing->permissions);
     }
 
     public function test_marketing_can_only_view_and_update_doctor_profiles(): void
@@ -120,7 +122,7 @@ class SeederPermissionPreservationTest extends TestCase
         $this->seedAll();
 
         $marketing = Role::findByName('marketing', 'web');
-        $this->assertCount(54, $marketing->permissions);
+        $this->assertCount(63, $marketing->permissions);
     }
 
     public function test_new_permission_is_added_to_existing_super_admin(): void

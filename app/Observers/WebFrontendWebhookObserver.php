@@ -6,6 +6,7 @@ use App\Jobs\SendCacheInvalidationWebhookJob;
 use App\Models\Article;
 use App\Models\AuditLog;
 use App\Models\BannerPromotion;
+use App\Models\DynamicForm;
 use App\Models\FacilityService;
 use App\Models\News;
 use App\Models\Promotion;
@@ -30,6 +31,7 @@ class WebFrontendWebhookObserver
             $model instanceof FacilityService => 'facilities',
             $model instanceof RoomFacility => 'room_facilities',
             $model instanceof BannerPromotion => 'banner_promotions',
+            $model instanceof DynamicForm => 'dynamic_forms',
             default => null,
         };
     }

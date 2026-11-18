@@ -44,6 +44,7 @@ class RoleAndPermissionSeeder extends Seeder
         'FacilityService',
         'RoomFacility',
         'OnlineLibrary',
+        'DynamicForm',
     ];
 
     /**
@@ -76,6 +77,7 @@ class RoleAndPermissionSeeder extends Seeder
         'User',
         'Role',
         'OnlineLibrary',
+        'DynamicForm',
     ];
 
     /**
@@ -93,9 +95,10 @@ class RoleAndPermissionSeeder extends Seeder
     protected const WIDGET_SUBJECTS = [
         'FeedbackSectionWidget',
         'QuestionnaireSectionWidget',
+        'DynamicFeedbackOverviewWidget',
     ];
 
-    protected const PATIENT_SUBJECTS = ['Feedback', 'QuestionnaireResponse'];
+    protected const PATIENT_SUBJECTS = ['Feedback', 'QuestionnaireResponse', 'DynamicFormSubmission'];
 
     /**
      * Konstanta nama role & subject agar tidak ada typo/duplikasi magic string.
@@ -155,6 +158,7 @@ class RoleAndPermissionSeeder extends Seeder
             }
         }
         Permission::findOrCreate('Update:Feedback', 'web');
+        Permission::findOrCreate('Update:DynamicFormSubmission', 'web');
     }
 
     /**
