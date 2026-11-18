@@ -26,17 +26,19 @@ class RoomFacilityResource extends Resource
     /**
      * Label yang muncul di sidebar navigasi admin panel.
      */
-    protected static ?string $navigationLabel = 'Room Facilities';
+    protected static ?string $navigationLabel = 'Inpatient Rooms';
 
     /**
      * Label plural untuk list page heading.
      */
-    protected static ?string $pluralModelLabel = 'Room Facilities';
+    protected static ?string $pluralModelLabel = 'Inpatient Rooms';
 
     /**
      * Label singular untuk create/edit page heading.
      */
-    protected static ?string $modelLabel = 'Room Facility';
+    protected static ?string $modelLabel = 'Inpatient Room';
+
+    protected static ?int $navigationSort = 6;
 
     /**
      * Kolom yang digunakan sebagai judul record (untuk breadcrumb & relasi).

@@ -23,6 +23,14 @@ class ArticleResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    protected static ?string $navigationLabel = 'Articles';
+
+    protected static ?string $pluralModelLabel = 'Articles';
+
+    protected static ?string $modelLabel = 'Article';
+
+    protected static ?int $navigationSort = 1;
+
     protected static ?string $recordTitleAttribute = 'title';
 
     public static function form(Schema $schema): Schema

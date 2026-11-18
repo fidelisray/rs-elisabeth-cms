@@ -31,7 +31,7 @@ class BannerPromotionResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'title';
 
-    // protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     /**
      * Mengelompokkan modul ini di bawah grup "Konten Halaman Utama"

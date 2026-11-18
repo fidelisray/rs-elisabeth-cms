@@ -68,8 +68,16 @@ class AdminPanelProvider extends PanelProvider
                 FeedbackSectionWidget::class,
                 QuestionnaireSectionWidget::class,
             ])
+            ->navigationGroups([
+                'Administration',
+            ])
             ->plugins([
-                FilamentShieldPlugin::make(),
+                FilamentShieldPlugin::make()
+                    ->navigationGroup('Administration')
+                    ->navigationLabel('Roles')
+                    ->modelLabel('Role')
+                    ->pluralModelLabel('Roles')
+                    ->navigationSort(2),
                 SpatieTranslatablePlugin::make()
                     ->defaultLocales(config('app.supported_locales', ['id', 'en']))
                     ->getLocaleLabelUsing(fn (string $locale): string => match ($locale) {

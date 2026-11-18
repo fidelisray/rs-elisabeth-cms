@@ -23,11 +23,13 @@ class FacilityServiceResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingLibrary;
 
-    protected static ?string $navigationLabel = 'Facility Services';
+    protected static ?string $navigationLabel = 'Facilities & Services';
 
-    protected static ?string $pluralModelLabel = 'Facility Services';
+    protected static ?string $pluralModelLabel = 'Facilities & Services';
 
-    protected static ?string $modelLabel = 'Facility Service';
+    protected static ?string $modelLabel = 'Facility & Service';
+
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $recordTitleAttribute = 'name';
 

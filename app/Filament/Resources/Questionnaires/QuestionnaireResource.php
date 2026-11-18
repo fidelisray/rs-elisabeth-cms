@@ -24,9 +24,13 @@ class QuestionnaireResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
-    protected static ?string $modelLabel = 'Kuesioner';
+    protected static ?string $navigationLabel = 'Satisfaction Questionnaires';
 
-    protected static ?string $pluralModelLabel = 'Kuesioner Kepuasan';
+    protected static ?string $modelLabel = 'Satisfaction Questionnaire';
+
+    protected static ?string $pluralModelLabel = 'Satisfaction Questionnaires';
+
+    protected static ?int $navigationSort = 10;
 
     public static function table(Table $table): Table
     {

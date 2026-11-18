@@ -25,11 +25,13 @@ class DoctorResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
-    protected static ?string $navigationLabel = 'Profil Dokter';
+    protected static ?string $navigationLabel = 'Doctor Profiles';
 
-    protected static ?string $modelLabel = 'Profil Dokter';
+    protected static ?string $modelLabel = 'Doctor Profile';
 
-    protected static ?string $pluralModelLabel = 'Profil Dokter';
+    protected static ?string $pluralModelLabel = 'Doctor Profiles';
+
+    protected static ?int $navigationSort = 3;
 
     /**
      * Menonaktifkan aksi create manual karena seluruh data dokter
