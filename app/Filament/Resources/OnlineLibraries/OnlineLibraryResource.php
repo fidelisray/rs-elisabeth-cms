@@ -23,11 +23,13 @@ class OnlineLibraryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
 
-    protected static ?string $navigationLabel = 'Perpustakaan Online';
+    protected static ?string $navigationLabel = 'Online Library';
 
-    protected static ?string $modelLabel = 'Perpustakaan Online';
+    protected static ?string $modelLabel = 'Online Library';
 
-    protected static ?string $pluralModelLabel = 'Perpustakaan Online';
+    protected static ?string $pluralModelLabel = 'Online Library';
+
+    protected static ?int $navigationSort = 8;
 
     protected static ?string $recordTitleAttribute = 'title';
 

@@ -23,6 +23,14 @@ class PromotionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMegaphone;
 
+    protected static ?string $navigationLabel = 'Promotions';
+
+    protected static ?string $pluralModelLabel = 'Promotions';
+
+    protected static ?string $modelLabel = 'Promotion';
+
+    protected static ?int $navigationSort = 9;
+
     protected static ?string $recordTitleAttribute = 'title';
 
     public static function form(Schema $schema): Schema

@@ -22,9 +22,13 @@ class FeedbackResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChatBubbleLeftRight;
 
-    protected static ?string $modelLabel = 'Kritik & Saran';
+    protected static ?string $navigationLabel = 'Feedback & Suggestions';
 
-    protected static ?string $pluralModelLabel = 'Kritik & Saran';
+    protected static ?string $modelLabel = 'Feedback';
+
+    protected static ?string $pluralModelLabel = 'Feedback & Suggestions';
+
+    protected static ?int $navigationSort = 5;
 
     protected static ?string $recordTitleAttribute = 'ticket_number';
 

@@ -23,6 +23,14 @@ class NewsResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
+    protected static ?string $navigationLabel = 'News';
+
+    protected static ?string $pluralModelLabel = 'News';
+
+    protected static ?string $modelLabel = 'News';
+
+    protected static ?int $navigationSort = 7;
+
     protected static ?string $recordTitleAttribute = 'title';
 
     public static function form(Schema $schema): Schema
