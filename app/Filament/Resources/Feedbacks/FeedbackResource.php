@@ -28,7 +28,9 @@ class FeedbackResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Feedback & Suggestions';
 
-    protected static ?int $navigationSort = 5;
+    protected static string|\UnitEnum|null $navigationGroup = 'Patient Feedback';
+
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'ticket_number';
 

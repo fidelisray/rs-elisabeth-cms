@@ -29,7 +29,9 @@ class OnlineLibraryResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Online Library';
 
-    protected static ?int $navigationSort = 8;
+    protected static string|\UnitEnum|null $navigationGroup = 'Doctors & Library';
+
+    protected static ?int $navigationSort = 2;
 
     protected static ?string $recordTitleAttribute = 'title';
 

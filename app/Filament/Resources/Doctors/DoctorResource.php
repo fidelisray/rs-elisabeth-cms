@@ -31,7 +31,9 @@ class DoctorResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Doctor Profiles';
 
-    protected static ?int $navigationSort = 3;
+    protected static string|\UnitEnum|null $navigationGroup = 'Doctors & Library';
+
+    protected static ?int $navigationSort = 1;
 
     /**
      * Menonaktifkan aksi create manual karena seluruh data dokter

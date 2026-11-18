@@ -38,7 +38,9 @@ class RoomFacilityResource extends Resource
      */
     protected static ?string $modelLabel = 'Inpatient Room';
 
-    protected static ?int $navigationSort = 6;
+    protected static string|\UnitEnum|null $navigationGroup = 'Services & Rooms';
+
+    protected static ?int $navigationSort = 2;
 
     /**
      * Kolom yang digunakan sebagai judul record (untuk breadcrumb & relasi).

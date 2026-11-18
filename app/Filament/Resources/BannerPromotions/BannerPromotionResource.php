@@ -29,18 +29,11 @@ class BannerPromotionResource extends Resource
 
     protected static ?string $modelLabel = 'Banner Promotion';
 
-    protected static ?string $recordTitleAttribute = 'title';
+    protected static string|\UnitEnum|null $navigationGroup = 'Marketing & Editorial';
 
     protected static ?int $navigationSort = 2;
 
-    /**
-     * Mengelompokkan modul ini di bawah grup "Konten Halaman Utama"
-     * di sidebar Filament.
-     */
-    // public static function getNavigationGroup(): ?string
-    // {
-    //     return 'Konten Halaman Utama';
-    // }
+    protected static ?string $recordTitleAttribute = 'title';
 
     public static function form(Schema $schema): Schema
     {

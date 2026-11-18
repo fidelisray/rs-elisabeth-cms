@@ -29,7 +29,9 @@ class PromotionResource extends Resource
 
     protected static ?string $modelLabel = 'Promotion';
 
-    protected static ?int $navigationSort = 9;
+    protected static string|\UnitEnum|null $navigationGroup = 'Marketing & Editorial';
+
+    protected static ?int $navigationSort = 4;
 
     protected static ?string $recordTitleAttribute = 'title';
 

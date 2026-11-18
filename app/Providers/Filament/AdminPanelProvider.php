@@ -12,6 +12,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -69,11 +70,15 @@ class AdminPanelProvider extends PanelProvider
                 QuestionnaireSectionWidget::class,
             ])
             ->navigationGroups([
-                'Administration',
+                NavigationGroup::make('Marketing & Editorial')->collapsible(),
+                NavigationGroup::make('Services & Rooms')->collapsible(),
+                NavigationGroup::make('Doctors & Library')->collapsible(),
+                NavigationGroup::make('Patient Feedback')->collapsible(),
+                NavigationGroup::make('Access Control')->collapsible(),
             ])
             ->plugins([
                 FilamentShieldPlugin::make()
-                    ->navigationGroup('Administration')
+                    ->navigationGroup('Access Control')
                     ->navigationLabel('Roles')
                     ->modelLabel('Role')
                     ->pluralModelLabel('Roles')
