@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Filament\Resources\Articles\ArticleResource;
 use App\Filament\Resources\BannerPromotions\BannerPromotionResource;
 use App\Filament\Resources\Doctors\DoctorResource;
+use App\Filament\Resources\DynamicForms\DynamicFormResource;
+use App\Filament\Resources\DynamicFormSubmissions\DynamicFormSubmissionResource;
 use App\Filament\Resources\FacilityServices\FacilityServiceResource;
 use App\Filament\Resources\Feedbacks\FeedbackResource;
 use App\Filament\Resources\News\NewsResource;
@@ -79,6 +81,8 @@ class CmsNavigationLocalizationTest extends TestCase
             'ViewAny:Article',
             'ViewAny:BannerPromotion',
             'ViewAny:Doctor',
+            'ViewAny:DynamicForm',
+            'ViewAny:DynamicFormSubmission',
             'ViewAny:FacilityService',
             'ViewAny:Feedback',
             'ViewAny:RoomFacility',
@@ -171,6 +175,20 @@ class CmsNavigationLocalizationTest extends TestCase
                 'group' => 'Patient Feedback',
                 'sort' => 2,
             ],
+            DynamicFormResource::class => [
+                'nav' => 'Dynamic Forms',
+                'plural' => 'Dynamic Forms',
+                'singular' => 'Dynamic Form',
+                'group' => 'Patient Feedback',
+                'sort' => 3,
+            ],
+            DynamicFormSubmissionResource::class => [
+                'nav' => 'Form Submissions',
+                'plural' => 'Form Submissions',
+                'singular' => 'Form Submission',
+                'group' => 'Patient Feedback',
+                'sort' => 4,
+            ],
             UserResource::class => [
                 'nav' => 'User Management',
                 'plural' => 'Users',
@@ -230,7 +248,7 @@ class CmsNavigationLocalizationTest extends TestCase
             ],
             [
                 'label' => 'Patient Feedback',
-                'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires'],
+                'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires', 'Dynamic Forms', 'Form Submissions'],
             ],
             [
                 'label' => 'Access Control',
@@ -285,6 +303,8 @@ class CmsNavigationLocalizationTest extends TestCase
             'Patient Feedback',
             'Feedback & Suggestions',
             'Satisfaction Questionnaires',
+            'Dynamic Forms',
+            'Form Submissions',
             'Access Control',
             'User Management',
             'Roles',
@@ -333,6 +353,8 @@ class CmsNavigationLocalizationTest extends TestCase
             'Online Library',
             'Feedback & Suggestions',
             'Satisfaction Questionnaires',
+            'Dynamic Forms',
+            'Form Submissions',
             'User Management',
             'Roles',
         ], $renderedItemLabels);
@@ -430,7 +452,7 @@ class CmsNavigationLocalizationTest extends TestCase
             ],
             [
                 'label' => 'Patient Feedback',
-                'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires'],
+                'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires', 'Dynamic Forms', 'Form Submissions'],
             ],
         ];
 
@@ -820,8 +842,10 @@ class CmsNavigationLocalizationTest extends TestCase
             'Article',
             'Banner Promotion',
             'Doctor Profile',
+            'Dynamic Form',
             'Facility & Service',
             'Feedback',
+            'Form Submission',
             'Inpatient Room',
             'News',
             'Online Library',

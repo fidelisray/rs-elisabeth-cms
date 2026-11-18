@@ -4,8 +4,10 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\CustomProfile;
 use App\Filament\Pages\Auth\RecoveryLogin;
+use App\Filament\Widgets\DynamicFeedbackOverviewWidget;
 use App\Filament\Widgets\FeedbackSectionWidget;
 use App\Filament\Widgets\QuestionnaireSectionWidget;
+use App\Http\Controllers\Admin\DownloadDynamicFormUploadController;
 use App\Http\Middleware\EnforcePasswordChange;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\Authenticate;
@@ -43,6 +45,10 @@ class AdminPanelProvider extends PanelProvider
             ->routes(function (): void {
                 Route::get('/recovery-login', RecoveryLogin::class)->name('auth.recovery-login');
             })
+            ->authenticatedRoutes(function (): void {
+                Route::get('/dynamic-form-uploads/{upload}/download', DownloadDynamicFormUploadController::class)
+                    ->name('dynamic-forms.uploads.download');
+            })
             ->renderHook(
                 PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
                 fn (): HtmlString => new HtmlString(
@@ -68,6 +74,7 @@ class AdminPanelProvider extends PanelProvider
                 FilamentInfoWidget::class,
                 FeedbackSectionWidget::class,
                 QuestionnaireSectionWidget::class,
+                DynamicFeedbackOverviewWidget::class,
             ])
             ->navigationGroups([
                 NavigationGroup::make('Marketing & Editorial')->collapsible(),

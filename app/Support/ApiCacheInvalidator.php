@@ -33,6 +33,7 @@ class ApiCacheInvalidator
         'room_facilities' => 'rs_web_cms_api_room_facilities',
         'doctors' => 'rs_web_cms_api_doctors',
         'online_libraries' => 'rs_web_cms_api_online_libraries',
+        'dynamic_forms' => 'rs_web_cms_api_dynamic_forms',
     ];
 
     private const PAGINATED_MODULES = ['news', 'articles', 'promotions', 'online_libraries'];
@@ -47,6 +48,21 @@ class ApiCacheInvalidator
         $version = Cache::rememberForever(self::baseKey('doctors').'_version', fn (): string => (string) Str::uuid());
 
         return self::keyForModule('doctors', $locale).'_v'.$version.'_'.hash('sha256', $specialty ?? '');
+    }
+
+    public static function dynamicFormListKey(?string $locale = null, ?string $mode = null): string
+    {
+        $version = Cache::rememberForever(self::baseKey('dynamic_forms').'_version', fn (): string => (string) Str::uuid());
+        $langSegment = in_array($locale, ['id', 'en'], true) ? $locale : 'all';
+
+        return self::baseKey('dynamic_forms').'_'.$langSegment.'_v'.$version.'_'.($mode ?? 'all');
+    }
+
+    public static function dynamicFormDetailKey(string $slug): string
+    {
+        $version = Cache::rememberForever(self::baseKey('dynamic_forms').'_version', fn (): string => (string) Str::uuid());
+
+        return self::baseKey('dynamic_forms').'_detail_v'.$version.'_'.hash('sha256', $slug);
     }
 
     public static function pageKeyForModule(string $module, int $page, ?string $locale = null, ?string $date = null): string
@@ -83,7 +99,7 @@ class ApiCacheInvalidator
         // Also expire the pre-locale key during the transition from older application versions.
         Cache::forget(self::baseKey($module));
 
-        if ($module === 'doctors' || in_array($module, self::PAGINATED_MODULES, true)) {
+        if ($module === 'doctors' || $module === 'dynamic_forms' || in_array($module, self::PAGINATED_MODULES, true)) {
             // UUID avoids retaining a generation when two mutations happen in one second.
             Cache::forever(self::baseKey($module).'_version', (string) Str::uuid());
 

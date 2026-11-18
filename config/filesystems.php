@@ -31,6 +31,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Dynamic Form Private Upload Disk
+    |--------------------------------------------------------------------------
+    |
+    | Disk privat khusus lampiran responden form dinamis agar berkas sensitif
+    | terpisah dari bucket/disk media publik dan hanya diakses via endpoint
+    | admin yang terotorisasi.
+    |
+    */
+
+    'dynamic_form_private_disk' => env('DYNAMIC_FORM_PRIVATE_DISK', 'local'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |

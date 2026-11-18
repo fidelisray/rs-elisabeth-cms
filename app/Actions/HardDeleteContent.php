@@ -3,6 +3,7 @@
 namespace App\Actions;
 
 use App\Models\AuditLog;
+use App\Models\DynamicForm;
 use App\Support\HardDeleteGuard;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -34,25 +35,47 @@ class HardDeleteContent
 
         $mediaPaths = $this->mediaPaths($record);
         $disk = config('filesystems.media_disk');
+        $privateUploads = $record instanceof DynamicForm
+            ? $record->uploads()->get(['disk', 'storage_path'])->map(fn ($u) => ['disk' => $u->disk, 'path' => $u->storage_path])->all()
+            : [];
 
-        return HardDeleteGuard::allow(function () use ($record, $mediaPaths, $disk): bool {
-            return DB::transaction(function () use ($record, $mediaPaths, $disk): bool {
+        return HardDeleteGuard::allow(function () use ($record, $mediaPaths, $disk, $privateUploads): bool {
+            return DB::transaction(function () use ($record, $mediaPaths, $disk, $privateUploads): bool {
+                $hasTranslatedSlug = method_exists($record, 'isTranslatableAttribute') && $record->isTranslatableAttribute('slug');
+
                 AuditLog::record('content.force_deleted', $record, [
                     'module' => $record->getTable(),
-                    'slug_id' => $record->getTranslation('slug', 'id', false),
-                    'slug_en' => $record->getTranslation('slug', 'en', false),
+                    'slug_id' => $hasTranslatedSlug ? $record->getTranslation('slug', 'id', false) : null,
+                    'slug_en' => $hasTranslatedSlug ? $record->getTranslation('slug', 'en', false) : null,
+                    'slug' => $hasTranslatedSlug ? null : ($record->getAttribute('slug') ?? null),
                     'source' => 'panel',
                 ]);
 
+                // Hapus submissions lebih dulu agar FK restrictOnDelete pada dynamic_form_version_id
+                // tidak memblokir penghapusan permanen form beserta versinya.
+                if ($record instanceof DynamicForm) {
+                    DB::table('dynamic_form_submissions')->where('dynamic_form_id', $record->id)->delete();
+                }
+
                 $deleted = (bool) $record->forceDelete();
 
-                if ($deleted && $mediaPaths !== []) {
-                    DB::afterCommit(function () use ($mediaPaths, $disk): void {
+                if ($deleted && ($mediaPaths !== [] || $privateUploads !== [])) {
+                    DB::afterCommit(function () use ($mediaPaths, $disk, $privateUploads): void {
                         // Exception di afterCommit akan dilempar ke pemanggil setelah commit,
                         // sehingga data sudah terhapus tetapi request gagal. Ditangani di sini.
                         foreach ($mediaPaths as $path) {
                             try {
                                 Storage::disk($disk)->delete($path);
+                            } catch (Throwable $exception) {
+                                report($exception);
+                            }
+                        }
+
+                        foreach ($privateUploads as $upload) {
+                            try {
+                                if (! empty($upload['path'])) {
+                                    Storage::disk($upload['disk'])->delete($upload['path']);
+                                }
                             } catch (Throwable $exception) {
                                 report($exception);
                             }

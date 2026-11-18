@@ -26,20 +26,34 @@
                 ]
             }
         },
-        "/api/v1/cms/articles/{id}": {
+        "/api/v1/cms/articles/{identifier}": {
             "get": {
                 "tags": [
                     "Articles"
                 ],
                 "summary": "Get article detail",
-                "description": "Returns a single article data.",
-                "operationId": "a8c75355bcea5207544facd7f4e0a4d1",
+                "description": "Returns an active article by numeric ID or by the exact slug in the selected locale. Slugs from other locales return 404. Use alternate_slugs to switch languages.",
+                "operationId": "c2de3ba1a3a5686006c44878ae586302",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "identifier",
                         "in": "path",
-                        "description": "Article ID",
+                        "description": "Article ID (numeric) or slug (string)",
                         "required": true
+                    },
+                    {
+                        "name": "lang",
+                        "in": "query",
+                        "description": "Content locale: id or en. Unsupported values use id.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "id",
+                            "enum": [
+                                "id",
+                                "en"
+                            ]
+                        }
                     }
                 ],
                 "responses": {
@@ -77,13 +91,240 @@
                 ]
             }
         },
+        "/api/v1/cms/forms": {
+            "get": {
+                "tags": [
+                    "DynamicForms"
+                ],
+                "summary": "Get list of active published dynamic forms",
+                "description": "Returns published dynamic forms currently active by schedule, optionally filtered by mode and lang.",
+                "operationId": "f331bcf00fe6b67fd32427b4b1ffa6a4",
+                "parameters": [
+                    {
+                        "name": "mode",
+                        "in": "query",
+                        "description": "Form mode: questionnaire or feedback",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "questionnaire",
+                                "feedback"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "lang",
+                        "in": "query",
+                        "description": "Form language: id or en",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "en"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "HmacAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/cms/forms/{slug}": {
+            "get": {
+                "tags": [
+                    "DynamicForms"
+                ],
+                "summary": "Get published dynamic form schema and availability",
+                "description": "Returns published form schema snapshot, conditional logic, and live quota/schedule availability.",
+                "operationId": "e6df540e88b89ffee9e21bf74ebe9773",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "description": "Dynamic form slug",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    },
+                    "404": {
+                        "description": "Form not found or still draft"
+                    }
+                },
+                "security": [
+                    {
+                        "HmacAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/cms/forms/{slug}/submissions": {
+            "post": {
+                "tags": [
+                    "DynamicForms"
+                ],
+                "summary": "Submit answers to a published dynamic form",
+                "description": "Validates conditional visibility, section jumps, field rules, atomic quota, and upload_tokens, then stores the submission.",
+                "operationId": "77c9c6265c9a8b29f7891216408a87d6",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "description": "Dynamic form slug",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "answers"
+                                ],
+                                "properties": {
+                                    "version_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "answers": {
+                                        "type": "object"
+                                    },
+                                    "locale": {
+                                        "type": "string",
+                                        "nullable": true,
+                                        "enum": [
+                                            "id",
+                                            "en"
+                                        ]
+                                    },
+                                    "source": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "respondent_key": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "hp_website": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Submission recorded"
+                    },
+                    "422": {
+                        "description": "Validation or quota error"
+                    },
+                    "404": {
+                        "description": "Form not found"
+                    }
+                },
+                "security": [
+                    {
+                        "HmacAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/cms/forms/{slug}/uploads": {
+            "post": {
+                "tags": [
+                    "DynamicForms"
+                ],
+                "summary": "Step-1 private file upload for a dynamic form field",
+                "description": "Validates MIME/extension/size against the published form schema and stores the file in private storage, returning a short-lived upload_token.",
+                "operationId": "155a1e7a829e9ee0d6e36f33b6cf501a",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "description": "Dynamic form slug",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Content-SHA256",
+                        "in": "header",
+                        "description": "Hex SHA-256 hash of the uploaded file bytes; HMAC signs {timestamp}{consId}{X-Content-SHA256}",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "field_key",
+                                    "file"
+                                ],
+                                "properties": {
+                                    "field_key": {
+                                        "type": "string"
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "File uploaded"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "HmacAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/cms/facilities": {
             "get": {
                 "tags": [
                     "Facilities"
                 ],
                 "summary": "Get list of facilities and services",
-                "description": "Returns list of active facilities and services without pagination.",
+                "description": "Returns active facilities without pagination, ordered by sort_order, name in the selected locale, and ID.",
                 "operationId": "89109c1ac2845a29ce485f89d97f9c1f",
                 "responses": {
                     "200": {
@@ -103,7 +344,7 @@
                     "Facilities"
                 ],
                 "summary": "Get facility or service detail",
-                "description": "Returns a single facility or service data.",
+                "description": "Returns an active facility matching the exact slug in the selected locale. Slugs from other locales return 404. Use alternate_slugs to switch languages.",
                 "operationId": "2a917b78db176bb12ece3269056b5d1b",
                 "parameters": [
                     {
@@ -111,6 +352,20 @@
                         "in": "path",
                         "description": "Facility slug",
                         "required": true
+                    },
+                    {
+                        "name": "lang",
+                        "in": "query",
+                        "description": "Content locale: id or en. Unsupported values use id.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "id",
+                            "enum": [
+                                "id",
+                                "en"
+                            ]
+                        }
                     }
                 ],
                 "responses": {
@@ -154,7 +409,7 @@
                     "News"
                 ],
                 "summary": "Get news detail",
-                "description": "Returns a single news data.",
+                "description": "Returns published news matching the exact slug in the selected locale. Slugs from other locales return 404. Use alternate_slugs to switch languages.",
                 "operationId": "30ee2d58fbc129112785e92a25afcbd7",
                 "parameters": [
                     {
@@ -162,6 +417,85 @@
                         "in": "path",
                         "description": "News slug",
                         "required": true
+                    },
+                    {
+                        "name": "lang",
+                        "in": "query",
+                        "description": "Content locale: id or en. Unsupported values use id.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "id",
+                            "enum": [
+                                "id",
+                                "en"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    },
+                    "404": {
+                        "description": "Resource Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "HmacAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/cms/online-libraries": {
+            "get": {
+                "tags": [
+                    "OnlineLibrary"
+                ],
+                "summary": "Get list of online library documents",
+                "description": "Returns list of published online library documents with pagination.",
+                "operationId": "27a83ed3ad52541e7a3284acf65b41b8",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation"
+                    }
+                },
+                "security": [
+                    {
+                        "HmacAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/cms/online-libraries/{identifier}": {
+            "get": {
+                "tags": [
+                    "OnlineLibrary"
+                ],
+                "summary": "Get online library document detail",
+                "description": "Returns published document matching the exact slug in the selected locale.",
+                "operationId": "b6e43edb3d5132311083a89843a99225",
+                "parameters": [
+                    {
+                        "name": "identifier",
+                        "in": "path",
+                        "description": "Document slug",
+                        "required": true
+                    },
+                    {
+                        "name": "lang",
+                        "in": "query",
+                        "description": "Content locale: id or en.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "id",
+                            "enum": [
+                                "id",
+                                "en"
+                            ]
+                        }
                     }
                 ],
                 "responses": {
@@ -199,20 +533,34 @@
                 ]
             }
         },
-        "/api/v1/cms/promotions/{id}": {
+        "/api/v1/cms/promotions/{identifier}": {
             "get": {
                 "tags": [
                     "Promotions"
                 ],
                 "summary": "Get promotion detail",
-                "description": "Returns a single promotion data.",
-                "operationId": "b77c3adef10775f8f1de876301df8b3d",
+                "description": "Returns a currently active promotion by numeric ID or by the exact slug in the selected locale. Slugs from other locales return 404. Use alternate_slugs to switch languages.",
+                "operationId": "7841caea83b74e5440b13794e55f45ad",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "identifier",
                         "in": "path",
-                        "description": "Promotion ID",
+                        "description": "Promotion ID (numeric) or slug (string)",
                         "required": true
+                    },
+                    {
+                        "name": "lang",
+                        "in": "query",
+                        "description": "Content locale: id or en. Unsupported values use id.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "id",
+                            "enum": [
+                                "id",
+                                "en"
+                            ]
+                        }
                     }
                 ],
                 "responses": {
@@ -236,7 +584,7 @@
                     "Room Facilities"
                 ],
                 "summary": "Get list of room facilities",
-                "description": "Returns list of active room facilities without pagination.",
+                "description": "Returns active rooms without pagination, ordered by sort_order, name in the selected locale, and ID.",
                 "operationId": "9550b84c603ed535c615566283f49f03",
                 "responses": {
                     "200": {
@@ -256,7 +604,7 @@
                     "Room Facilities"
                 ],
                 "summary": "Get room facility detail",
-                "description": "Returns a single room facility data.",
+                "description": "Returns an active room matching the exact slug in the selected locale. Slugs from other locales return 404. Use alternate_slugs to switch languages.",
                 "operationId": "a739d2406279f4a60a1b5f6b01247a4e",
                 "parameters": [
                     {
@@ -264,6 +612,20 @@
                         "in": "path",
                         "description": "Room Facility slug",
                         "required": true
+                    },
+                    {
+                        "name": "lang",
+                        "in": "query",
+                        "description": "Content locale: id or en. Unsupported values use id.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "id",
+                            "enum": [
+                                "id",
+                                "en"
+                            ]
+                        }
                     }
                 ],
                 "responses": {
@@ -301,12 +663,20 @@
             "description": "Banner Promotions"
         },
         {
+            "name": "DynamicForms",
+            "description": "DynamicForms"
+        },
+        {
             "name": "Facilities",
             "description": "Facilities"
         },
         {
             "name": "News",
             "description": "News"
+        },
+        {
+            "name": "OnlineLibrary",
+            "description": "OnlineLibrary"
         },
         {
             "name": "Promotions",

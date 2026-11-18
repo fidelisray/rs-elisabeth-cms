@@ -4,6 +4,8 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\RateLimiter;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -44,11 +46,41 @@ class VerifyCmsHmacSignature
         }
 
         // 4. Hitung dan verifikasi Signature
-        // GET/HEAD (tanpa body): base64(hmac_sha256({timestamp}.{consId}, secret)), format lama.
-        // POST/PUT/PATCH/DELETE: base64(hmac_sha256({timestamp}.{consId}.{rawBody}, secret)).
-        // Body ikut ditandatangani agar payload tidak bisa diubah atau di-replay dengan isi lain.
-        // Body GET diabaikan: klien GET tidak mengirim body, dan test lama mengirim "[]".
-        $signedBody = in_array($request->method(), ['GET', 'HEAD'], true) ? '' : $request->getContent();
+        // GET/HEAD (tanpa body): base64(hmac_sha256({timestamp}{consId}, secret)).
+        // POST multipart upload (/forms/{slug}/uploads): base64(hmac_sha256({timestamp}{consId}{X-Content-SHA256}, secret)),
+        //   disertai verifikasi hash_file('sha256', ...) pada berkas yang diterima.
+        // POST/PUT/PATCH/DELETE lainnya: base64(hmac_sha256({timestamp}{consId}{rawBody}, secret)).
+        if ($this->isDynamicFormMultipartUpload($request)) {
+            $contentSha256 = (string) $request->header('X-Content-SHA256', '');
+
+            if (preg_match('/^[a-f0-9]{64}$/i', $contentSha256) !== 1) {
+                return $this->unauthorizedResponse('Missing or invalid X-Content-SHA256 header.');
+            }
+
+            $files = Arr::flatten($request->allFiles());
+            if (count($files) > 1) {
+                return $this->unauthorizedResponse('Only a single file per upload request is allowed.');
+            }
+
+            if (count($files) === 1) {
+                $uploadedFile = $files[0];
+                $realPath = $uploadedFile instanceof UploadedFile && $uploadedFile->isValid()
+                    ? $uploadedFile->getRealPath()
+                    : false;
+                $actualSha256 = is_string($realPath) && $realPath !== '' ? hash_file('sha256', $realPath) : false;
+
+                if ($actualSha256 === false || ! hash_equals(strtolower($contentSha256), strtolower($actualSha256))) {
+                    return $this->unauthorizedResponse('Uploaded file content SHA-256 mismatch.');
+                }
+            } elseif (! hash_equals(strtolower($contentSha256), hash('sha256', ''))) {
+                return $this->unauthorizedResponse('Empty upload SHA-256 mismatch.');
+            }
+
+            $signedBody = $contentSha256;
+        } else {
+            $signedBody = in_array($request->method(), ['GET', 'HEAD'], true) ? '' : $request->getContent();
+        }
+
         $expectedSignatureRaw = hash_hmac('sha256', $timestamp.$consId.$signedBody, $secretKey, true);
         $expectedSignature = base64_encode($expectedSignatureRaw);
 
@@ -81,6 +113,19 @@ class VerifyCmsHmacSignature
         RateLimiter::hit($limiterKey, 60);
 
         return $next($request);
+    }
+
+    private function isDynamicFormMultipartUpload(Request $request): bool
+    {
+        if (! $request->isMethod('POST') || ! $request->is('api/v1/cms/forms/*/uploads')) {
+            return false;
+        }
+
+        $contentType = strtolower((string) $request->header('Content-Type', ''));
+
+        return str_starts_with($contentType, 'multipart/form-data')
+            || $request->allFiles() !== []
+            || $request->hasHeader('X-Content-SHA256');
     }
 
     /**
