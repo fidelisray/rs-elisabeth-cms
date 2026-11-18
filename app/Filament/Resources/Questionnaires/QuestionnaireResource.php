@@ -30,7 +30,9 @@ class QuestionnaireResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Satisfaction Questionnaires';
 
-    protected static ?int $navigationSort = 10;
+    protected static string|\UnitEnum|null $navigationGroup = 'Patient Feedback';
+
+    protected static ?int $navigationSort = 2;
 
     public static function table(Table $table): Table
     {

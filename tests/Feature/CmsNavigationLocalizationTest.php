@@ -29,11 +29,15 @@ use App\Models\RoomFacility;
 use App\Models\User;
 use BezhanSalleh\FilamentShield\Resources\Roles\RoleResource;
 use Database\Seeders\DatabaseSeeder;
+use DOMDocument;
+use DOMElement;
+use DOMXPath;
 use Filament\Facades\Filament;
 use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Js;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
@@ -101,84 +105,84 @@ class CmsNavigationLocalizationTest extends TestCase
                 'nav' => 'Articles',
                 'plural' => 'Articles',
                 'singular' => 'Article',
-                'group' => null,
+                'group' => 'Marketing & Editorial',
                 'sort' => 1,
             ],
             BannerPromotionResource::class => [
                 'nav' => 'Banner Promotions',
                 'plural' => 'Banner Promotions',
                 'singular' => 'Banner Promotion',
-                'group' => null,
+                'group' => 'Marketing & Editorial',
+                'sort' => 2,
+            ],
+            NewsResource::class => [
+                'nav' => 'News',
+                'plural' => 'News',
+                'singular' => 'News',
+                'group' => 'Marketing & Editorial',
+                'sort' => 3,
+            ],
+            PromotionResource::class => [
+                'nav' => 'Promotions',
+                'plural' => 'Promotions',
+                'singular' => 'Promotion',
+                'group' => 'Marketing & Editorial',
+                'sort' => 4,
+            ],
+            FacilityServiceResource::class => [
+                'nav' => 'Facilities & Services',
+                'plural' => 'Facilities & Services',
+                'singular' => 'Facility & Service',
+                'group' => 'Services & Rooms',
+                'sort' => 1,
+            ],
+            RoomFacilityResource::class => [
+                'nav' => 'Inpatient Rooms',
+                'plural' => 'Inpatient Rooms',
+                'singular' => 'Inpatient Room',
+                'group' => 'Services & Rooms',
                 'sort' => 2,
             ],
             DoctorResource::class => [
                 'nav' => 'Doctor Profiles',
                 'plural' => 'Doctor Profiles',
                 'singular' => 'Doctor Profile',
-                'group' => null,
-                'sort' => 3,
-            ],
-            FacilityServiceResource::class => [
-                'nav' => 'Facilities & Services',
-                'plural' => 'Facilities & Services',
-                'singular' => 'Facility & Service',
-                'group' => null,
-                'sort' => 4,
-            ],
-            FeedbackResource::class => [
-                'nav' => 'Feedback & Suggestions',
-                'plural' => 'Feedback & Suggestions',
-                'singular' => 'Feedback',
-                'group' => null,
-                'sort' => 5,
-            ],
-            RoomFacilityResource::class => [
-                'nav' => 'Inpatient Rooms',
-                'plural' => 'Inpatient Rooms',
-                'singular' => 'Inpatient Room',
-                'group' => null,
-                'sort' => 6,
-            ],
-            NewsResource::class => [
-                'nav' => 'News',
-                'plural' => 'News',
-                'singular' => 'News',
-                'group' => null,
-                'sort' => 7,
+                'group' => 'Doctors & Library',
+                'sort' => 1,
             ],
             OnlineLibraryResource::class => [
                 'nav' => 'Online Library',
                 'plural' => 'Online Library',
                 'singular' => 'Online Library',
-                'group' => null,
-                'sort' => 8,
+                'group' => 'Doctors & Library',
+                'sort' => 2,
             ],
-            PromotionResource::class => [
-                'nav' => 'Promotions',
-                'plural' => 'Promotions',
-                'singular' => 'Promotion',
-                'group' => null,
-                'sort' => 9,
+            FeedbackResource::class => [
+                'nav' => 'Feedback & Suggestions',
+                'plural' => 'Feedback & Suggestions',
+                'singular' => 'Feedback',
+                'group' => 'Patient Feedback',
+                'sort' => 1,
             ],
             QuestionnaireResource::class => [
                 'nav' => 'Satisfaction Questionnaires',
                 'plural' => 'Satisfaction Questionnaires',
                 'singular' => 'Satisfaction Questionnaire',
-                'group' => null,
-                'sort' => 10,
+                'group' => 'Patient Feedback',
+                'sort' => 2,
             ],
             UserResource::class => [
                 'nav' => 'User Management',
                 'plural' => 'Users',
                 'singular' => 'User',
-                'group' => 'Administration',
+                'group' => 'Access Control',
                 'sort' => 1,
             ],
             RoleResource::class => [
                 'nav' => 'Roles',
                 'plural' => 'Roles',
                 'singular' => 'Role',
-                'group' => 'Administration',
+                'group' => 'Access Control',
                 'sort' => 2,
             ],
         ];
@@ -187,6 +191,7 @@ class CmsNavigationLocalizationTest extends TestCase
 
         $this->assertSame('Dashboard', Dashboard::getNavigationLabel());
         $this->assertSame('Dashboard', (new Dashboard)->getTitle());
+        $this->assertNull(Dashboard::getNavigationGroup());
 
         foreach ($expected as $resource => $labels) {
             $this->assertSame($labels['nav'], $resource::getNavigationLabel(), "{$resource} navigationLabel mismatch");
@@ -197,51 +202,67 @@ class CmsNavigationLocalizationTest extends TestCase
         }
     }
 
-    public function test_super_admin_sidebar_navigation_groups_labels_and_alphabetical_order(): void
+    public function test_super_admin_sidebar_navigation_groups_labels_and_order(): void
     {
         $this->actingAs($this->superAdmin);
 
         $panel = Filament::getPanel('admin');
         $groups = array_values($panel->getNavigation());
 
-        $this->assertCount(2, $groups);
+        $this->assertCount(6, $groups);
 
-        /** @var NavigationGroup $topLevelGroup */
-        $topLevelGroup = $groups[0];
-        $this->assertNull($topLevelGroup->getLabel());
+        $expectedGroups = [
+            [
+                'label' => null,
+                'items' => ['Dashboard'],
+            ],
+            [
+                'label' => 'Marketing & Editorial',
+                'items' => ['Articles', 'Banner Promotions', 'News', 'Promotions'],
+            ],
+            [
+                'label' => 'Services & Rooms',
+                'items' => ['Facilities & Services', 'Inpatient Rooms'],
+            ],
+            [
+                'label' => 'Doctors & Library',
+                'items' => ['Doctor Profiles', 'Online Library'],
+            ],
+            [
+                'label' => 'Patient Feedback',
+                'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires'],
+            ],
+            [
+                'label' => 'Access Control',
+                'items' => ['User Management', 'Roles'],
+            ],
+        ];
 
-        $topLevelLabels = collect($topLevelGroup->getItems())
-            ->map(fn (NavigationItem $item): string => $item->getLabel())
-            ->values()
-            ->all();
+        foreach ($expectedGroups as $index => $expectedGroup) {
+            /** @var NavigationGroup $group */
+            $group = $groups[$index];
+            $this->assertSame($expectedGroup['label'], $group->getLabel(), "Navigation group label mismatch at index {$index}");
 
-        $this->assertSame([
-            'Dashboard',
-            'Articles',
-            'Banner Promotions',
-            'Doctor Profiles',
-            'Facilities & Services',
-            'Feedback & Suggestions',
-            'Inpatient Rooms',
-            'News',
-            'Online Library',
-            'Promotions',
-            'Satisfaction Questionnaires',
-        ], $topLevelLabels);
+            if ($expectedGroup['label'] !== null) {
+                $this->assertTrue($group->isCollapsible(), "Group [{$expectedGroup['label']}] should be collapsible.");
+                $this->assertFalse($group->isCollapsed(), "Group [{$expectedGroup['label']}] should be expanded by default.");
+                $this->assertNull($group->getIcon(), "Group [{$expectedGroup['label']}] should not define a group icon.");
+            }
 
-        /** @var NavigationGroup $adminGroup */
-        $adminGroup = $groups[1];
-        $this->assertSame('Administration', $adminGroup->getLabel());
+            $items = collect($group->getItems())->values();
+            $this->assertSame(
+                $expectedGroup['items'],
+                $items->map(fn (NavigationItem $item): string => $item->getLabel())->all(),
+                "Navigation items mismatch for group [{$expectedGroup['label']}]"
+            );
 
-        $adminLabels = collect($adminGroup->getItems())
-            ->map(fn (NavigationItem $item): string => $item->getLabel())
-            ->values()
-            ->all();
-
-        $this->assertSame([
-            'User Management',
-            'Roles',
-        ], $adminLabels);
+            foreach ($items as $item) {
+                $this->assertNotNull(
+                    $item->getIcon(),
+                    "Submenu item [{$item->getLabel()}] should retain its icon."
+                );
+            }
+        }
 
         $response = $this->get('/admin')->assertOk();
         $html = $response->getContent();
@@ -250,20 +271,92 @@ class CmsNavigationLocalizationTest extends TestCase
 
         $response->assertSeeInOrder([
             'Dashboard',
+            'Marketing & Editorial',
             'Articles',
             'Banner Promotions',
-            'Doctor Profiles',
-            'Facilities & Services',
-            'Feedback & Suggestions',
-            'Inpatient Rooms',
             'News',
-            'Online Library',
             'Promotions',
+            'Services & Rooms',
+            'Facilities & Services',
+            'Inpatient Rooms',
+            'Doctors & Library',
+            'Doctor Profiles',
+            'Online Library',
+            'Patient Feedback',
+            'Feedback & Suggestions',
             'Satisfaction Questionnaires',
-            'Administration',
+            'Access Control',
             'User Management',
             'Roles',
         ]);
+
+        $sidebarHtml = $this->extractSidebarNavigationHtml($html);
+        foreach ([
+            'Marketing &amp; Editorial',
+            'Services &amp; Rooms',
+            'Doctors &amp; Library',
+            'Patient Feedback',
+            'Access Control',
+        ] as $encodedGroupLabel) {
+            $this->assertSame(
+                1,
+                preg_match(
+                    '/<li\b[^>]*data-group-label="'.preg_quote($encodedGroupLabel, '/').'"[^>]*\sclass="([^"]*)"/s',
+                    $sidebarHtml,
+                    $groupAttrMatches
+                ),
+                "Expected collapsible sidebar group [{$encodedGroupLabel}] in rendered HTML."
+            );
+            $groupClasses = preg_split('/\s+/', trim($groupAttrMatches[1])) ?: [];
+            $this->assertContains('fi-sidebar-group', $groupClasses);
+            $this->assertContains('fi-collapsible', $groupClasses);
+            $this->assertNotContains(
+                'fi-collapsed',
+                $groupClasses,
+                "Group [{$encodedGroupLabel}] should not render as collapsed initially."
+            );
+        }
+
+        $this->assertStringContainsString('JSON.stringify([])', $sidebarHtml);
+        $this->assertStringNotContainsString('&amp;amp;', $sidebarHtml);
+
+        $renderedItemLabels = $this->extractSidebarItemLabels($sidebarHtml);
+        $this->assertSame([
+            'Dashboard',
+            'Articles',
+            'Banner Promotions',
+            'News',
+            'Promotions',
+            'Facilities & Services',
+            'Inpatient Rooms',
+            'Doctor Profiles',
+            'Online Library',
+            'Feedback & Suggestions',
+            'Satisfaction Questionnaires',
+            'User Management',
+            'Roles',
+        ], $renderedItemLabels);
+
+        $this->assertSame(
+            count($renderedItemLabels),
+            preg_match_all('/<svg[^>]*class="[^"]*fi-sidebar-item-icon[^"]*"/s', $sidebarHtml),
+            'Every sidebar navigation item must render its submenu icon SVG.'
+        );
+
+        $this->assertSidebarDomStructure($html, $expectedGroups, null, 'Dashboard');
+
+        foreach ([
+            '/admin/articles' => ['Marketing & Editorial', 'Articles'],
+            '/admin/facility-services' => ['Services & Rooms', 'Facilities & Services'],
+            '/admin/doctors' => ['Doctors & Library', 'Doctor Profiles'],
+            '/admin/feedbacks/feedback' => ['Patient Feedback', 'Feedback & Suggestions'],
+            '/admin/users' => ['Access Control', 'User Management'],
+            '/admin/shield/roles' => ['Access Control', 'Roles'],
+        ] as $route => [$activeGroup, $activeItem]) {
+            app()->forgetScopedInstances();
+            $routeHtml = $this->get($route)->assertOk()->getContent();
+            $this->assertSidebarDomStructure($routeHtml, $expectedGroups, $activeGroup, $activeItem);
+        }
 
         foreach ([
             'Dasbor',
@@ -273,8 +366,13 @@ class CmsNavigationLocalizationTest extends TestCase
             'Room Facilities',
             'Perpustakaan Online',
             'Manajemen User',
+            'Administration',
             'Administrasi',
             'Filament Shield',
+            'Konten Halaman Utama',
+            'Marketing And Editorial',
+            'Services And Rooms',
+            'Doctors And Library',
             'Peran',
             'Daftar Peran',
         ] as $forbidden) {
@@ -292,8 +390,13 @@ class CmsNavigationLocalizationTest extends TestCase
             'Kuesioner Kepuasan',
             'Kritik & Saran',
             'Manajemen User',
+            'Administration',
             'Administrasi',
             'Filament Shield',
+            'Konten Halaman Utama',
+            'Marketing And Editorial',
+            'Services And Rooms',
+            'Doctors And Library',
             'Peran',
             'Daftar Peran',
         ] as $forbiddenSidebarLabel) {
@@ -302,31 +405,232 @@ class CmsNavigationLocalizationTest extends TestCase
         $this->assertStringNotContainsStringIgnoringCase('peran', $sidebarText);
     }
 
-    public function test_dashboard_remains_accessible_for_all_authenticated_panel_roles_without_extra_permissions(): void
+    public function test_role_based_sidebar_navigation_visibility_hides_inaccessible_and_empty_groups(): void
     {
         $panelOnlyRole = Role::findOrCreate('panel_user', 'web');
         $panelOnlyUser = User::factory()->create(['must_change_password' => false]);
         $panelOnlyUser->assignRole($panelOnlyRole);
 
-        foreach ([$this->marketing, $this->staffIt, $panelOnlyUser] as $user) {
-            session()->flush();
-            $this->actingAs($user);
+        $expectedStaffGroups = [
+            [
+                'label' => null,
+                'items' => ['Dashboard'],
+            ],
+            [
+                'label' => 'Marketing & Editorial',
+                'items' => ['Articles', 'Banner Promotions', 'News', 'Promotions'],
+            ],
+            [
+                'label' => 'Services & Rooms',
+                'items' => ['Facilities & Services', 'Inpatient Rooms'],
+            ],
+            [
+                'label' => 'Doctors & Library',
+                'items' => ['Doctor Profiles', 'Online Library'],
+            ],
+            [
+                'label' => 'Patient Feedback',
+                'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires'],
+            ],
+        ];
+
+        foreach ([$this->marketing, $this->staffIt] as $staffUser) {
+            $this->switchAuthenticatedUser($staffUser);
 
             $panel = Filament::getPanel('admin');
             $groups = array_values($panel->getNavigation());
             $groupLabels = collect($groups)->map(fn (NavigationGroup $group): ?string => $group->getLabel())->all();
 
-            $this->assertNotContains('Administration', $groupLabels);
-            $this->assertNotContains('Filament Shield', $groupLabels);
+            $this->assertSame([
+                null,
+                'Marketing & Editorial',
+                'Services & Rooms',
+                'Doctors & Library',
+                'Patient Feedback',
+            ], $groupLabels);
+
+            foreach ($groups as $group) {
+                $this->assertNotEmpty($group->getItems(), "Group [{$group->getLabel()}] must not be empty.");
+            }
 
             $response = $this->get('/admin')->assertOk();
             $html = $response->getContent();
             $this->assertSame('Dashboard', $this->extractPageHeading($html));
             $this->assertSame($this->expectedDocumentTitle('Dashboard'), $this->extractPageTitle($html));
+            $this->assertSidebarDomStructure($html, $expectedStaffGroups, null, 'Dashboard');
+
+            $sidebarText = $this->extractSidebarNavigationText($html);
+            $this->assertStringContainsString('Marketing & Editorial', $sidebarText);
+            $this->assertStringContainsString('Services & Rooms', $sidebarText);
+            $this->assertStringContainsString('Doctors & Library', $sidebarText);
+            $this->assertStringContainsString('Patient Feedback', $sidebarText);
+            $this->assertStringNotContainsString('Access Control', $sidebarText);
+            $this->assertStringNotContainsString('Administration', $sidebarText);
+            $this->assertStringNotContainsString('Filament Shield', $sidebarText);
+            $response->assertDontSee('Access Control');
+            $response->assertDontSee('Administration');
+            $response->assertDontSee('User Management');
             $response->assertDontSee('Peran');
             $response->assertDontSee('Daftar Peran');
             $response->assertDontSee('Dasbor');
         }
+
+        // panel_user hanya melihat Dashboard dan Patient Feedback (via PatientSubmissionPolicy).
+        $this->switchAuthenticatedUser($panelOnlyUser);
+
+        $panel = Filament::getPanel('admin');
+        $panelUserGroups = array_values($panel->getNavigation());
+        $panelUserGroupLabels = collect($panelUserGroups)->map(fn (NavigationGroup $group): ?string => $group->getLabel())->all();
+
+        $expectedPanelUserGroups = [
+            [
+                'label' => null,
+                'items' => ['Dashboard'],
+            ],
+            [
+                'label' => 'Patient Feedback',
+                'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires'],
+            ],
+        ];
+
+        $this->assertSame([null, 'Patient Feedback'], $panelUserGroupLabels);
+        $this->assertSame(
+            ['Dashboard'],
+            collect($panelUserGroups[0]->getItems())->map(fn (NavigationItem $item): string => $item->getLabel())->values()->all()
+        );
+        $this->assertSame(
+            ['Feedback & Suggestions', 'Satisfaction Questionnaires'],
+            collect($panelUserGroups[1]->getItems())->map(fn (NavigationItem $item): string => $item->getLabel())->values()->all()
+        );
+
+        $panelUserResponse = $this->get('/admin')->assertOk();
+        $panelUserHtml = $panelUserResponse->getContent();
+        $this->assertSame('Dashboard', $this->extractPageHeading($panelUserHtml));
+        $this->assertSame($this->expectedDocumentTitle('Dashboard'), $this->extractPageTitle($panelUserHtml));
+        $this->assertSidebarDomStructure($panelUserHtml, $expectedPanelUserGroups, null, 'Dashboard');
+
+        $panelUserSidebarHtml = $this->extractSidebarNavigationHtml($panelUserHtml);
+        $this->assertSame(
+            ['Dashboard', 'Feedback & Suggestions', 'Satisfaction Questionnaires'],
+            $this->extractSidebarItemLabels($panelUserSidebarHtml)
+        );
+        $this->assertSame(1, preg_match_all('/<li\b[^>]*\bdata-group-label="([^"]+)"/s', $panelUserSidebarHtml, $panelUserRenderedGroups));
+        $this->assertSame(['Patient Feedback'], $panelUserRenderedGroups[1]);
+
+        $panelUserSidebarText = $this->extractSidebarNavigationText($panelUserHtml);
+        $this->assertStringContainsString('Dashboard', $panelUserSidebarText);
+        $this->assertStringContainsString('Patient Feedback', $panelUserSidebarText);
+        $this->assertStringContainsString('Feedback & Suggestions', $panelUserSidebarText);
+        $this->assertStringContainsString('Satisfaction Questionnaires', $panelUserSidebarText);
+
+        foreach ([
+            'Marketing & Editorial',
+            'Services & Rooms',
+            'Doctors & Library',
+            'Access Control',
+            'Administration',
+            'Filament Shield',
+            'Articles',
+            'Banner Promotions',
+            'News',
+            'Promotions',
+            'Facilities & Services',
+            'Inpatient Rooms',
+            'Doctor Profiles',
+            'Online Library',
+            'User Management',
+            'Roles',
+            'Peran',
+            'Daftar Peran',
+            'Dasbor',
+        ] as $hiddenForPanelUser) {
+            $this->assertStringNotContainsString($hiddenForPanelUser, $panelUserSidebarText);
+            $panelUserResponse->assertDontSee($hiddenForPanelUser);
+        }
+
+        app()->forgetScopedInstances();
+        $panelUserFeedbackHtml = $this->get('/admin/feedbacks/feedback')->assertOk()->getContent();
+        $this->assertSidebarDomStructure(
+            $panelUserFeedbackHtml,
+            $expectedPanelUserGroups,
+            'Patient Feedback',
+            'Feedback & Suggestions'
+        );
+        app()->forgetScopedInstances();
+        $panelUserQuestionnaireHtml = $this->get('/admin/questionnaires')->assertOk()->getContent();
+        $this->assertSidebarDomStructure(
+            $panelUserQuestionnaireHtml,
+            $expectedPanelUserGroups,
+            'Patient Feedback',
+            'Satisfaction Questionnaires'
+        );
+        $this->get('/admin/articles')->assertForbidden();
+        $this->get('/admin/facility-services')->assertForbidden();
+        $this->get('/admin/doctors')->assertForbidden();
+        $this->get('/admin/users')->assertForbidden();
+        $this->get('/admin/shield/roles')->assertForbidden();
+
+        // Role dengan izin parsial hanya menampilkan grup yang memiliki minimal satu item yang dapat diakses.
+        $partialRole = Role::findOrCreate('article_viewer', 'web');
+        $partialRole->syncPermissions(['ViewAny:Article', 'View:Article']);
+        $partialUser = User::factory()->create(['must_change_password' => false]);
+        $partialUser->assignRole($partialRole);
+        $this->switchAuthenticatedUser($partialUser);
+
+        $expectedPartialGroups = [
+            [
+                'label' => null,
+                'items' => ['Dashboard'],
+            ],
+            [
+                'label' => 'Marketing & Editorial',
+                'items' => ['Articles'],
+            ],
+            [
+                'label' => 'Patient Feedback',
+                'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires'],
+            ],
+        ];
+
+        $partialNavGroups = array_values(Filament::getPanel('admin')->getNavigation());
+        $this->assertSame(
+            [null, 'Marketing & Editorial', 'Patient Feedback'],
+            collect($partialNavGroups)->map(fn (NavigationGroup $group): ?string => $group->getLabel())->all()
+        );
+        $partialDashboardHtml = $this->get('/admin')->assertOk()->getContent();
+        $this->assertSidebarDomStructure($partialDashboardHtml, $expectedPartialGroups, null, 'Dashboard');
+        $partialSidebarText = $this->extractSidebarNavigationText($partialDashboardHtml);
+        foreach ([
+            'Banner Promotions',
+            'News',
+            'Promotions',
+            'Services & Rooms',
+            'Doctors & Library',
+            'Access Control',
+        ] as $hiddenForPartialUser) {
+            $this->assertStringNotContainsString($hiddenForPartialUser, $partialSidebarText);
+        }
+
+        // Pemberian permission User/Role langsung ke non-super_admin tetap tidak membuka grup Access Control.
+        $panelOnlyUser->givePermissionTo(['ViewAny:User', 'ViewAny:Role']);
+        $this->switchAuthenticatedUser($panelOnlyUser);
+        $groupsAfterDirectPerm = array_values(Filament::getPanel('admin')->getNavigation());
+        $this->assertSame(
+            [null, 'Patient Feedback'],
+            collect($groupsAfterDirectPerm)->map(fn (NavigationGroup $group): ?string => $group->getLabel())->all()
+        );
+        $panelUserAfterPermHtml = $this->get('/admin')->assertOk()->getContent();
+        $this->assertSidebarDomStructure($panelUserAfterPermHtml, $expectedPanelUserGroups, null, 'Dashboard');
+
+        // User tanpa role tidak memiliki grup navigasi yang tersisa maupun grup kosong.
+        $rolelessUser = User::factory()->create(['must_change_password' => false]);
+        $this->switchAuthenticatedUser($rolelessUser);
+        $rolelessGroups = array_values(Filament::getPanel('admin')->getNavigation());
+        $this->assertSame(
+            [null],
+            collect($rolelessGroups)->map(fn (NavigationGroup $group): ?string => $group->getLabel())->all()
+        );
+        $this->get('/admin')->assertForbidden();
     }
 
     public function test_list_create_edit_and_view_page_headings_use_consistent_english_and_clean_ampersands(): void
@@ -548,6 +852,8 @@ class CmsNavigationLocalizationTest extends TestCase
         $sidebarText = $this->extractSidebarNavigationText($html);
         $this->assertStringNotContainsStringIgnoringCase('peran', $sidebarText);
         $this->assertStringNotContainsString('Filament Shield', $sidebarText);
+        $this->assertStringNotContainsString('Administration', $sidebarText);
+        $this->assertStringNotContainsString('Administrasi', $sidebarText);
 
         foreach ([
             'Peran',
@@ -559,7 +865,10 @@ class CmsNavigationLocalizationTest extends TestCase
             'Facility Service',
             'Profil Dokter',
             'Kuesioner Kepuasan',
+            'Administration',
+            'Administrasi',
             'Filament Shield',
+            'Konten Halaman Utama',
         ] as $forbidden) {
             $response->assertDontSee($forbidden);
         }
@@ -665,8 +974,7 @@ class CmsNavigationLocalizationTest extends TestCase
         $this->assertStringEndsWith('/admin/feedbacks/feedback', FeedbackResource::getUrl('index'));
         $this->assertStringEndsWith('/admin/shield/roles', RoleResource::getUrl('index'));
 
-        session()->flush();
-        $this->actingAs($this->marketing);
+        $this->switchAuthenticatedUser($this->marketing);
         foreach ([
             '/admin',
             '/admin/articles',
@@ -686,8 +994,7 @@ class CmsNavigationLocalizationTest extends TestCase
         $this->get('/admin/users')->assertForbidden();
         $this->get('/admin/shield/roles')->assertForbidden();
 
-        session()->flush();
-        $this->actingAs($this->staffIt);
+        $this->switchAuthenticatedUser($this->staffIt);
         foreach ([
             '/admin',
             '/admin/articles',
@@ -706,6 +1013,157 @@ class CmsNavigationLocalizationTest extends TestCase
         $this->get('/admin/articles/create')->assertForbidden();
         $this->get('/admin/users')->assertForbidden();
         $this->get('/admin/shield/roles')->assertForbidden();
+    }
+
+    /**
+     * @param  list<array{label: ?string, items: list<string>}>  $expectedGroups
+     */
+    private function assertSidebarDomStructure(
+        string $html,
+        array $expectedGroups,
+        ?string $expectedActiveGroupLabel = null,
+        ?string $expectedActiveItemLabel = null,
+    ): void {
+        $sidebarHtml = $this->extractSidebarNavigationHtml($html);
+        $this->assertStringNotContainsString('&amp;amp;', $sidebarHtml);
+
+        $dom = new DOMDocument;
+        $previousErrorSetting = libxml_use_internal_errors(true);
+        $loaded = $dom->loadHTML('<?xml encoding="utf-8" ?>'.$sidebarHtml);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previousErrorSetting);
+
+        $this->assertTrue($loaded, 'Failed to parse rendered sidebar HTML into DOMDocument.');
+
+        $xpath = new DOMXPath($dom);
+
+        $groupedBorders = $xpath->query('//*[contains(concat(" ", normalize-space(@class), " "), " fi-sidebar-item-grouped-border ")]');
+        $this->assertNotFalse($groupedBorders);
+        $this->assertSame(0, $groupedBorders->length, 'Submenu items must keep their icons without grouped border fallbacks.');
+
+        $groupNodes = $xpath->query('//ul[contains(concat(" ", normalize-space(@class), " "), " fi-sidebar-nav-groups ")]/li[contains(concat(" ", normalize-space(@class), " "), " fi-sidebar-group ")]');
+        $this->assertNotFalse($groupNodes);
+        $this->assertSame(count($expectedGroups), $groupNodes->length, 'Rendered sidebar group count mismatch (unexpected or empty group rendered).');
+
+        foreach ($expectedGroups as $index => $expectedGroup) {
+            /** @var DOMElement $groupNode */
+            $groupNode = $groupNodes->item($index);
+            $expectedLabel = $expectedGroup['label'];
+            $expectedItems = $expectedGroup['items'];
+
+            $this->assertSame($expectedLabel ?? '', $groupNode->getAttribute('data-group-label'));
+
+            $groupClasses = preg_split('/\s+/', trim($groupNode->getAttribute('class'))) ?: [];
+            $this->assertContains('fi-sidebar-group', $groupClasses);
+            $this->assertNotContains('fi-collapsed', $groupClasses, 'Sidebar group must not render collapsed initially.');
+
+            $groupItemListNodes = $xpath->query('./ul[contains(concat(" ", normalize-space(@class), " "), " fi-sidebar-group-items ")]', $groupNode);
+            $this->assertNotFalse($groupItemListNodes);
+            $this->assertSame(1, $groupItemListNodes->length);
+            /** @var DOMElement $groupItemListNode */
+            $groupItemListNode = $groupItemListNodes->item(0);
+
+            if ($expectedLabel === null) {
+                $groupBtnNodes = $xpath->query('./div[contains(concat(" ", normalize-space(@class), " "), " fi-sidebar-group-btn ")]', $groupNode);
+                $this->assertNotFalse($groupBtnNodes);
+                $this->assertSame(0, $groupBtnNodes->length, 'Standalone Dashboard entry must remain ungrouped.');
+            } else {
+                $this->assertContains('fi-collapsible', $groupClasses, "Group [{$expectedLabel}] must be collapsible.");
+
+                if ($expectedActiveGroupLabel !== null) {
+                    if ($expectedLabel === $expectedActiveGroupLabel) {
+                        $this->assertContains('fi-active', $groupClasses, "Expected group [{$expectedLabel}] to be active.");
+                    } else {
+                        $this->assertNotContains('fi-active', $groupClasses, "Group [{$expectedLabel}] should not be active.");
+                    }
+                }
+
+                $this->assertStringContainsString(
+                    'label: '.Js::from($expectedLabel)->toHtml(),
+                    $groupNode->getAttribute('x-data'),
+                    "Group [{$expectedLabel}] Alpine x-data label mismatch."
+                );
+
+                $groupBtnNodes = $xpath->query('./div[contains(concat(" ", normalize-space(@class), " "), " fi-sidebar-group-btn ")]', $groupNode);
+                $this->assertNotFalse($groupBtnNodes);
+                $this->assertSame(1, $groupBtnNodes->length);
+                /** @var DOMElement $groupBtnNode */
+                $groupBtnNode = $groupBtnNodes->item(0);
+
+                $directGroupIcons = $xpath->query('./svg', $groupBtnNode);
+                $this->assertNotFalse($directGroupIcons);
+                $this->assertSame(0, $directGroupIcons->length, "Group [{$expectedLabel}] must not render a group-level icon.");
+
+                $groupLabelNodes = $xpath->query('./span[contains(concat(" ", normalize-space(@class), " "), " fi-sidebar-group-label ")]', $groupBtnNode);
+                $this->assertNotFalse($groupLabelNodes);
+                $this->assertSame(1, $groupLabelNodes->length);
+                $this->assertSame(
+                    $expectedLabel,
+                    trim((string) preg_replace('/\s+/', ' ', $groupLabelNodes->item(0)->textContent))
+                );
+
+                $collapseBtns = $xpath->query('./button[contains(concat(" ", normalize-space(@class), " "), " fi-sidebar-group-collapse-btn ")]', $groupBtnNode);
+                $this->assertNotFalse($collapseBtns);
+                $this->assertSame(1, $collapseBtns->length, "Group [{$expectedLabel}] must render a collapse toggle button.");
+                /** @var DOMElement $collapseBtn */
+                $collapseBtn = $collapseBtns->item(0);
+                $this->assertSame(
+                    $groupItemListNode->getAttribute('id'),
+                    $collapseBtn->getAttribute('aria-controls'),
+                    "Collapse button aria-controls must match group items <ul> id for [{$expectedLabel}]."
+                );
+                $this->assertSame(
+                    '! $store.sidebar.groupIsCollapsed(label)',
+                    $collapseBtn->getAttribute('x-bind:aria-expanded')
+                );
+            }
+
+            $itemNodes = $xpath->query('./li[contains(concat(" ", normalize-space(@class), " "), " fi-sidebar-item ")]', $groupItemListNode);
+            $this->assertNotFalse($itemNodes);
+            $this->assertSame(
+                count($expectedItems),
+                $itemNodes->length,
+                'Sidebar item count mismatch inside group ['.($expectedLabel ?? 'ungrouped').'].'
+            );
+
+            foreach ($expectedItems as $itemIndex => $expectedItemLabel) {
+                /** @var DOMElement $itemNode */
+                $itemNode = $itemNodes->item($itemIndex);
+                $itemLabelNodes = $xpath->query('.//span[contains(concat(" ", normalize-space(@class), " "), " fi-sidebar-item-label ")]', $itemNode);
+                $this->assertNotFalse($itemLabelNodes);
+                $this->assertSame(1, $itemLabelNodes->length);
+                $actualItemLabel = trim((string) preg_replace('/\s+/', ' ', $itemLabelNodes->item(0)->textContent));
+                $this->assertSame($expectedItemLabel, $actualItemLabel);
+
+                $itemIcons = $xpath->query('.//svg[contains(concat(" ", normalize-space(@class), " "), " fi-sidebar-item-icon ")]', $itemNode);
+                $this->assertNotFalse($itemIcons);
+                $this->assertSame(1, $itemIcons->length, "Submenu item [{$expectedItemLabel}] must render exactly one SVG icon.");
+
+                if ($expectedActiveItemLabel !== null) {
+                    $itemClasses = preg_split('/\s+/', trim($itemNode->getAttribute('class'))) ?: [];
+                    $linkNodes = $xpath->query('./a', $itemNode);
+                    $this->assertNotFalse($linkNodes);
+                    $this->assertSame(1, $linkNodes->length);
+                    /** @var DOMElement $linkNode */
+                    $linkNode = $linkNodes->item(0);
+
+                    if ($expectedItemLabel === $expectedActiveItemLabel) {
+                        $this->assertContains('fi-active', $itemClasses, "Expected item [{$expectedItemLabel}] to be active.");
+                        $this->assertSame('page', $linkNode->getAttribute('aria-current'));
+                    } else {
+                        $this->assertNotContains('fi-active', $itemClasses, "Item [{$expectedItemLabel}] should not be active.");
+                        $this->assertSame('', $linkNode->getAttribute('aria-current'));
+                    }
+                }
+            }
+        }
+    }
+
+    private function switchAuthenticatedUser(User $user): void
+    {
+        session()->flush();
+        app()->forgetScopedInstances();
+        $this->actingAs($user);
     }
 
     private function extractPageHeading(string $html): string
@@ -777,13 +1235,40 @@ class CmsNavigationLocalizationTest extends TestCase
         ));
     }
 
-    private function extractSidebarNavigationText(string $html): string
+    private function extractSidebarNavigationHtml(string $html): string
     {
         if (! preg_match('/<nav[^>]*class="[^"]*fi-sidebar-nav[^"]*"[^>]*>(.*?)<\/nav>/s', $html, $matches)) {
             $this->fail('Could not find <nav class="fi-sidebar-nav"> in rendered HTML.');
         }
 
-        $withoutScripts = (string) preg_replace('/<script\b[^>]*>.*?<\/script>/is', ' ', $matches[1]);
+        return $matches[1];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function extractSidebarItemLabels(string $sidebarHtml): array
+    {
+        preg_match_all(
+            '/<span[^>]*class="[^"]*fi-sidebar-item-label[^"]*"[^>]*>(.*?)<\/span>/s',
+            $sidebarHtml,
+            $matches
+        );
+
+        return array_values(array_map(
+            fn (string $label): string => trim((string) preg_replace(
+                '/\s+/',
+                ' ',
+                html_entity_decode(strip_tags($label), ENT_QUOTES | ENT_HTML5, 'UTF-8')
+            )),
+            $matches[1]
+        ));
+    }
+
+    private function extractSidebarNavigationText(string $html): string
+    {
+        $sidebarHtml = $this->extractSidebarNavigationHtml($html);
+        $withoutScripts = (string) preg_replace('/<script\b[^>]*>.*?<\/script>/is', ' ', $sidebarHtml);
         $decoded = html_entity_decode(strip_tags($withoutScripts), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
         return trim((string) preg_replace('/\s+/', ' ', $decoded));

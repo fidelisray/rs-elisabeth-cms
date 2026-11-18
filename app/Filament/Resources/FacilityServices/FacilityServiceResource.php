@@ -29,7 +29,9 @@ class FacilityServiceResource extends Resource
 
     protected static ?string $modelLabel = 'Facility & Service';
 
-    protected static ?int $navigationSort = 4;
+    protected static string|\UnitEnum|null $navigationGroup = 'Services & Rooms';
+
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'name';
 
