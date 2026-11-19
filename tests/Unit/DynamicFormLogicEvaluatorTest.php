@@ -346,4 +346,337 @@ class DynamicFormLogicEvaluatorTest extends TestCase
         $this->assertCount(1, $enumTypedErrors);
         $this->assertStringContainsString('Enum Radio', $enumTypedErrors[0]);
     }
+
+    public function test_allowed_operators_and_options_match_each_field_type(): void
+    {
+        $this->assertSame(
+            ['equals', 'not_equals', 'in', 'not_in', 'is_empty', 'is_not_empty'],
+            DynamicFormLogicEvaluator::allowedOperatorsForField(['type' => 'radio'])
+        );
+        $this->assertSame(
+            ['equals', 'not_equals', 'in', 'not_in', 'is_empty', 'is_not_empty'],
+            DynamicFormLogicEvaluator::allowedOperatorsForField(['type' => 'dropdown'])
+        );
+        $this->assertSame(
+            ['contains', 'in', 'not_in', 'equals', 'not_equals', 'is_empty', 'is_not_empty'],
+            DynamicFormLogicEvaluator::allowedOperatorsForField(['type' => 'checkbox'])
+        );
+        $this->assertSame(
+            ['equals', 'not_equals', 'gt', 'gte', 'lt', 'lte', 'in', 'not_in', 'is_empty', 'is_not_empty'],
+            DynamicFormLogicEvaluator::allowedOperatorsForField(['type' => 'linear_scale'])
+        );
+        $this->assertSame(
+            ['equals', 'not_equals', 'gt', 'gte', 'lt', 'lte', 'in', 'not_in', 'is_empty', 'is_not_empty'],
+            DynamicFormLogicEvaluator::allowedOperatorsForField(['type' => 'rating'])
+        );
+        $this->assertSame(
+            ['equals', 'not_equals', 'gt', 'gte', 'lt', 'lte', 'in', 'not_in', 'is_empty', 'is_not_empty'],
+            DynamicFormLogicEvaluator::allowedOperatorsForField(['type' => 'short_text', 'options' => ['subtype' => 'number']])
+        );
+        $this->assertSame(
+            ['equals', 'not_equals', 'contains', 'in', 'not_in', 'is_empty', 'is_not_empty'],
+            DynamicFormLogicEvaluator::allowedOperatorsForField(['type' => 'short_text', 'options' => ['subtype' => 'text']])
+        );
+        $this->assertSame(
+            ['equals', 'not_equals', 'contains', 'in', 'not_in', 'is_empty', 'is_not_empty'],
+            DynamicFormLogicEvaluator::allowedOperatorsForField(['type' => 'long_text'])
+        );
+        $this->assertSame(
+            ['equals', 'not_equals', 'is_empty', 'is_not_empty'],
+            DynamicFormLogicEvaluator::allowedOperatorsForField(['type' => 'date'])
+        );
+        $this->assertSame(
+            ['equals', 'not_equals', 'is_empty', 'is_not_empty'],
+            DynamicFormLogicEvaluator::allowedOperatorsForField(['type' => 'time'])
+        );
+        $this->assertSame(
+            ['is_empty', 'is_not_empty'],
+            DynamicFormLogicEvaluator::allowedOperatorsForField(['type' => 'file_upload'])
+        );
+        $this->assertSame(
+            ['is_empty', 'is_not_empty'],
+            DynamicFormLogicEvaluator::allowedOperatorsForField(['type' => 'matrix_grid'])
+        );
+        $this->assertSame([], DynamicFormLogicEvaluator::allowedOperatorsForField(['type' => 'info_block']));
+
+        $radioOps = DynamicFormLogicEvaluator::operatorOptionsForField(['type' => 'radio']);
+        $this->assertSame('Salah satu dari', $radioOps['in']);
+        $this->assertArrayNotHasKey('gt', $radioOps);
+        $this->assertArrayNotHasKey('contains', $radioOps);
+    }
+
+    public function test_validate_schema_logic_rejects_empty_values_invalid_choice_keys_and_incompatible_operators(): void
+    {
+        $sections = [
+            [
+                'section_key' => 'sec_1',
+                'title' => 'Bagian 1',
+                'fields' => [
+                    [
+                        'field_key' => 'kepatuhan',
+                        'label' => 'Kepatuhan Browser',
+                        'type' => 'radio',
+                        'options' => [
+                            'choices' => [
+                                ['key' => 'patuh', 'label' => 'Patuh'],
+                                ['key' => 'tidak_patuh', 'label' => 'Tidak Patuh'],
+                            ],
+                            'allow_other' => false,
+                        ],
+                    ],
+                    [
+                        'field_key' => 'hobi',
+                        'label' => 'Hobi',
+                        'type' => 'checkbox',
+                        'options' => [
+                            'choices' => [
+                                ['key' => 'baca', 'label' => 'Membaca'],
+                            ],
+                            'allow_other' => true,
+                        ],
+                    ],
+                    [
+                        'field_key' => 'lampiran',
+                        'label' => 'Lampiran',
+                        'type' => 'file_upload',
+                    ],
+                    [
+                        'field_key' => 'matriks',
+                        'label' => 'Matriks',
+                        'type' => 'matrix_grid',
+                        'options' => [
+                            'rows' => [['key' => 'r1', 'label' => 'R1']],
+                            'columns' => [['key' => 'c1', 'label' => 'C1']],
+                        ],
+                    ],
+                    [
+                        'field_key' => 't_bad_choice',
+                        'label' => 'Target Opsi Salah',
+                        'type' => 'short_text',
+                        'conditional_logic' => [
+                            'visibility' => [
+                                'enabled' => true,
+                                'match' => 'all',
+                                'rules' => [
+                                    ['source_field_key' => 'kepatuhan', 'operator' => 'equals', 'value' => 'Tidak Patuh'],
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'field_key' => 't_other_disallowed',
+                        'label' => 'Target Other Tidak Aktif',
+                        'type' => 'short_text',
+                        'conditional_logic' => [
+                            'visibility' => [
+                                'enabled' => true,
+                                'match' => 'all',
+                                'rules' => [
+                                    ['source_field_key' => 'kepatuhan', 'operator' => 'equals', 'value' => '__other__'],
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'field_key' => 't_other_allowed',
+                        'label' => 'Target Other Aktif',
+                        'type' => 'short_text',
+                        'conditional_logic' => [
+                            'visibility' => [
+                                'enabled' => true,
+                                'match' => 'all',
+                                'rules' => [
+                                    ['source_field_key' => 'hobi', 'operator' => 'contains', 'value' => '__other__'],
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'field_key' => 't_empty_value',
+                        'label' => 'Target Nilai Kosong',
+                        'type' => 'short_text',
+                        'conditional_logic' => [
+                            'visibility' => [
+                                'enabled' => true,
+                                'match' => 'all',
+                                'rules' => [
+                                    ['source_field_key' => 'kepatuhan', 'operator' => 'in', 'value' => ['   ']],
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'field_key' => 't_bad_op_file',
+                        'label' => 'Target Operator File',
+                        'type' => 'short_text',
+                        'conditional_logic' => [
+                            'visibility' => [
+                                'enabled' => true,
+                                'match' => 'all',
+                                'rules' => [
+                                    ['source_field_key' => 'lampiran', 'operator' => 'gt', 'value' => '1'],
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'field_key' => 't_bad_op_matrix',
+                        'label' => 'Target Operator Matrix',
+                        'type' => 'short_text',
+                        'conditional_logic' => [
+                            'visibility' => [
+                                'enabled' => true,
+                                'match' => 'all',
+                                'rules' => [
+                                    ['source_field_key' => 'matriks', 'operator' => 'lt', 'value' => '2'],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $errors = $this->evaluator->validateSchemaLogic($sections);
+        $joined = implode(' | ', $errors);
+
+        $this->assertStringContainsString('Nilai pembanding [Tidak Patuh]', $joined);
+        $this->assertStringContainsString('Nilai pembanding [__other__]', $joined);
+        $this->assertStringNotContainsString('Target Other Aktif', $joined);
+        $this->assertStringContainsString('Target Nilai Kosong', $joined);
+        $this->assertStringContainsString('Operator [gt]', $joined);
+        $this->assertStringContainsString('Operator [lt]', $joined);
+    }
+
+    public function test_validate_raw_logic_config_rejects_duplicate_visibility_choice_jump_and_section_jump_rules(): void
+    {
+        $errors = $this->evaluator->validateRawLogicConfig([
+            'visibility_rules' => [
+                ['target_field_key' => 'q2', 'match' => 'all', 'rules' => []],
+                ['target_field_key' => 'q2', 'match' => 'any', 'rules' => []],
+            ],
+            'choice_jumps' => [
+                ['source_field_key' => 'q1', 'choice_key' => 'ya', 'go_to_section_key' => 'sec_2'],
+                ['source_field_key' => 'q1', 'choice_key' => 'ya', 'go_to_section_key' => 'sec_3'],
+            ],
+            'section_jumps' => [
+                ['section_key' => 'sec_1', 'action' => 'jump', 'target_section_key' => 'sec_2'],
+                ['section_key' => 'sec_1', 'action' => 'submit', 'target_section_key' => null],
+            ],
+        ]);
+
+        $this->assertCount(3, $errors);
+        $joined = implode(' ', $errors);
+        $this->assertStringContainsString('aturan visibilitas untuk pertanyaan target [q2]', $joined);
+        $this->assertStringContainsString('lompatan pilihan untuk pertanyaan [q1] pada opsi [ya]', $joined);
+        $this->assertStringContainsString('aturan akhir bagian untuk bagian [sec_1]', $joined);
+    }
+
+    public function test_parity_edge_cases_for_whitespace_only_strings_and_matrix_grid_maps(): void
+    {
+        $cases = [
+            ['is_empty', null, '   ', true],
+            ['is_empty', null, "\t\n ", true],
+            ['is_empty', null, ['   ', ''], true],
+            ['is_not_empty', null, '   ', false],
+            ['equals', '   ', '   ', false],
+            ['lt', '3', '   ', false],
+            ['gte', '0', '   ', false],
+            ['is_empty', null, 0, false],
+            ['is_empty', null, '0', false],
+            ['is_empty', null, ['r1' => '', 'r2' => '   '], true],
+            ['is_empty', null, ['r1' => ['   ']], true],
+            ['is_not_empty', null, ['r1' => 'c1'], true],
+            ['is_not_empty', null, ['r1' => ['c1']], true],
+            ['equals', '[object Object]', ['r1' => 'c1'], false],
+            ['equals', 'c1', ['r1' => 'c1'], false],
+            ['not_equals', 'c1', ['r1' => 'c1'], false],
+            ['in', ['[object Object]', 'c1'], ['r1' => 'c1'], false],
+            ['not_in', ['c1'], ['r1' => 'c1'], false],
+            ['contains', 'c1', ['r1' => ['c1']], false],
+            ['gt', '0', ['r1' => 'c1'], false],
+        ];
+
+        foreach ($cases as [$op, $expected, $actual, $shouldBeVisible]) {
+            $field = [
+                'field_key' => 'target',
+                'conditional_logic' => [
+                    'visibility' => [
+                        'enabled' => true,
+                        'match' => 'all',
+                        'rules' => [
+                            ['source_field_key' => 'source', 'operator' => $op, 'value' => $expected],
+                        ],
+                    ],
+                ],
+            ];
+
+            $this->assertSame(
+                $shouldBeVisible,
+                $this->evaluator->evaluateVisibility($field, ['source' => $actual]),
+                "Failed parity check for operator [{$op}]."
+            );
+        }
+    }
+
+    public function test_validate_schema_logic_rejects_array_on_scalar_operator_and_non_numeric_on_range_operators(): void
+    {
+        $sections = [[
+            'section_key' => 'sec_1',
+            'title' => 'Bagian 1',
+            'fields' => [
+                [
+                    'field_key' => 'pilihan',
+                    'label' => 'Pilihan',
+                    'type' => 'radio',
+                    'options' => [
+                        'choices' => [
+                            ['key' => 'ya', 'label' => 'Ya'],
+                            ['key' => 'tidak', 'label' => 'Tidak'],
+                        ],
+                    ],
+                ],
+                [
+                    'field_key' => 'skala',
+                    'label' => 'Skala',
+                    'type' => 'linear_scale',
+                    'options' => ['min_value' => 1, 'max_value' => 5],
+                ],
+                [
+                    'field_key' => 't_array_equals',
+                    'label' => 'Target Array Equals',
+                    'type' => 'short_text',
+                    'conditional_logic' => [
+                        'visibility' => [
+                            'enabled' => true,
+                            'match' => 'all',
+                            'rules' => [
+                                ['source_field_key' => 'pilihan', 'operator' => 'equals', 'value' => ['ya', 'tidak']],
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'field_key' => 't_non_numeric_gt',
+                    'label' => 'Target Non Numeric GT',
+                    'type' => 'short_text',
+                    'conditional_logic' => [
+                        'visibility' => [
+                            'enabled' => true,
+                            'match' => 'all',
+                            'rules' => [
+                                ['source_field_key' => 'skala', 'operator' => 'gt', 'value' => 'bukan_angka'],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ]];
+
+        $errors = $this->evaluator->validateSchemaLogic($sections);
+        $joined = implode(' | ', $errors);
+
+        $this->assertStringContainsString('harus berupa satu nilai tunggal untuk operator [equals]', $joined);
+        $this->assertStringContainsString('harus berupa angka untuk operator [gt]', $joined);
+    }
 }

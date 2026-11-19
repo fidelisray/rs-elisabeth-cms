@@ -9,6 +9,7 @@ use App\Models\DynamicForm;
 use App\Models\DynamicFormField;
 use App\Models\DynamicFormSection;
 use App\Models\DynamicFormVersion;
+use App\Support\ApiCacheInvalidator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -177,6 +178,16 @@ class DynamicFormVersionService
         $sectionJumps = [];
         $choiceJumps = [];
         $visibilityRules = [];
+        $fieldsByKey = [];
+
+        foreach ($sections as $section) {
+            foreach ((array) ($section['fields'] ?? []) as $field) {
+                $fKey = (string) ($field['field_key'] ?? '');
+                if ($fKey !== '') {
+                    $fieldsByKey[$fKey] = $field;
+                }
+            }
+        }
 
         foreach ($sections as $section) {
             $sectionKey = (string) ($section['section_key'] ?? '');
@@ -213,10 +224,26 @@ class DynamicFormVersionService
 
                 $vis = (array) ($field['conditional_logic']['visibility'] ?? []);
                 if (! empty($vis['enabled']) && ! empty($vis['rules'])) {
+                    $hydratedRules = array_map(function ($rule) use ($fieldsByKey): array {
+                        if (! is_array($rule)) {
+                            return [];
+                        }
+
+                        $sourceKey = trim((string) ($rule['source_field_key'] ?? ''));
+                        $operator = (string) ($rule['operator'] ?? 'equals');
+                        $sourceField = $fieldsByKey[$sourceKey] ?? null;
+
+                        return [
+                            'source_field_key' => $sourceKey,
+                            'operator' => $operator,
+                            'value' => $this->hydrateVisibilityRuleValueForForm($operator, $rule['value'] ?? null, $sourceField),
+                        ];
+                    }, array_values((array) $vis['rules']));
+
                     $visibilityRules[] = [
                         'target_field_key' => $fieldKey,
                         'match' => ($vis['match'] ?? 'all') === 'any' ? 'any' : 'all',
-                        'rules' => array_values((array) $vis['rules']),
+                        'rules' => array_values(array_filter($hydratedRules, fn (array $r): bool => $r !== [])),
                     ];
                 }
             }
@@ -245,7 +272,8 @@ class DynamicFormVersionService
             if (! is_array($item) || blank($item['section_key'] ?? null)) {
                 continue;
             }
-            $sectionJumpMap[(string) $item['section_key']] = [
+            $sectionKey = trim((string) $item['section_key']);
+            $sectionJumpMap[$sectionKey] = [
                 'action' => (string) ($item['action'] ?? 'next'),
                 'target_section_key' => filled($item['target_section_key'] ?? null)
                     ? trim((string) $item['target_section_key'])
@@ -258,7 +286,9 @@ class DynamicFormVersionService
             if (! is_array($item) || blank($item['source_field_key'] ?? null) || blank($item['choice_key'] ?? null)) {
                 continue;
             }
-            $choiceJumpMap[(string) $item['source_field_key']][(string) $item['choice_key']] = filled($item['go_to_section_key'] ?? null)
+            $sourceKey = trim((string) $item['source_field_key']);
+            $choiceKey = trim((string) $item['choice_key']);
+            $choiceJumpMap[$sourceKey][$choiceKey] = filled($item['go_to_section_key'] ?? null)
                 ? trim((string) $item['go_to_section_key'])
                 : null;
         }
@@ -275,15 +305,20 @@ class DynamicFormVersionService
             if ($rules === []) {
                 continue;
             }
-            $visibilityMap[(string) $item['target_field_key']] = [
+            $targetKey = trim((string) $item['target_field_key']);
+            $visibilityMap[$targetKey] = [
                 'visibility' => [
                     'enabled' => true,
                     'match' => ($item['match'] ?? 'all') === 'any' ? 'any' : 'all',
-                    'rules' => array_map(fn (array $r): array => [
-                        'source_field_key' => trim((string) $r['source_field_key']),
-                        'operator' => (string) ($r['operator'] ?? 'equals'),
-                        'value' => $r['value'] ?? null,
-                    ], $rules),
+                    'rules' => array_map(function (array $r): array {
+                        $operator = trim((string) ($r['operator'] ?? 'equals'));
+
+                        return [
+                            'source_field_key' => trim((string) $r['source_field_key']),
+                            'operator' => $operator,
+                            'value' => $this->normalizeVisibilityRuleValue($operator, $r['value'] ?? null),
+                        ];
+                    }, $rules),
                 ],
             ];
         }
@@ -334,36 +369,52 @@ class DynamicFormVersionService
      *
      * @param  array<int, array<string, mixed>>  $rawSections
      */
-    public function syncDraftStructure(DynamicForm $form, array $rawSections, bool $createNextDraftOnlyIfChanged = true): DynamicFormVersion
-    {
+    public function syncDraftStructure(
+        DynamicForm $form,
+        array $rawSections,
+        bool $createNextDraftOnlyIfChanged = true,
+        bool $updatePublishedInPlaceIfEmpty = false,
+    ): DynamicFormVersion {
         $normalized = $this->normalizeSectionsInput($rawSections);
 
-        return DB::transaction(function () use ($form, $normalized, $createNextDraftOnlyIfChanged): DynamicFormVersion {
+        return DB::transaction(function () use ($form, $normalized, $createNextDraftOnlyIfChanged, $updatePublishedInPlaceIfEmpty): DynamicFormVersion {
             $draft = $form->latestDraftVersion();
+            $published = $form->published_version_id ? $form->publishedVersion()->first() : null;
 
-            if (! $draft && $form->published_version_id && $createNextDraftOnlyIfChanged) {
-                $published = $form->publishedVersion()->first();
-                if ($published && $this->sectionsEqual($this->extractSnapshotSections($published), $normalized)) {
+            if (! $draft && $published && $createNextDraftOnlyIfChanged) {
+                if ($this->sectionsEqual($this->extractSnapshotSections($published), $normalized)) {
                     return $published;
                 }
             }
 
-            if (! $draft) {
-                $nextNumber = ((int) $form->versions()->max('version_number')) + 1;
-                $draft = DynamicFormVersion::create([
-                    'dynamic_form_id' => $form->id,
-                    'version_number' => $nextNumber,
-                    'status' => 'draft',
-                ]);
+            if ($updatePublishedInPlaceIfEmpty && $published && ! $published->submissions()->withTrashed()->exists()) {
+                if ($draft && $draft->id !== $published->id) {
+                    $draft->fields()->delete();
+                    $draft->sections()->delete();
+                    $draft->delete();
+                }
+
+                $target = $published;
+            } else {
+                if (! $draft) {
+                    $nextNumber = ((int) $form->versions()->max('version_number')) + 1;
+                    $draft = DynamicFormVersion::create([
+                        'dynamic_form_id' => $form->id,
+                        'version_number' => $nextNumber,
+                        'status' => 'draft',
+                    ]);
+                }
+
+                $target = $draft;
             }
 
-            // Hapus dan tulis ulang sections & fields pada draft version saja (versi terpublikasi tidak disentuh).
-            $draft->fields()->delete();
-            $draft->sections()->delete();
+            // Hapus dan tulis ulang sections & fields pada target version.
+            $target->fields()->delete();
+            $target->sections()->delete();
 
             foreach ($normalized as $sectionData) {
                 $section = DynamicFormSection::create([
-                    'dynamic_form_version_id' => $draft->id,
+                    'dynamic_form_version_id' => $target->id,
                     'section_key' => $sectionData['section_key'],
                     'title' => $sectionData['title'],
                     'description' => $sectionData['description'],
@@ -373,7 +424,7 @@ class DynamicFormVersionService
 
                 foreach ($sectionData['fields'] as $fieldData) {
                     DynamicFormField::create([
-                        'dynamic_form_version_id' => $draft->id,
+                        'dynamic_form_version_id' => $target->id,
                         'dynamic_form_section_id' => $section->id,
                         'field_key' => $fieldData['field_key'],
                         'type' => $fieldData['type'],
@@ -389,7 +440,7 @@ class DynamicFormVersionService
                 }
             }
 
-            return $draft->fresh(['sections.fields']);
+            return $target->fresh(['sections.fields']);
         });
     }
 
@@ -442,9 +493,12 @@ class DynamicFormVersionService
      *
      * @throws ValidationException
      */
-    public function publishDraftVersion(DynamicForm $form, ?string $actorEmail = null): DynamicFormVersion
-    {
-        return DB::transaction(function () use ($form, $actorEmail): DynamicFormVersion {
+    public function publishDraftVersion(
+        DynamicForm $form,
+        ?string $actorEmail = null,
+        bool $consolidateIntoEmptyPublished = false,
+    ): DynamicFormVersion {
+        return DB::transaction(function () use ($form, $actorEmail, $consolidateIntoEmptyPublished): DynamicFormVersion {
             $lockedForm = DynamicForm::whereKey($form->id)->lockForUpdate()->firstOrFail();
             $targetVersion = $lockedForm->latestDraftVersion() ?? $lockedForm->publishedVersion()->first();
 
@@ -480,11 +534,35 @@ class DynamicFormVersionService
                 ]);
             }
 
-            // Arsipkan versi terpublikasi sebelumnya bila menerbitkan versi baru.
-            DynamicFormVersion::where('dynamic_form_id', $lockedForm->id)
-                ->where('id', '!=', $targetVersion->id)
-                ->where('status', 'published')
-                ->update(['status' => 'archived']);
+            $currentPublished = $lockedForm->published_version_id
+                ? $lockedForm->publishedVersion()->first()
+                : null;
+
+            if (
+                $consolidateIntoEmptyPublished
+                && $currentPublished
+                && $currentPublished->id !== $targetVersion->id
+                && ! $currentPublished->submissions()->withTrashed()->exists()
+            ) {
+                // Konsolidasikan draf ke versi aktif bila versi aktif belum memiliki respons sama sekali.
+                $currentPublished->fields()->delete();
+                $currentPublished->sections()->delete();
+
+                DynamicFormSection::where('dynamic_form_version_id', $targetVersion->id)
+                    ->update(['dynamic_form_version_id' => $currentPublished->id]);
+                DynamicFormField::where('dynamic_form_version_id', $targetVersion->id)
+                    ->update(['dynamic_form_version_id' => $currentPublished->id]);
+
+                $targetVersion->delete();
+                $targetVersion = $currentPublished->fresh(['sections.fields']);
+                $snapshot = $this->buildSchemaSnapshot($targetVersion);
+            } else {
+                // Arsipkan versi terpublikasi sebelumnya bila menerbitkan versi baru.
+                DynamicFormVersion::where('dynamic_form_id', $lockedForm->id)
+                    ->where('id', '!=', $targetVersion->id)
+                    ->where('status', 'published')
+                    ->update(['status' => 'archived']);
+            }
 
             $targetVersion->update([
                 'status' => 'published',
@@ -497,6 +575,8 @@ class DynamicFormVersionService
                 'published_version_id' => $targetVersion->id,
                 'status' => DynamicFormStatus::Published,
             ]);
+
+            ApiCacheInvalidator::forgetForModule('dynamic_forms');
 
             AuditLog::record('dynamic_form.published', $lockedForm, [
                 'version_id' => $targetVersion->id,
@@ -818,13 +898,17 @@ class DynamicFormVersionService
 
         $rules = collect((array) ($visibility['rules'] ?? []))
             ->filter(fn ($rule): bool => is_array($rule) && filled($rule['source_field_key'] ?? null))
-            ->map(fn (array $rule): array => [
-                'source_field_key' => trim((string) $rule['source_field_key']),
-                'operator' => in_array($rule['operator'] ?? 'equals', DynamicFormLogicEvaluator::OPERATORS, true)
+            ->map(function (array $rule): array {
+                $operator = in_array($rule['operator'] ?? 'equals', DynamicFormLogicEvaluator::OPERATORS, true)
                     ? (string) $rule['operator']
-                    : 'equals',
-                'value' => $rule['value'] ?? null,
-            ])
+                    : 'equals';
+
+                return [
+                    'source_field_key' => trim((string) $rule['source_field_key']),
+                    'operator' => $operator,
+                    'value' => $this->normalizeVisibilityRuleValue($operator, $rule['value'] ?? null),
+                ];
+            })
             ->values()
             ->all();
 
@@ -839,6 +923,108 @@ class DynamicFormVersionService
                 'rules' => $rules,
             ],
         ];
+    }
+
+    private function normalizeVisibilityRuleValue(string $operator, mixed $rawValue): mixed
+    {
+        if (in_array($operator, ['is_empty', 'is_not_empty'], true)) {
+            return null;
+        }
+
+        if (is_array($rawValue)) {
+            $items = [];
+            foreach ($rawValue as $item) {
+                if (! is_scalar($item)) {
+                    continue;
+                }
+                $trimmed = trim((string) $item);
+                if ($trimmed !== '') {
+                    $items[] = $trimmed;
+                }
+            }
+
+            $uniqueItems = array_values(array_unique($items));
+
+            if (in_array($operator, ['in', 'not_in'], true)) {
+                return $uniqueItems;
+            }
+
+            if ($uniqueItems === []) {
+                return null;
+            }
+
+            return count($uniqueItems) === 1 ? $uniqueItems[0] : $uniqueItems;
+        }
+
+        if (is_string($rawValue)) {
+            if (in_array($operator, ['in', 'not_in'], true)) {
+                $parts = array_values(array_filter(
+                    array_map('trim', explode(',', $rawValue)),
+                    fn (string $v): bool => $v !== ''
+                ));
+
+                return implode(',', $parts);
+            }
+
+            return trim($rawValue);
+        }
+
+        if (is_int($rawValue) || is_float($rawValue)) {
+            return $rawValue;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $sourceField
+     */
+    private function hydrateVisibilityRuleValueForForm(string $operator, mixed $rawValue, ?array $sourceField): mixed
+    {
+        if (in_array($operator, ['is_empty', 'is_not_empty'], true)) {
+            return null;
+        }
+
+        if (DynamicFormLogicEvaluator::fieldSupportsSelectValue($sourceField)) {
+            if (in_array($operator, ['in', 'not_in'], true)) {
+                if (is_array($rawValue)) {
+                    return array_values(array_filter(
+                        array_map(fn ($v): string => is_scalar($v) ? trim((string) $v) : '', $rawValue),
+                        fn (string $v): bool => $v !== ''
+                    ));
+                }
+
+                if (is_scalar($rawValue)) {
+                    return array_values(array_filter(
+                        array_map('trim', explode(',', (string) $rawValue)),
+                        fn (string $v): bool => $v !== ''
+                    ));
+                }
+
+                return [];
+            }
+
+            if (is_array($rawValue)) {
+                foreach ($rawValue as $item) {
+                    if (is_scalar($item) && trim((string) $item) !== '') {
+                        return trim((string) $item);
+                    }
+                }
+
+                return null;
+            }
+
+            return is_scalar($rawValue) && trim((string) $rawValue) !== '' ? trim((string) $rawValue) : null;
+        }
+
+        if (is_array($rawValue)) {
+            return implode(', ', array_values(array_filter(
+                array_map(fn ($v): string => is_scalar($v) ? trim((string) $v) : '', $rawValue),
+                fn (string $v): bool => $v !== ''
+            )));
+        }
+
+        return is_scalar($rawValue) ? trim((string) $rawValue) : null;
     }
 
     /**

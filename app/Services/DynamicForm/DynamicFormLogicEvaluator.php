@@ -48,6 +48,199 @@ class DynamicFormLogicEvaluator
     }
 
     /**
+     * Tentukan apakah pertanyaan sumber memakai dropdown nilai pembanding di Step 3.
+     *
+     * @param  array<string, mixed>|null  $field
+     */
+    public static function fieldSupportsSelectValue(?array $field): bool
+    {
+        if (! is_array($field)) {
+            return false;
+        }
+
+        $type = DynamicFormFieldType::tryFrom((string) ($field['type'] ?? ''));
+
+        return in_array($type, [
+            DynamicFormFieldType::Radio,
+            DynamicFormFieldType::Dropdown,
+            DynamicFormFieldType::Checkbox,
+            DynamicFormFieldType::LinearScale,
+            DynamicFormFieldType::Rating,
+        ], true);
+    }
+
+    /**
+     * Daftar operator yang kompatibel untuk satu definisi field sumber.
+     *
+     * @param  array<string, mixed>  $field
+     * @return list<string>
+     */
+    public static function allowedOperatorsForField(array $field): array
+    {
+        $type = DynamicFormFieldType::tryFrom((string) ($field['type'] ?? ''));
+
+        if ($type === null) {
+            return self::OPERATORS;
+        }
+
+        return match ($type) {
+            DynamicFormFieldType::Radio, DynamicFormFieldType::Dropdown => [
+                'equals',
+                'not_equals',
+                'in',
+                'not_in',
+                'is_empty',
+                'is_not_empty',
+            ],
+            DynamicFormFieldType::Checkbox => [
+                'contains',
+                'in',
+                'not_in',
+                'equals',
+                'not_equals',
+                'is_empty',
+                'is_not_empty',
+            ],
+            DynamicFormFieldType::LinearScale, DynamicFormFieldType::Rating => [
+                'equals',
+                'not_equals',
+                'gt',
+                'gte',
+                'lt',
+                'lte',
+                'in',
+                'not_in',
+                'is_empty',
+                'is_not_empty',
+            ],
+            DynamicFormFieldType::ShortText => ((string) ($field['options']['subtype'] ?? 'text') === 'number')
+                ? ['equals', 'not_equals', 'gt', 'gte', 'lt', 'lte', 'in', 'not_in', 'is_empty', 'is_not_empty']
+                : ['equals', 'not_equals', 'contains', 'in', 'not_in', 'is_empty', 'is_not_empty'],
+            DynamicFormFieldType::LongText => [
+                'equals',
+                'not_equals',
+                'contains',
+                'in',
+                'not_in',
+                'is_empty',
+                'is_not_empty',
+            ],
+            DynamicFormFieldType::Date, DynamicFormFieldType::Time => [
+                'equals',
+                'not_equals',
+                'is_empty',
+                'is_not_empty',
+            ],
+            DynamicFormFieldType::FileUpload, DynamicFormFieldType::MatrixGrid => [
+                'is_empty',
+                'is_not_empty',
+            ],
+            DynamicFormFieldType::InfoBlock => [],
+        };
+    }
+
+    /**
+     * Daftar opsi operator (key => label) yang sesuai dengan tipe pertanyaan sumber.
+     *
+     * @param  array<string, mixed>|null  $field
+     * @return array<string, string>
+     */
+    public static function operatorOptionsForField(?array $field): array
+    {
+        $all = self::operatorOptions();
+
+        if (! is_array($field)) {
+            return $all;
+        }
+
+        $allowed = self::allowedOperatorsForField($field);
+        $usesSelect = self::fieldSupportsSelectValue($field);
+        $filtered = [];
+
+        foreach ($allowed as $op) {
+            if (! isset($all[$op])) {
+                continue;
+            }
+
+            if ($usesSelect && $op === 'in') {
+                $filtered[$op] = 'Salah satu dari';
+            } elseif ($usesSelect && $op === 'not_in') {
+                $filtered[$op] = 'Bukan salah satu dari';
+            } else {
+                $filtered[$op] = $all[$op];
+            }
+        }
+
+        return $filtered;
+    }
+
+    /**
+     * Deteksi duplikasi aturan mentah pada Step 3 sebelum digabungkan ke struktur sections.
+     *
+     * @param  array<string, mixed>  $logicConfig
+     * @return list<string>
+     */
+    public function validateRawLogicConfig(array $logicConfig): array
+    {
+        $errors = [];
+
+        $seenVisibilityTargets = [];
+        foreach ((array) ($logicConfig['visibility_rules'] ?? []) as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $targetKey = trim((string) ($item['target_field_key'] ?? ''));
+            if ($targetKey === '') {
+                continue;
+            }
+
+            if (isset($seenVisibilityTargets[$targetKey])) {
+                $errors[] = "Terdapat lebih dari satu aturan visibilitas untuk pertanyaan target [{$targetKey}]. Gabungkan syaratnya dalam satu aturan (AND/OR).";
+            }
+            $seenVisibilityTargets[$targetKey] = true;
+        }
+
+        $seenChoiceJumps = [];
+        foreach ((array) ($logicConfig['choice_jumps'] ?? []) as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $sourceKey = trim((string) ($item['source_field_key'] ?? ''));
+            $choiceKey = trim((string) ($item['choice_key'] ?? ''));
+            if ($sourceKey === '' || $choiceKey === '') {
+                continue;
+            }
+
+            $pair = "{$sourceKey}::{$choiceKey}";
+            if (isset($seenChoiceJumps[$pair])) {
+                $errors[] = "Terdapat lebih dari satu lompatan pilihan untuk pertanyaan [{$sourceKey}] pada opsi [{$choiceKey}].";
+            }
+            $seenChoiceJumps[$pair] = true;
+        }
+
+        $seenSectionJumps = [];
+        foreach ((array) ($logicConfig['section_jumps'] ?? []) as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $sectionKey = trim((string) ($item['section_key'] ?? ''));
+            if ($sectionKey === '') {
+                continue;
+            }
+
+            if (isset($seenSectionJumps[$sectionKey])) {
+                $errors[] = "Terdapat lebih dari satu aturan akhir bagian untuk bagian [{$sectionKey}].";
+            }
+            $seenSectionJumps[$sectionKey] = true;
+        }
+
+        return array_values(array_unique($errors));
+    }
+
+    /**
      * Evaluasi jalur section aktif, visibilitas field, dan sanitasi jawaban liar.
      *
      * @param  array<string, mixed>  $schemaSnapshot
@@ -329,6 +522,7 @@ class DynamicFormLogicEvaluator
         $sectionIndexMap = [];
         $fieldPositions = [];
         $fieldTypes = [];
+        $fieldsByKey = [];
         $globalFieldOrder = 0;
 
         foreach ($sections as $sectionIdx => $section) {
@@ -365,6 +559,7 @@ class DynamicFormLogicEvaluator
 
                 $fieldPositions[$fieldKey] = $globalFieldOrder++;
                 $fieldTypes[$fieldKey] = (string) ($field['type'] ?? '');
+                $fieldsByKey[$fieldKey] = $field;
             }
         }
 
@@ -426,7 +621,11 @@ class DynamicFormLogicEvaluator
                             continue;
                         }
 
-                        if (($fieldTypes[$sourceKey] ?? '') === DynamicFormFieldType::InfoBlock->value) {
+                        $sourceField = $fieldsByKey[$sourceKey];
+                        $sourceLabel = (string) ($sourceField['label'] ?? $sourceKey);
+                        $sourceType = DynamicFormFieldType::tryFrom((string) ($fieldTypes[$sourceKey] ?? ''));
+
+                        if ($sourceType === DynamicFormFieldType::InfoBlock) {
                             $errors[] = "Pertanyaan sumber [{$sourceKey}] pada aturan [{$fieldLabel}] bertipe Blok Informasi dan tidak memiliki jawaban.";
                         }
 
@@ -436,6 +635,56 @@ class DynamicFormLogicEvaluator
 
                         if (! in_array($operator, self::OPERATORS, true)) {
                             $errors[] = "Operator logika [{$operator}] pada [{$fieldLabel}] tidak didukung.";
+
+                            continue;
+                        }
+
+                        if ($sourceType !== null && $sourceType !== DynamicFormFieldType::InfoBlock) {
+                            $allowedOperators = self::allowedOperatorsForField($sourceField);
+                            if (! in_array($operator, $allowedOperators, true)) {
+                                $errors[] = "Operator [{$operator}] pada aturan [{$fieldLabel}] tidak kompatibel dengan pertanyaan sumber [{$sourceLabel}] ({$sourceType->label()}).";
+
+                                continue;
+                            }
+                        }
+
+                        if (! in_array($operator, ['is_empty', 'is_not_empty'], true)) {
+                            $rawExpected = $rule['value'] ?? null;
+
+                            if (! in_array($operator, ['in', 'not_in'], true) && is_array($rawExpected)) {
+                                $errors[] = "Nilai pembanding pada aturan visibilitas [{$fieldLabel}] harus berupa satu nilai tunggal untuk operator [{$operator}].";
+
+                                continue;
+                            }
+
+                            $expectedValues = $this->extractExpectedComparisonValues($operator, $rawExpected);
+
+                            if ($expectedValues === []) {
+                                $errors[] = "Nilai pembanding pada aturan visibilitas [{$fieldLabel}] wajib diisi untuk operator [{$operator}].";
+
+                                continue;
+                            }
+
+                            if (
+                                in_array($operator, ['gt', 'gte', 'lt', 'lte'], true)
+                                && ! is_numeric($expectedValues[0])
+                            ) {
+                                $errors[] = "Nilai pembanding [{$expectedValues[0]}] pada aturan visibilitas [{$fieldLabel}] harus berupa angka untuk operator [{$operator}].";
+                            }
+
+                            if (
+                                $sourceType !== null
+                                && $sourceType->supportsChoices()
+                                && in_array($operator, ['equals', 'not_equals', 'in', 'not_in', 'contains'], true)
+                            ) {
+                                $validChoiceKeys = $this->validChoiceKeysForField($sourceField, $sourceType);
+
+                                foreach ($expectedValues as $expectedVal) {
+                                    if (! in_array($expectedVal, $validChoiceKeys, true)) {
+                                        $errors[] = "Nilai pembanding [{$expectedVal}] pada aturan visibilitas [{$fieldLabel}] tidak cocok dengan kunci pilihan mana pun pada pertanyaan [{$sourceLabel}].";
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -562,15 +811,16 @@ class DynamicFormLogicEvaluator
     private function evaluateOperator(mixed $actual, string $operator, mixed $expected): bool
     {
         $isEmpty = $this->isValueEmpty($actual);
+        $isMap = $this->isMapValue($actual);
 
         return match ($operator) {
             'is_empty' => $isEmpty,
             'is_not_empty' => ! $isEmpty,
-            'equals' => ! $isEmpty && $this->matchesEquals($actual, $expected),
-            'not_equals' => ! $isEmpty && ! $this->matchesEquals($actual, $expected),
-            'in' => ! $isEmpty && $this->matchesIn($actual, $expected),
-            'not_in' => ! $isEmpty && ! $this->matchesIn($actual, $expected),
-            'contains' => ! $isEmpty && $this->matchesContains($actual, $expected),
+            'equals' => ! $isEmpty && ! $isMap && $this->matchesEquals($actual, $expected),
+            'not_equals' => ! $isEmpty && ! $isMap && ! $this->matchesEquals($actual, $expected),
+            'in' => ! $isEmpty && ! $isMap && $this->matchesIn($actual, $expected),
+            'not_in' => ! $isEmpty && ! $isMap && ! $this->matchesIn($actual, $expected),
+            'contains' => ! $isEmpty && ! $isMap && $this->matchesContains($actual, $expected),
             'gt' => is_numeric($actual) && is_numeric($expected) && ((float) $actual > (float) $expected),
             'gte' => is_numeric($actual) && is_numeric($expected) && ((float) $actual >= (float) $expected),
             'lt' => is_numeric($actual) && is_numeric($expected) && ((float) $actual < (float) $expected),
@@ -579,16 +829,33 @@ class DynamicFormLogicEvaluator
         };
     }
 
+    private function isMapValue(mixed $value): bool
+    {
+        return is_array($value) && $value !== [] && ! array_is_list($value);
+    }
+
     private function isValueEmpty(mixed $value): bool
     {
-        if ($value === null || $value === '' || $value === []) {
+        if ($value === null) {
             return true;
         }
 
-        if (is_array($value)) {
-            $nonEmpty = array_filter($value, fn ($item): bool => $item !== null && $item !== '' && $item !== []);
+        if (is_string($value)) {
+            return trim($value) === '';
+        }
 
-            return $nonEmpty === [];
+        if (is_array($value)) {
+            if ($value === []) {
+                return true;
+            }
+
+            foreach ($value as $item) {
+                if (! $this->isValueEmpty($item)) {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         return false;
@@ -596,31 +863,52 @@ class DynamicFormLogicEvaluator
 
     private function matchesEquals(mixed $actual, mixed $expected): bool
     {
+        if ($this->isMapValue($actual) || is_array($expected)) {
+            return false;
+        }
+
         if (is_array($actual)) {
-            return count($actual) === 1 && (string) array_values($actual)[0] === (string) $expected;
+            $values = array_values($actual);
+
+            return count($values) === 1
+                && is_scalar($values[0])
+                && (string) $values[0] === (string) ($expected ?? '');
+        }
+
+        if (! is_scalar($actual)) {
+            return false;
         }
 
         if (is_numeric($actual) && is_numeric($expected)) {
             return (float) $actual === (float) $expected;
         }
 
-        return (string) $actual === (string) $expected;
+        return (string) $actual === (string) ($expected ?? '');
     }
 
     private function matchesIn(mixed $actual, mixed $expected): bool
     {
-        $list = is_array($expected)
-            ? array_values(array_filter(array_map(fn ($v) => trim((string) $v), $expected), fn ($v) => $v !== ''))
-            : array_values(array_filter(array_map('trim', explode(',', (string) $expected)), fn ($v) => $v !== ''));
+        if ($this->isMapValue($actual)) {
+            return false;
+        }
+
+        $list = $this->extractExpectedComparisonValues('in', $expected);
 
         if ($list === []) {
             return false;
         }
 
         if (is_array($actual)) {
-            $actualStrings = array_map('strval', $actual);
+            $actualStrings = array_values(array_map(
+                'strval',
+                array_filter($actual, 'is_scalar')
+            ));
 
             return count(array_intersect($actualStrings, $list)) > 0;
+        }
+
+        if (! is_scalar($actual)) {
+            return false;
         }
 
         return in_array((string) $actual, $list, true);
@@ -628,15 +916,88 @@ class DynamicFormLogicEvaluator
 
     private function matchesContains(mixed $actual, mixed $expected): bool
     {
-        $needle = (string) ($expected ?? '');
+        if ($this->isMapValue($actual) || ! is_scalar($expected)) {
+            return false;
+        }
+
+        $needle = (string) $expected;
         if ($needle === '') {
             return false;
         }
 
         if (is_array($actual)) {
-            return in_array($needle, array_map('strval', $actual), true);
+            $actualStrings = array_values(array_map(
+                'strval',
+                array_filter($actual, 'is_scalar')
+            ));
+
+            return in_array($needle, $actualStrings, true);
+        }
+
+        if (! is_scalar($actual)) {
+            return false;
         }
 
         return str_contains(mb_strtolower((string) $actual), mb_strtolower($needle));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function extractExpectedComparisonValues(string $operator, mixed $rawValue): array
+    {
+        if (is_array($rawValue)) {
+            $items = [];
+            foreach ($rawValue as $item) {
+                if (! is_scalar($item)) {
+                    continue;
+                }
+                $trimmed = trim((string) $item);
+                if ($trimmed !== '') {
+                    $items[] = $trimmed;
+                }
+            }
+
+            return array_values($items);
+        }
+
+        if (! is_scalar($rawValue)) {
+            return [];
+        }
+
+        $str = (string) $rawValue;
+        if (in_array($operator, ['in', 'not_in'], true)) {
+            return array_values(array_filter(
+                array_map('trim', explode(',', $str)),
+                fn (string $v): bool => $v !== ''
+            ));
+        }
+
+        $trimmed = trim($str);
+
+        return $trimmed === '' ? [] : [$trimmed];
+    }
+
+    /**
+     * @param  array<string, mixed>  $sourceField
+     * @return list<string>
+     */
+    private function validChoiceKeysForField(array $sourceField, DynamicFormFieldType $sourceType): array
+    {
+        $validKeys = [];
+        foreach ((array) ($sourceField['options']['choices'] ?? []) as $choice) {
+            if (is_array($choice) && filled($choice['key'] ?? null)) {
+                $validKeys[] = trim((string) $choice['key']);
+            }
+        }
+
+        $allowOther = in_array($sourceType, [DynamicFormFieldType::Radio, DynamicFormFieldType::Checkbox], true)
+            && (bool) ($sourceField['options']['allow_other'] ?? false);
+
+        if ($allowOther) {
+            $validKeys[] = self::OTHER_CHOICE_KEY;
+        }
+
+        return array_values(array_unique($validKeys));
     }
 }
