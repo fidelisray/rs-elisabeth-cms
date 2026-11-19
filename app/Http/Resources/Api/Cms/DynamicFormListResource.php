@@ -32,6 +32,7 @@ class DynamicFormListResource extends JsonResource
             'remaining_quota' => $availability['remaining_quota'],
             'is_accepting_responses' => $availability['is_accepting_responses'],
             'allow_multiple_submissions' => $this->allow_multiple_submissions,
+            'is_public_listed' => (bool) $this->is_public_listed,
             'published_version_number' => $this->publishedVersion?->version_number,
         ];
     }

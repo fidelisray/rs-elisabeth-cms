@@ -272,5 +272,25 @@ class WebFrontendWebhookTest extends TestCase
                 && $body['event'] === 'content.updated'
                 && $body['slug'] === null;
         });
+
+        Http::fake([
+            '*' => Http::response(['success' => true], 200),
+        ]);
+
+        $this->artisan('webhook:cache-invalidate', [
+            'module' => 'dynamic_forms',
+            '--event' => 'content.updated',
+            '--slug' => 'survei-igd',
+        ])
+            ->expectsOutputToContain('Berhasil')
+            ->assertExitCode(0);
+
+        Http::assertSent(function (Request $request) {
+            $body = json_decode($request->body(), true);
+
+            return $body['module'] === 'dynamic_forms'
+                && $body['event'] === 'content.updated'
+                && $body['slug'] === 'survei-igd';
+        });
     }
 }

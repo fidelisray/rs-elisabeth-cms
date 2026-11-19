@@ -4,12 +4,14 @@ namespace App\Filament\Resources\DynamicForms\Tables;
 
 use App\Enums\DynamicFormMode;
 use App\Enums\DynamicFormStatus;
+use App\Filament\Resources\DynamicForms\Actions\DynamicFormShareAction;
 use App\Filament\Resources\DynamicForms\DynamicFormResource;
 use App\Filament\Support\ContentTrashActions;
 use App\Livewire\DynamicFormLivePreview;
 use App\Models\DynamicForm;
 use App\Services\DynamicForm\DynamicFormVersionService;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -19,6 +21,7 @@ use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\HtmlString;
@@ -33,7 +36,9 @@ class DynamicFormsTable
             ->columns([
                 TextColumn::make('title')
                     ->label('Judul Formulir')
-                    ->description(fn (DynamicForm $record): string => '/api/v1/cms/forms/'.$record->slug)
+                    ->description(fn (DynamicForm $record): string => '/formulir/'.$record->slug)
+                    ->wrap()
+                    ->extraCellAttributes(['style' => 'max-width: 15rem; white-space: normal; overflow-wrap: anywhere;'])
                     ->searchable(['title', 'slug'])
                     ->sortable(),
 
@@ -45,13 +50,15 @@ class DynamicFormsTable
                         : (DynamicFormMode::tryFrom((string) $state)?->label() ?? (string) $state))
                     ->color(fn (DynamicFormMode|string $state): string => ($state instanceof DynamicFormMode ? $state : DynamicFormMode::tryFrom((string) $state)) === DynamicFormMode::Feedback
                         ? 'warning'
-                        : 'info'),
+                        : 'info')
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('locale')
                     ->label('Bahasa')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => strtoupper($state))
-                    ->color('gray'),
+                    ->color('gray')
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('status')
                     ->label('Status')
@@ -65,11 +72,19 @@ class DynamicFormsTable
                         default => 'gray',
                     }),
 
+                TextColumn::make('is_public_listed')
+                    ->label('Katalog Web')
+                    ->badge()
+                    ->formatStateUsing(fn (mixed $state): string => (bool) $state ? 'Katalog Publik' : 'Link / QR Saja')
+                    ->color(fn (mixed $state): string => (bool) $state ? 'success' : 'gray')
+                    ->sortable(),
+
                 TextColumn::make('publishedVersion.version_number')
                     ->label('Versi Aktif')
                     ->formatStateUsing(fn ($state): string => $state ? 'v'.$state : 'Draf')
                     ->badge()
-                    ->color(fn ($state): string => $state ? 'primary' : 'gray'),
+                    ->color(fn ($state): string => $state ? 'primary' : 'gray')
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('submissions_count')
                     ->counts('submissions')
@@ -80,7 +95,8 @@ class DynamicFormsTable
                 TextColumn::make('updated_at')
                     ->label('Diperbarui')
                     ->dateTime('d M Y H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('updated_at', 'desc')
             ->filters([
@@ -90,6 +106,11 @@ class DynamicFormsTable
                 SelectFilter::make('status')
                     ->label('Status')
                     ->options(DynamicFormStatus::options()),
+                TernaryFilter::make('is_public_listed')
+                    ->label('Katalog Web')
+                    ->placeholder('Semua')
+                    ->trueLabel('Katalog Publik')
+                    ->falseLabel('Link / QR Saja'),
                 SelectFilter::make('locale')
                     ->label('Bahasa')
                     ->options(['id' => 'ID', 'en' => 'EN']),
@@ -97,113 +118,120 @@ class DynamicFormsTable
             ])
             ->recordActions([
                 Action::make('analytics')
-                    ->label('Ringkasan & Analitik')
+                    ->label('Analitik')
+                    ->tooltip('Ringkasan & Analitik')
                     ->icon(Heroicon::OutlinedChartBar)
                     ->url(fn (DynamicForm $record): string => DynamicFormResource::getUrl('analytics', ['record' => $record]))
                     ->visible(fn (DynamicForm $record): bool => ! $record->trashed() && Gate::allows('view', $record)),
 
-                Action::make('preview')
-                    ->label('Pratinjau Interaktif')
-                    ->icon(Heroicon::OutlinedEye)
-                    ->modalHeading(fn (DynamicForm $record): string => 'Pratinjau: '.$record->title)
-                    ->modalSubmitAction(false)
-                    ->modalCancelActionLabel('Tutup Pratinjau')
-                    ->modalContent(fn (DynamicForm $record): HtmlString => new HtmlString(
-                        Livewire::mount(DynamicFormLivePreview::class, ['formId' => $record->id])
-                    ))
-                    ->visible(fn (DynamicForm $record): bool => ! $record->trashed() && Gate::allows('view', $record)),
+                DynamicFormShareAction::make(),
 
-                Action::make('publish')
-                    ->label('Publikasikan Versi')
-                    ->icon(Heroicon::OutlinedCheckCircle)
-                    ->color('primary')
-                    ->requiresConfirmation()
-                    ->modalHeading('Publikasikan Versi Formulir')
-                    ->modalDescription('Skema versi aktif akan dibekukan dan langsung tersedia pada API Web Frontend.')
-                    ->authorize(fn (DynamicForm $record): bool => Gate::allows('update', $record))
-                    ->visible(fn (DynamicForm $record): bool => ! $record->trashed()
-                        && ($record->latestDraftVersion() !== null || $record->status === DynamicFormStatus::Draft))
-                    ->action(function (DynamicForm $record): void {
-                        try {
-                            $version = app(DynamicFormVersionService::class)->publishDraftVersion($record);
+                ActionGroup::make([
+                    Action::make('preview')
+                        ->label('Pratinjau Interaktif')
+                        ->icon(Heroicon::OutlinedEye)
+                        ->modalHeading(fn (DynamicForm $record): string => 'Pratinjau: '.$record->title)
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Tutup Pratinjau')
+                        ->modalContent(fn (DynamicForm $record): HtmlString => new HtmlString(
+                            Livewire::mount(DynamicFormLivePreview::class, ['formId' => $record->id])
+                        ))
+                        ->visible(fn (DynamicForm $record): bool => ! $record->trashed() && Gate::allows('view', $record)),
+
+                    Action::make('publish')
+                        ->label('Publikasikan Versi')
+                        ->icon(Heroicon::OutlinedCheckCircle)
+                        ->color('primary')
+                        ->requiresConfirmation()
+                        ->modalHeading('Publikasikan Versi Formulir')
+                        ->modalDescription('Skema versi aktif akan dibekukan dan langsung tersedia pada API Web Frontend.')
+                        ->authorize(fn (DynamicForm $record): bool => Gate::allows('update', $record))
+                        ->visible(fn (DynamicForm $record): bool => ! $record->trashed()
+                            && ($record->latestDraftVersion() !== null || $record->status === DynamicFormStatus::Draft))
+                        ->action(function (DynamicForm $record): void {
+                            try {
+                                $version = app(DynamicFormVersionService::class)->publishDraftVersion($record);
+                                Notification::make()
+                                    ->title("Versi v{$version->version_number} berhasil dipublikasikan")
+                                    ->success()
+                                    ->send();
+                            } catch (ValidationException $e) {
+                                Notification::make()
+                                    ->title('Publikasi ditolak')
+                                    ->body(collect($e->errors())->flatten()->implode(' '))
+                                    ->danger()
+                                    ->send();
+                            }
+                        }),
+
+                    Action::make('close')
+                        ->label('Tutup Form')
+                        ->icon(Heroicon::OutlinedLockClosed)
+                        ->color('warning')
+                        ->requiresConfirmation()
+                        ->authorize(fn (DynamicForm $record): bool => Gate::allows('update', $record))
+                        ->visible(fn (DynamicForm $record): bool => ! $record->trashed() && $record->status === DynamicFormStatus::Published)
+                        ->action(function (DynamicForm $record): void {
+                            app(DynamicFormVersionService::class)->closeForm($record);
+                            Notification::make()->title('Formulir ditutup sementara')->success()->send();
+                        }),
+
+                    Action::make('reopen')
+                        ->label('Buka Kembali')
+                        ->icon(Heroicon::OutlinedLockOpen)
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->authorize(fn (DynamicForm $record): bool => Gate::allows('update', $record))
+                        ->visible(fn (DynamicForm $record): bool => ! $record->trashed()
+                            && $record->status === DynamicFormStatus::Closed
+                            && $record->published_version_id !== null)
+                        ->action(function (DynamicForm $record): void {
+                            app(DynamicFormVersionService::class)->reopenForm($record);
+                            Notification::make()->title('Formulir dibuka kembali')->success()->send();
+                        }),
+
+                    Action::make('duplicate')
+                        ->label('Duplikat Form')
+                        ->icon(Heroicon::OutlinedDocumentDuplicate)
+                        ->authorize(fn (): bool => Gate::allows('create', DynamicForm::class))
+                        ->visible(fn (DynamicForm $record): bool => ! $record->trashed())
+                        ->fillForm(fn (DynamicForm $record): array => [
+                            'title' => $record->title.' (Salinan)',
+                            'locale' => $record->locale === 'id' ? 'en' : 'id',
+                        ])
+                        ->schema([
+                            TextInput::make('title')
+                                ->label('Judul Formulir Baru')
+                                ->required()
+                                ->maxLength(255),
+                            Select::make('locale')
+                                ->label('Bahasa Formulir Baru')
+                                ->options([
+                                    'id' => 'Bahasa Indonesia (ID)',
+                                    'en' => 'English (EN)',
+                                ])
+                                ->required(),
+                        ])
+                        ->action(function (DynamicForm $record, array $data): void {
+                            $copy = app(DynamicFormVersionService::class)->duplicateForm(
+                                $record,
+                                (string) ($data['title'] ?? ''),
+                                null,
+                                (string) ($data['locale'] ?? $record->locale)
+                            );
                             Notification::make()
-                                ->title("Versi v{$version->version_number} berhasil dipublikasikan")
+                                ->title("Formulir [{$copy->title}] berhasil diduplikasi sebagai draf")
                                 ->success()
                                 ->send();
-                        } catch (ValidationException $e) {
-                            Notification::make()
-                                ->title('Publikasi ditolak')
-                                ->body(collect($e->errors())->flatten()->implode(' '))
-                                ->danger()
-                                ->send();
-                        }
-                    }),
+                        }),
 
-                Action::make('close')
-                    ->label('Tutup Form')
-                    ->icon(Heroicon::OutlinedLockClosed)
-                    ->color('warning')
-                    ->requiresConfirmation()
-                    ->authorize(fn (DynamicForm $record): bool => Gate::allows('update', $record))
-                    ->visible(fn (DynamicForm $record): bool => ! $record->trashed() && $record->status === DynamicFormStatus::Published)
-                    ->action(function (DynamicForm $record): void {
-                        app(DynamicFormVersionService::class)->closeForm($record);
-                        Notification::make()->title('Formulir ditutup sementara')->success()->send();
-                    }),
-
-                Action::make('reopen')
-                    ->label('Buka Kembali')
-                    ->icon(Heroicon::OutlinedLockOpen)
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->authorize(fn (DynamicForm $record): bool => Gate::allows('update', $record))
-                    ->visible(fn (DynamicForm $record): bool => ! $record->trashed()
-                        && $record->status === DynamicFormStatus::Closed
-                        && $record->published_version_id !== null)
-                    ->action(function (DynamicForm $record): void {
-                        app(DynamicFormVersionService::class)->reopenForm($record);
-                        Notification::make()->title('Formulir dibuka kembali')->success()->send();
-                    }),
-
-                Action::make('duplicate')
-                    ->label('Duplikat Form')
-                    ->icon(Heroicon::OutlinedDocumentDuplicate)
-                    ->authorize(fn (): bool => Gate::allows('create', DynamicForm::class))
-                    ->visible(fn (DynamicForm $record): bool => ! $record->trashed())
-                    ->fillForm(fn (DynamicForm $record): array => [
-                        'title' => $record->title.' (Salinan)',
-                        'locale' => $record->locale === 'id' ? 'en' : 'id',
-                    ])
-                    ->schema([
-                        TextInput::make('title')
-                            ->label('Judul Formulir Baru')
-                            ->required()
-                            ->maxLength(255),
-                        Select::make('locale')
-                            ->label('Bahasa Formulir Baru')
-                            ->options([
-                                'id' => 'Bahasa Indonesia (ID)',
-                                'en' => 'English (EN)',
-                            ])
-                            ->required(),
-                    ])
-                    ->action(function (DynamicForm $record, array $data): void {
-                        $copy = app(DynamicFormVersionService::class)->duplicateForm(
-                            $record,
-                            (string) ($data['title'] ?? ''),
-                            null,
-                            (string) ($data['locale'] ?? $record->locale)
-                        );
-                        Notification::make()
-                            ->title("Formulir [{$copy->title}] berhasil diduplikasi sebagai draf")
-                            ->success()
-                            ->send();
-                    }),
-
-                EditAction::make()
-                    ->visible(fn (DynamicForm $record): bool => ! $record->trashed()),
-                ContentTrashActions::restoreAction(),
-                ContentTrashActions::forceDeleteAction(),
+                    EditAction::make()
+                        ->visible(fn (DynamicForm $record): bool => ! $record->trashed()),
+                    ContentTrashActions::restoreAction(),
+                    ContentTrashActions::forceDeleteAction(),
+                ])
+                    ->label('Aksi lainnya')
+                    ->tooltip('Aksi lainnya'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

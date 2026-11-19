@@ -97,7 +97,7 @@
                     "DynamicForms"
                 ],
                 "summary": "Get list of active published dynamic forms",
-                "description": "Returns published dynamic forms currently active by schedule, optionally filtered by mode and lang.",
+                "description": "Returns published dynamic forms currently active by schedule. Defaults to public-listed forms only (is_public_listed = true) unless include_unlisted=1 is passed.",
                 "operationId": "f331bcf00fe6b67fd32427b4b1ffa6a4",
                 "parameters": [
                     {
@@ -124,6 +124,24 @@
                                 "id",
                                 "en"
                             ]
+                        }
+                    },
+                    {
+                        "name": "listed_only",
+                        "in": "query",
+                        "description": "When 1/true, force returning only public-listed forms",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "include_unlisted",
+                        "in": "query",
+                        "description": "When 1/true (and listed_only is not set), include unlisted QR/direct-link forms",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
                         }
                     }
                 ],

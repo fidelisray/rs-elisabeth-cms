@@ -21,10 +21,12 @@ class DynamicFormApiController extends Controller
         summary: 'Get list of active published dynamic forms',
         security: [['HmacAuth' => []]],
         tags: ['DynamicForms'],
-        description: 'Returns published dynamic forms currently active by schedule, optionally filtered by mode and lang.'
+        description: 'Returns published dynamic forms currently active by schedule. Defaults to public-listed forms only (is_public_listed = true) unless include_unlisted=1 is passed.'
     )]
     #[OA\Parameter(name: 'mode', description: 'Form mode: questionnaire or feedback', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['questionnaire', 'feedback']))]
     #[OA\Parameter(name: 'lang', description: 'Form language: id or en', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['id', 'en']))]
+    #[OA\Parameter(name: 'listed_only', description: 'When 1/true, force returning only public-listed forms', in: 'query', required: false, schema: new OA\Schema(type: 'boolean'))]
+    #[OA\Parameter(name: 'include_unlisted', description: 'When 1/true (and listed_only is not set), include unlisted QR/direct-link forms', in: 'query', required: false, schema: new OA\Schema(type: 'boolean'))]
     #[OA\Response(response: 200, description: 'Successful operation')]
     public function index(Request $request): JsonResponse
     {
@@ -33,15 +35,17 @@ class DynamicFormApiController extends Controller
 
         $validMode = is_string($mode) && DynamicFormMode::tryFrom($mode) ? $mode : null;
         $validLang = is_string($lang) && in_array($lang, ['id', 'en'], true) ? $lang : null;
+        $includeUnlisted = $request->boolean('include_unlisted') && ! $request->boolean('listed_only');
 
-        $cacheKey = ApiCacheInvalidator::dynamicFormListKey($validLang ?? 'all', $validMode);
+        $cacheKey = ApiCacheInvalidator::dynamicFormListKey($validLang ?? 'all', $validMode, $includeUnlisted);
 
         // Cache daftar form terpublikasi berdasarkan versi invalidasi, lalu saring jadwal real-time agar batas waktu selalu akurat.
-        $publishedForms = Cache::remember($cacheKey, now()->addHours(2), function () use ($validMode, $validLang) {
+        $publishedForms = Cache::remember($cacheKey, now()->addHours(2), function () use ($validMode, $validLang, $includeUnlisted) {
             return DynamicForm::query()
                 ->with('publishedVersion')
                 ->where('status', DynamicFormStatus::Published->value)
                 ->whereNotNull('published_version_id')
+                ->when(! $includeUnlisted, fn ($q) => $q->where('is_public_listed', true))
                 ->when($validMode !== null, fn ($q) => $q->where('mode', $validMode))
                 ->when($validLang !== null, fn ($q) => $q->where('locale', $validLang))
                 ->orderByDesc('updated_at')

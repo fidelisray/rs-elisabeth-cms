@@ -32,6 +32,7 @@ class DynamicFormSchemaResource extends JsonResource
             'ends_at' => $this->ends_at?->toIso8601String(),
             'max_responses' => $this->max_responses,
             'allow_multiple_submissions' => $this->allow_multiple_submissions,
+            'is_public_listed' => (bool) $this->is_public_listed,
             'is_accepting_responses' => $availability['is_accepting_responses'],
             'remaining_quota' => $availability['remaining_quota'],
             'closed_reason' => $availability['closed_reason'],

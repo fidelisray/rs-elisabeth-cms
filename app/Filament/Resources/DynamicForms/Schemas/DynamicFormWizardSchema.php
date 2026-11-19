@@ -61,7 +61,7 @@ class DynamicFormWizardSchema
                             }),
 
                         TextInput::make('slug')
-                            ->label('Identifier / Slug API')
+                            ->label('Slug URL Web')
                             ->placeholder('survei-kepuasan-rawat-jalan')
                             ->required()
                             ->clearErrorOnInput()
@@ -72,7 +72,7 @@ class DynamicFormWizardSchema
                                 'unique' => 'Slug formulir sudah digunakan. Gunakan slug lain.',
                                 'regex' => 'Slug hanya boleh berisi huruf kecil, angka, dan tanda hubung (-).',
                             ])
-                            ->helperText('Digunakan Web Frontend pada endpoint /api/v1/cms/forms/{slug}.'),
+                            ->helperText('Menjadi alamat publik /formulir/{slug} di Web Frontend.'),
 
                         Select::make('mode')
                             ->label('Mode Formulir')
@@ -846,6 +846,11 @@ class DynamicFormWizardSchema
                                     $ruleCount
                                 );
                             }),
+
+                        Toggle::make('is_public_listed')
+                            ->label('Tampilkan di Katalog Formulir Publik (/formulir)')
+                            ->default(false)
+                            ->helperText('Jika dimatikan, formulir hanya dapat diakses via tautan langsung atau QR Code dan tidak diindeks mesin pencari.'),
 
                         Toggle::make('publish_now')
                             ->label($isEdit

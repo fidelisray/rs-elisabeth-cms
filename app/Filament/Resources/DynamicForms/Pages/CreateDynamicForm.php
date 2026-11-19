@@ -77,6 +77,7 @@ class CreateDynamicForm extends CreateRecord
                 'ends_at' => $data['ends_at'] ?? null,
                 'max_responses' => $data['max_responses'] ?? null,
                 'allow_multiple_submissions' => (bool) ($data['allow_multiple_submissions'] ?? true),
+                'is_public_listed' => (bool) ($data['is_public_listed'] ?? false),
                 'ticket_prefix' => filled($data['ticket_prefix'] ?? null) ? strtoupper((string) $data['ticket_prefix']) : 'DFB',
                 'confirmation_message' => $data['confirmation_message'] ?? null,
                 'closed_message' => $data['closed_message'] ?? null,

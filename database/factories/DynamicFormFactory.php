@@ -27,6 +27,7 @@ class DynamicFormFactory extends Factory
             'locale' => 'id',
             'status' => DynamicFormStatus::Draft,
             'allow_multiple_submissions' => true,
+            'is_public_listed' => false,
             'ticket_prefix' => 'DFB',
             'created_by' => 'system',
         ];

@@ -19,11 +19,23 @@ class StoreDynamicFormSubmissionRequest extends FormRequest
         return [
             'hp_website' => ['nullable', 'max:0'],
             'version_id' => ['nullable', 'integer', 'min:1'],
-            'answers' => ['required', 'array'],
+            'answers' => ['present', 'array'],
             'locale' => ['nullable', 'string', 'in:id,en'],
             'source' => ['nullable', 'string', 'max:50'],
             'respondent_key' => ['nullable', 'string', 'max:191'],
             'submitted_at' => ['nullable', 'date'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'hp_website.max' => 'Permintaan Anda terdeteksi sebagai spam otomatis.',
+            'answers.present' => 'Jawaban formulir wajib disertakan.',
+            'answers.array' => 'Format jawaban formulir tidak valid.',
         ];
     }
 
