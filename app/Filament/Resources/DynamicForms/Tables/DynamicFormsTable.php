@@ -70,6 +70,15 @@ class DynamicFormsTable
                         DynamicFormStatus::Published => 'success',
                         DynamicFormStatus::Closed => 'danger',
                         default => 'gray',
+                    })
+                    ->description(function (DynamicForm $record): ?string {
+                        if ($record->status === DynamicFormStatus::Draft) {
+                            return null;
+                        }
+
+                        $draft = $record->latestDraftVersion();
+
+                        return $draft ? "Draf v{$draft->version_number} belum terbit" : null;
                     }),
 
                 TextColumn::make('is_public_listed')
@@ -150,7 +159,10 @@ class DynamicFormsTable
                             && ($record->latestDraftVersion() !== null || $record->status === DynamicFormStatus::Draft))
                         ->action(function (DynamicForm $record): void {
                             try {
-                                $version = app(DynamicFormVersionService::class)->publishDraftVersion($record);
+                                $version = app(DynamicFormVersionService::class)->publishDraftVersion(
+                                    $record,
+                                    consolidateIntoEmptyPublished: true,
+                                );
                                 Notification::make()
                                     ->title("Versi v{$version->version_number} berhasil dipublikasikan")
                                     ->success()

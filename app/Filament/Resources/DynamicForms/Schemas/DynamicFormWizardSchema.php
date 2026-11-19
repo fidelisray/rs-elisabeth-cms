@@ -15,6 +15,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -629,8 +630,12 @@ class DynamicFormWizardSchema
                     ]);
                 }
 
+                $rawLogicErrors = $evaluator->validateRawLogicConfig($logicConfig);
                 $merged = app(DynamicFormVersionService::class)->mergeLogicConfigIntoSections($sections, $logicConfig);
-                $errors = $evaluator->validateSchemaLogic($merged);
+                $errors = array_values(array_unique([
+                    ...$rawLogicErrors,
+                    ...$evaluator->validateSchemaLogic($merged),
+                ]));
 
                 if ($errors !== []) {
                     Notification::make()
@@ -662,7 +667,36 @@ class DynamicFormWizardSchema
                                         includeInfoBlocks: true
                                     ))
                                     ->required()
-                                    ->searchable(),
+                                    ->searchable()
+                                    ->live()
+                                    ->afterStateUpdated(function (Set $set, Get $get, Component $component, ?string $state): void {
+                                        $sections = self::sectionsState($get, $component);
+                                        $allowedSources = array_map(
+                                            'strval',
+                                            array_keys(self::visibilitySourceFieldOptions($sections, (string) ($state ?? '')))
+                                        );
+
+                                        $rules = (array) ($get('rules') ?? []);
+                                        $changed = false;
+
+                                        foreach ($rules as $ruleKey => $rule) {
+                                            if (! is_array($rule)) {
+                                                continue;
+                                            }
+                                            $sourceKey = trim((string) ($rule['source_field_key'] ?? ''));
+                                            if ($sourceKey !== '' && ! in_array($sourceKey, $allowedSources, true)) {
+                                                $rules[$ruleKey]['source_field_key'] = null;
+                                                $rules[$ruleKey]['operator'] = 'equals';
+                                                $rules[$ruleKey]['value'] = null;
+                                                $changed = true;
+                                            }
+                                        }
+
+                                        if ($changed) {
+                                            $set('rules', $rules);
+                                            $component->getContainer()->getComponent('rules', withHidden: true)?->clearCachedChildSchemas();
+                                        }
+                                    }),
 
                                 Select::make('match')
                                     ->label('Kombinasi Syarat')
@@ -674,6 +708,7 @@ class DynamicFormWizardSchema
                                     ->required(),
 
                                 Repeater::make('rules')
+                                    ->key('rules')
                                     ->label('Kondisi Pemicu')
                                     ->minItems(1)
                                     ->defaultItems(1)
@@ -682,24 +717,121 @@ class DynamicFormWizardSchema
                                     ->schema([
                                         Select::make('source_field_key')
                                             ->label('Berdasarkan Jawaban Pertanyaan')
-                                            ->options(fn (Get $get, Component $component): array => self::fieldSelectOptions(
+                                            ->options(fn (Get $get, Component $component): array => self::visibilitySourceFieldOptions(
                                                 self::sectionsState($get, $component),
-                                                includeInfoBlocks: false
+                                                (string) ($get('../../target_field_key') ?? '')
                                             ))
+                                            ->placeholder(fn (Get $get, Component $component): string => self::visibilitySourcePlaceholder(
+                                                self::sectionsState($get, $component),
+                                                (string) ($get('../../target_field_key') ?? '')
+                                            ))
+                                            ->noOptionsMessage('Tidak ada pertanyaan sebelumnya yang dapat dijadikan pemicu untuk target ini.')
                                             ->required()
-                                            ->searchable(),
+                                            ->searchable()
+                                            ->live()
+                                            ->afterStateUpdated(function (Set $set, Get $get, Component $component, ?string $state): void {
+                                                $sections = self::sectionsState($get, $component);
+                                                $sourceField = self::findFieldByKey($sections, (string) ($state ?? ''));
+
+                                                if ($sourceField === null) {
+                                                    $set('operator', 'equals');
+                                                    $set('value', null);
+                                                } else {
+                                                    $allowed = DynamicFormLogicEvaluator::allowedOperatorsForField($sourceField);
+                                                    $currentOperator = (string) ($get('operator') ?? 'equals');
+                                                    $nextOperator = in_array($currentOperator, $allowed, true)
+                                                        ? $currentOperator
+                                                        : ($allowed[0] ?? 'equals');
+
+                                                    if ($nextOperator !== $currentOperator) {
+                                                        $set('operator', $nextOperator);
+                                                    }
+
+                                                    if (in_array($nextOperator, ['is_empty', 'is_not_empty'], true)) {
+                                                        $set('value', null);
+                                                    } elseif (
+                                                        DynamicFormLogicEvaluator::fieldSupportsSelectValue($sourceField)
+                                                        && in_array($nextOperator, ['in', 'not_in'], true)
+                                                    ) {
+                                                        $set('value', []);
+                                                    } else {
+                                                        $set('value', null);
+                                                    }
+                                                }
+
+                                                $component->getContainer()->getComponent('rule_value_group', withHidden: true)?->clearCachedChildSchemas();
+                                            }),
 
                                         Select::make('operator')
                                             ->label('Operator')
-                                            ->options(DynamicFormLogicEvaluator::operatorOptions())
+                                            ->options(fn (Get $get, Component $component): array => DynamicFormLogicEvaluator::operatorOptionsForField(
+                                                self::findFieldByKey(
+                                                    self::sectionsState($get, $component),
+                                                    (string) ($get('source_field_key') ?? '')
+                                                )
+                                            ))
                                             ->default('equals')
                                             ->required()
-                                            ->live(),
+                                            ->live()
+                                            ->afterStateUpdated(function (Set $set, Get $get, Component $component, ?string $state): void {
+                                                $operator = (string) ($state ?? 'equals');
+                                                $sourceField = self::findFieldByKey(
+                                                    self::sectionsState($get, $component),
+                                                    (string) ($get('source_field_key') ?? '')
+                                                );
 
-                                        TextInput::make('value')
-                                            ->label('Nilai Pembanding')
-                                            ->placeholder('Kunci opsi atau teks/angka')
-                                            ->hidden(fn (Get $get): bool => in_array((string) $get('operator'), ['is_empty', 'is_not_empty'], true)),
+                                                if (in_array($operator, ['is_empty', 'is_not_empty'], true)) {
+                                                    $set('value', null);
+                                                } elseif (DynamicFormLogicEvaluator::fieldSupportsSelectValue($sourceField)) {
+                                                    $currentVal = $get('value');
+                                                    $validKeys = array_map('strval', array_keys(self::valueSelectOptionsForField($sourceField)));
+
+                                                    if (in_array($operator, ['in', 'not_in'], true)) {
+                                                        $items = is_array($currentVal)
+                                                            ? $currentVal
+                                                            : (is_string($currentVal) && trim($currentVal) !== '' ? explode(',', $currentVal) : []);
+
+                                                        $filtered = array_values(array_unique(array_filter(
+                                                            array_map(fn ($v): string => is_scalar($v) ? trim((string) $v) : '', $items),
+                                                            fn (string $v): bool => $v !== '' && in_array($v, $validKeys, true)
+                                                        )));
+
+                                                        $set('value', $filtered);
+                                                    } elseif (is_array($currentVal)) {
+                                                        $firstValid = null;
+                                                        foreach ($currentVal as $item) {
+                                                            $str = is_scalar($item) ? trim((string) $item) : '';
+                                                            if ($str !== '' && in_array($str, $validKeys, true)) {
+                                                                $firstValid = $str;
+                                                                break;
+                                                            }
+                                                        }
+                                                        $set('value', $firstValid);
+                                                    } elseif (filled($currentVal) && ! in_array(trim((string) $currentVal), $validKeys, true)) {
+                                                        $set('value', null);
+                                                    }
+                                                } elseif (
+                                                    $sourceField !== null
+                                                    && (string) ($sourceField['type'] ?? '') === DynamicFormFieldType::ShortText->value
+                                                    && (string) ($sourceField['options']['subtype'] ?? 'text') === 'number'
+                                                    && ! in_array($operator, ['in', 'not_in'], true)
+                                                ) {
+                                                    $rawContainerState = $component->getContainer()->getRawState();
+                                                    $currentVal = is_array($rawContainerState)
+                                                        ? ($rawContainerState['value'] ?? null)
+                                                        : $get('value');
+                                                    if (is_array($currentVal) || (filled($currentVal) && ! is_numeric(trim((string) $currentVal)))) {
+                                                        $set('value', null);
+                                                    }
+                                                }
+
+                                                $component->getContainer()->getComponent('rule_value_group', withHidden: true)?->clearCachedChildSchemas();
+                                            }),
+
+                                        Group::make()
+                                            ->key('rule_value_group')
+                                            ->hidden(fn (Get $get): bool => in_array((string) ($get('operator') ?? 'equals'), ['is_empty', 'is_not_empty'], true))
+                                            ->schema(fn (Get $get, Component $component): array => self::visibilityRuleValueSchema($get, $component)),
                                     ]),
                             ])
                             ->columns(2),
@@ -1130,5 +1262,276 @@ class DynamicFormWizardSchema
         }
 
         return [];
+    }
+
+    /**
+     * Saring opsi Pertanyaan Sumber agar hanya memuat pertanyaan input (non-info_block)
+     * yang posisinya berada sebelum Pertanyaan Target.
+     *
+     * @param  array<int, array<string, mixed>>  $sections
+     * @return array<string, string>
+     */
+    private static function visibilitySourceFieldOptions(array $sections, string $targetFieldKey): array
+    {
+        $targetKey = trim($targetFieldKey);
+        $targetFound = $targetKey !== '' && self::findFieldByKey($sections, $targetKey) !== null;
+
+        $out = [];
+        foreach ($sections as $section) {
+            if (! is_array($section)) {
+                continue;
+            }
+            $sectionTitle = (string) ($section['title'] ?? 'Bagian');
+            foreach ((array) ($section['fields'] ?? []) as $field) {
+                if (! is_array($field)) {
+                    continue;
+                }
+                $key = (string) ($field['field_key'] ?? '');
+                if ($targetFound && $key === $targetKey) {
+                    return $out;
+                }
+                $isInfoBlock = ($field['type'] ?? '') === DynamicFormFieldType::InfoBlock->value;
+                if ($key === '' || $isInfoBlock) {
+                    continue;
+                }
+                $label = (string) ($field['label'] ?? $key);
+                $out[$key] = "[{$sectionTitle}] {$label} ({$key})";
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $sections
+     */
+    private static function visibilitySourcePlaceholder(array $sections, string $targetFieldKey): string
+    {
+        $targetKey = trim($targetFieldKey);
+        if ($targetKey !== '' && self::visibilitySourceFieldOptions($sections, $targetKey) === []) {
+            return 'Tidak ada pertanyaan sebelumnya untuk target ini';
+        }
+
+        return 'Pilih pertanyaan pemicu';
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $sections
+     * @return array<string, mixed>|null
+     */
+    private static function findFieldByKey(array $sections, string $fieldKey): ?array
+    {
+        $key = trim($fieldKey);
+        if ($key === '') {
+            return null;
+        }
+
+        foreach ($sections as $section) {
+            if (! is_array($section)) {
+                continue;
+            }
+            foreach ((array) ($section['fields'] ?? []) as $field) {
+                if (is_array($field) && (string) ($field['field_key'] ?? '') === $key) {
+                    return $field;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Bangun daftar opsi Nilai Pembanding untuk pertanyaan bertipe pilihan, skala linier, atau rating.
+     *
+     * @param  array<string, mixed>  $field
+     * @return array<string, string>
+     */
+    private static function valueSelectOptionsForField(array $field): array
+    {
+        $type = DynamicFormFieldType::tryFrom((string) ($field['type'] ?? ''));
+        $options = (array) ($field['options'] ?? []);
+
+        if ($type !== null && $type->supportsChoices()) {
+            $out = [];
+            foreach ((array) ($options['choices'] ?? []) as $choice) {
+                if (! is_array($choice)) {
+                    continue;
+                }
+                $key = trim((string) ($choice['key'] ?? ''));
+                if ($key !== '') {
+                    $label = filled($choice['label'] ?? null) ? (string) $choice['label'] : $key;
+                    $out[$key] = "{$label} ({$key})";
+                }
+            }
+
+            $allowOther = in_array($type, [DynamicFormFieldType::Radio, DynamicFormFieldType::Checkbox], true)
+                && (bool) ($options['allow_other'] ?? false);
+
+            if ($allowOther) {
+                $otherLabel = filled($options['other_label'] ?? null) ? trim((string) $options['other_label']) : 'Lainnya';
+                $out[DynamicFormLogicEvaluator::OTHER_CHOICE_KEY] = "{$otherLabel} (".DynamicFormLogicEvaluator::OTHER_CHOICE_KEY.')';
+            }
+
+            return $out;
+        }
+
+        if ($type === DynamicFormFieldType::LinearScale) {
+            $min = max(0, min(1, (int) ($options['min_value'] ?? 1)));
+            $max = max(2, min(10, (int) ($options['max_value'] ?? 5)));
+            $minLabel = filled($options['min_label'] ?? null) ? trim((string) $options['min_label']) : null;
+            $maxLabel = filled($options['max_label'] ?? null) ? trim((string) $options['max_label']) : null;
+
+            $out = [];
+            for ($i = $min; $i <= $max; $i++) {
+                $label = (string) $i;
+                if ($i === $min && $minLabel !== null) {
+                    $label .= " ({$minLabel})";
+                } elseif ($i === $max && $maxLabel !== null) {
+                    $label .= " ({$maxLabel})";
+                }
+                $out[(string) $i] = $label;
+            }
+
+            return $out;
+        }
+
+        if ($type === DynamicFormFieldType::Rating) {
+            $maxStars = max(3, min(10, (int) ($options['max_stars'] ?? 5)));
+            $out = [];
+            for ($i = 1; $i <= $maxStars; $i++) {
+                $out[(string) $i] = (string) $i;
+            }
+
+            return $out;
+        }
+
+        return [];
+    }
+
+    /**
+     * @return list<Component>
+     */
+    private static function visibilityRuleValueSchema(Get $get, Component $component): array
+    {
+        $operator = (string) ($get('operator') ?? 'equals');
+        if (in_array($operator, ['is_empty', 'is_not_empty'], true)) {
+            return [];
+        }
+
+        $sections = self::sectionsState($get, $component);
+        $sourceKey = trim((string) ($get('source_field_key') ?? ''));
+        $sourceField = self::findFieldByKey($sections, $sourceKey);
+        $sourceType = $sourceField ? DynamicFormFieldType::tryFrom((string) ($sourceField['type'] ?? '')) : null;
+
+        if ($sourceField !== null && DynamicFormLogicEvaluator::fieldSupportsSelectValue($sourceField)) {
+            $isMultiple = in_array($operator, ['in', 'not_in'], true);
+            $options = self::valueSelectOptionsForField($sourceField);
+            $optionsSignature = substr(md5($sourceKey.'|'.json_encode($options)), 0, 12);
+            $helperText = $sourceType?->supportsChoices()
+                ? 'Perbandingan pilihan memakai kunci opsi secara otomatis.'
+                : 'Pilih nilai angka sesuai rentang pertanyaan sumber.';
+
+            $select = Select::make('value')
+                ->key(($isMultiple ? 'value_select_multiple_' : 'value_select_single_').$optionsSignature)
+                ->label('Nilai Pembanding')
+                ->options(static function (Get $get, Component $component): array {
+                    $field = self::findFieldByKey(
+                        self::sectionsState($get, $component),
+                        (string) ($get('source_field_key') ?? '')
+                    );
+
+                    return $field !== null ? self::valueSelectOptionsForField($field) : [];
+                })
+                ->multiple($isMultiple)
+                ->searchable()
+                ->required()
+                ->placeholder($isMultiple ? 'Pilih satu atau lebih nilai' : 'Pilih nilai pembanding')
+                ->helperText($helperText);
+
+            if ($isMultiple) {
+                $select->formatStateUsing(static function (mixed $state): array {
+                    if (is_array($state)) {
+                        return array_values(array_filter(
+                            array_map(fn ($v): string => is_scalar($v) ? trim((string) $v) : '', $state),
+                            fn (string $v): bool => $v !== ''
+                        ));
+                    }
+
+                    if (is_scalar($state) && trim((string) $state) !== '') {
+                        return array_values(array_filter(
+                            array_map('trim', explode(',', (string) $state)),
+                            fn (string $v): bool => $v !== ''
+                        ));
+                    }
+
+                    return [];
+                });
+            } else {
+                $select->formatStateUsing(static function (mixed $state): ?string {
+                    if (is_array($state)) {
+                        foreach ($state as $item) {
+                            if (is_scalar($item) && trim((string) $item) !== '') {
+                                return trim((string) $item);
+                            }
+                        }
+
+                        return null;
+                    }
+
+                    return is_scalar($state) && trim((string) $state) !== '' ? trim((string) $state) : null;
+                });
+            }
+
+            return [$select];
+        }
+
+        $isListOperator = in_array($operator, ['in', 'not_in'], true);
+        $isNumberSubtype = $sourceType === DynamicFormFieldType::ShortText
+            && (string) ($sourceField['options']['subtype'] ?? 'text') === 'number';
+
+        $placeholder = match (true) {
+            $sourceType === DynamicFormFieldType::Date => 'YYYY-MM-DD (contoh: 2026-05-01)',
+            $sourceType === DynamicFormFieldType::Time => 'HH:MM (contoh: 08:30)',
+            $isNumberSubtype && $isListOperator => 'Contoh: 10, 20, 30',
+            $isNumberSubtype => 'Contoh: 10',
+            $isListOperator => 'Contoh: nilai1, nilai2',
+            $operator === 'contains' => 'Masukkan kata atau frasa yang dicari',
+            $sourceField === null => 'Pilih pertanyaan sumber terlebih dahulu',
+            default => 'Masukkan teks pembanding',
+        };
+
+        $helperText = match (true) {
+            $sourceType === DynamicFormFieldType::Date => 'Gunakan format tanggal YYYY-MM-DD.',
+            $sourceType === DynamicFormFieldType::Time => 'Gunakan format waktu 24-jam HH:MM.',
+            $isNumberSubtype && $isListOperator => 'Masukkan beberapa nilai angka, pisahkan dengan tanda koma (,).',
+            $isNumberSubtype => 'Masukkan nilai angka pembanding.',
+            $isListOperator => 'Pisahkan beberapa nilai pembanding dengan tanda koma (,).',
+            $operator === 'contains' => 'Pencocokan teks tidak membedakan huruf besar dan kecil.',
+            $sourceField === null => 'Jenis input akan menyesuaikan tipe pertanyaan sumber yang dipilih.',
+            default => 'Membandingkan isi jawaban teks secara persis (spasi awal dan akhir pada nilai pembanding dirapikan otomatis).',
+        };
+
+        $textMode = match (true) {
+            $sourceType === DynamicFormFieldType::Date => 'date',
+            $sourceType === DynamicFormFieldType::Time => 'time',
+            $isNumberSubtype && $isListOperator => 'number_list',
+            $isNumberSubtype => 'number',
+            $isListOperator => 'text_list',
+            $sourceField === null => 'unset',
+            default => 'text',
+        };
+
+        $input = TextInput::make('value')
+            ->key('value_text_'.$textMode)
+            ->label('Nilai Pembanding')
+            ->required()
+            ->placeholder($placeholder)
+            ->helperText($helperText);
+
+        if ($isNumberSubtype && ! $isListOperator) {
+            $input->numeric();
+        }
+
+        return [$input];
     }
 }

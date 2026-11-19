@@ -50,8 +50,12 @@ class CreateDynamicForm extends CreateRecord
             ]);
         }
 
+        $rawLogicErrors = $logicEvaluator->validateRawLogicConfig($logicConfig);
         $mergedSections = $versionService->mergeLogicConfigIntoSections($sections, $logicConfig);
-        $logicErrors = $logicEvaluator->validateSchemaLogic($mergedSections);
+        $logicErrors = array_values(array_unique([
+            ...$rawLogicErrors,
+            ...$logicEvaluator->validateSchemaLogic($mergedSections),
+        ]));
         if ($logicErrors !== []) {
             Notification::make()
                 ->danger()

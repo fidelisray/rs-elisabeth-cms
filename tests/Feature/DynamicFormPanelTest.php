@@ -20,8 +20,10 @@ use App\Filament\Widgets\DynamicFeedbackOverviewWidget;
 use App\Livewire\DynamicFormLivePreview;
 use App\Models\AuditLog;
 use App\Models\DynamicForm;
+use App\Models\DynamicFormField;
 use App\Models\DynamicFormSubmission;
 use App\Models\DynamicFormUpload;
+use App\Models\DynamicFormVersion;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\DynamicForm\DynamicFormExportService;
@@ -30,11 +32,14 @@ use App\Services\DynamicForm\DynamicFormSubmissionService;
 use App\Services\DynamicForm\DynamicFormVersionService;
 use Database\Seeders\DatabaseSeeder;
 use Filament\Actions\Testing\TestAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -1487,6 +1492,645 @@ class DynamicFormPanelTest extends TestCase
             ->assertActionHidden(TestAction::make('shareLink')->table($publishedListed))
             ->assertActionVisible(TestAction::make('restore')->table($publishedListed))
             ->assertActionVisible(TestAction::make('forceDelete')->table($publishedListed));
+    }
+
+    public function test_editing_published_form_with_zero_submissions_updates_version_in_place_and_consolidates_drafts(): void
+    {
+        $this->actingAs($this->marketing);
+        $versionService = app(DynamicFormVersionService::class);
+
+        $form = DynamicForm::factory()->create([
+            'title' => 'Survei Kepatuhan Username',
+            'slug' => 'survei-kepatuhan-username',
+            'is_public_listed' => true,
+        ]);
+
+        $versionService->syncDraftStructure($form, [[
+            'section_key' => 'data_lokasi',
+            'title' => 'Data Lokasi',
+            'fields' => [[
+                'field_key' => 'nama_ruangan',
+                'type' => 'short_text',
+                'label' => 'Nama Ruangan',
+                'is_required' => true,
+            ]],
+        ]], false);
+        $v1 = $versionService->publishDraftVersion($form);
+        $form->refresh();
+
+        $this->assertSame(1, DynamicFormVersion::where('dynamic_form_id', $form->id)->count());
+        $this->assertSame($v1->id, $form->published_version_id);
+
+        // 1. Membuka EditDynamicForm pada form Published otomatis menyalakan publish_now = true
+        // dan menyimpan perubahan langsung memperbarui v1 in-place (tanpa membuat version_id baru).
+        $editComponent = Livewire::test(EditDynamicForm::class, ['record' => $form->getRouteKey()]);
+        $this->assertTrue((bool) $editComponent->get('data.publish_now'));
+
+        $editComponent
+            ->set('data.sections', [[
+                'section_key' => 'data_lokasi',
+                'title' => 'Data Lokasi',
+                'fields' => [
+                    [
+                        'field_key' => 'nama_ruangan',
+                        'type' => 'short_text',
+                        'label' => 'Nama Ruangan',
+                        'is_required' => true,
+                    ],
+                    [
+                        'field_key' => 'tanggal_kunjungan',
+                        'type' => 'date',
+                        'label' => 'Tanggal Kunjungan',
+                        'is_required' => true,
+                    ],
+                ],
+            ]])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $form->refresh();
+        $v1->refresh();
+        $this->assertSame(1, DynamicFormVersion::where('dynamic_form_id', $form->id)->count());
+        $this->assertSame($v1->id, $form->published_version_id);
+        $this->assertCount(2, $v1->schema_snapshot['sections'][0]['fields']);
+        $this->assertSame(
+            [$v1->id],
+            DynamicFormField::whereIn('dynamic_form_version_id', $form->versions()->pluck('id'))
+                ->pluck('dynamic_form_version_id')
+                ->unique()
+                ->values()
+                ->all()
+        );
+
+        // 2. Jika admin secara sengaja mematikan publish_now = false, draf sementara v2 dibuat
+        // dan tabel menampilkan indikator "Draf v2 belum terbit", lalu saat dipublikasikan
+        // selama v1 masih 0 respons, draf v2 dikonsolidasikan kembali ke v1.
+        Livewire::test(EditDynamicForm::class, ['record' => $form->getRouteKey()])
+            ->set('data.sections', [[
+                'section_key' => 'data_lokasi',
+                'title' => 'Data Lokasi',
+                'fields' => [
+                    [
+                        'field_key' => 'nama_ruangan',
+                        'type' => 'short_text',
+                        'label' => 'Nama Ruangan',
+                        'is_required' => true,
+                    ],
+                    [
+                        'field_key' => 'tanggal_kunjungan',
+                        'type' => 'date',
+                        'label' => 'Tanggal Kunjungan',
+                        'is_required' => true,
+                    ],
+                    [
+                        'field_key' => 'nama_komputer',
+                        'type' => 'short_text',
+                        'label' => 'Nama Komputer',
+                        'is_required' => false,
+                    ],
+                ],
+            ]])
+            ->set('data.publish_now', false)
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame(2, DynamicFormVersion::where('dynamic_form_id', $form->id)->count());
+
+        Livewire::test(ListDynamicForms::class)
+            ->assertSee('Draf v2 belum terbit')
+            ->callAction(TestAction::make('publish')->table($form->fresh()))
+            ->assertHasNoActionErrors();
+
+        $form->refresh();
+        $v1->refresh();
+
+        $this->assertSame($v1->id, $form->published_version_id);
+        $this->assertSame(1, DynamicFormVersion::where('dynamic_form_id', $form->id)->count());
+        $this->assertCount(3, $v1->schema_snapshot['sections'][0]['fields']);
+        $this->assertSame(
+            [$v1->id],
+            DynamicFormField::where('dynamic_form_version_id', $v1->id)
+                ->pluck('dynamic_form_version_id')
+                ->unique()
+                ->values()
+                ->all()
+        );
+    }
+
+    public function test_step3_type_aware_value_inputs_source_filtering_operator_filtering_and_multi_select_roundtrip(): void
+    {
+        $this->actingAs($this->marketing);
+
+        $form = DynamicForm::factory()->create([
+            'title' => 'Form Step3 Dinamis',
+            'slug' => 'form-step3-dinamis',
+        ]);
+
+        app(DynamicFormVersionService::class)->syncDraftStructure($form, [
+            [
+                'section_key' => 'sec_1',
+                'title' => 'Bagian 1',
+                'fields' => [
+                    [
+                        'field_key' => 'kepatuhan',
+                        'type' => 'radio',
+                        'label' => 'Kepatuhan Browser',
+                        'options' => [
+                            'choices' => [
+                                ['key' => 'tidak_menyimpan_patuh', 'label' => 'Tidak Menyimpan (Patuh)'],
+                                ['key' => 'menyimpan_tidak_patuh', 'label' => 'Menyimpan (Tidak Patuh)'],
+                            ],
+                            'allow_other' => true,
+                            'other_label' => 'Alasan Lain',
+                        ],
+                    ],
+                    [
+                        'field_key' => 'info_tengah',
+                        'type' => 'info_block',
+                        'label' => 'Info Tengah',
+                        'options' => ['content' => 'Petunjuk'],
+                    ],
+                    [
+                        'field_key' => 'skala_puas',
+                        'type' => 'linear_scale',
+                        'label' => 'Skala Kepuasan',
+                        'options' => [
+                            'min_value' => 0,
+                            'max_value' => 4,
+                            'min_label' => 'Buruk',
+                            'max_label' => 'Sangat Baik',
+                        ],
+                    ],
+                    [
+                        'field_key' => 'bintang',
+                        'type' => 'rating',
+                        'label' => 'Rating Bintang',
+                        'options' => ['max_stars' => 3, 'icon' => 'star'],
+                    ],
+                    [
+                        'field_key' => 'fasilitas',
+                        'type' => 'checkbox',
+                        'label' => 'Fasilitas',
+                        'options' => [
+                            'choices' => [
+                                ['key' => 'parkir', 'label' => 'Parkir'],
+                                ['key' => 'wifi', 'label' => 'WiFi'],
+                            ],
+                            'allow_other' => false,
+                        ],
+                    ],
+                    [
+                        'field_key' => 'tanggal_periksa',
+                        'type' => 'date',
+                        'label' => 'Tanggal Periksa',
+                    ],
+                    [
+                        'field_key' => 'lampiran_awal',
+                        'type' => 'file_upload',
+                        'label' => 'Lampiran Awal',
+                    ],
+                ],
+            ],
+            [
+                'section_key' => 'sec_2',
+                'title' => 'Bagian 2',
+                'fields' => [
+                    ['field_key' => 'upload_bukti', 'type' => 'file_upload', 'label' => 'Upload Bukti'],
+                    ['field_key' => 'catatan_akhir', 'type' => 'short_text', 'label' => 'Catatan Akhir'],
+                ],
+            ],
+        ], false);
+
+        // 1. Cek dropdown dinamis untuk berbagai tipe sumber & penyaringan pertanyaan sebelum target
+        $component = Livewire::test(EditDynamicForm::class, ['record' => $form->getRouteKey()])
+            ->fillForm([
+                'title' => 'Form Step3 Dinamis',
+                'slug' => 'form-step3-dinamis',
+                'logic_config' => [
+                    'visibility_rules' => [
+                        [
+                            'target_field_key' => 'skala_puas',
+                            'match' => 'all',
+                            'rules' => [
+                                ['source_field_key' => 'kepatuhan', 'operator' => 'equals', 'value' => 'menyimpan_tidak_patuh'],
+                            ],
+                        ],
+                        [
+                            'target_field_key' => 'upload_bukti',
+                            'match' => 'any',
+                            'rules' => [
+                                ['source_field_key' => 'fasilitas', 'operator' => 'in', 'value' => ['parkir', 'wifi']],
+                                ['source_field_key' => 'skala_puas', 'operator' => 'lte', 'value' => '2'],
+                                ['source_field_key' => 'bintang', 'operator' => 'equals', 'value' => '3'],
+                                ['source_field_key' => 'tanggal_periksa', 'operator' => 'equals', 'value' => '2026-05-01'],
+                                ['source_field_key' => 'lampiran_awal', 'operator' => 'is_not_empty', 'value' => null],
+                            ],
+                        ],
+                    ],
+                ],
+            ]);
+
+        $schema = $component->instance()->form;
+        $vrItems = collect($schema->getComponentByStatePath('logic_config.visibility_rules', withHidden: true)->getChildSchemas(withHidden: true))->values();
+
+        // Aturan 1: target = skala_puas -> hanya kepatuhan yang muncul sebagai source (bukan info_tengah, skala_puas, atau field setelahnya)
+        $vr1Rule = collect($vrItems[0]->getComponentByStatePath('rules', withHidden: true)->getChildSchemas(withHidden: true))->first();
+        $vr1Source = $vr1Rule->getComponentByStatePath('source_field_key', withHidden: true);
+        $vr1Operator = $vr1Rule->getComponentByStatePath('operator', withHidden: true);
+        $vr1Value = $vr1Rule->getComponentByStatePath('value', withHidden: true);
+
+        $this->assertSame(['kepatuhan'], array_keys($vr1Source->getOptions()));
+        $this->assertArrayNotHasKey('gt', $vr1Operator->getOptions());
+        $this->assertArrayNotHasKey('contains', $vr1Operator->getOptions());
+        $this->assertInstanceOf(Select::class, $vr1Value);
+        $this->assertFalse($vr1Value->isMultiple());
+        $this->assertSame([
+            'tidak_menyimpan_patuh' => 'Tidak Menyimpan (Patuh) (tidak_menyimpan_patuh)',
+            'menyimpan_tidak_patuh' => 'Menyimpan (Tidak Patuh) (menyimpan_tidak_patuh)',
+            '__other__' => 'Alasan Lain (__other__)',
+        ], $vr1Value->getOptions());
+
+        // Aturan 2: multi-select checkbox, linear_scale, rating, date, dan file_upload
+        $vr2Rules = collect($vrItems[1]->getComponentByStatePath('rules', withHidden: true)->getChildSchemas(withHidden: true))->values();
+
+        $checkboxValue = $vr2Rules[0]->getComponentByStatePath('value', withHidden: true);
+        $this->assertInstanceOf(Select::class, $checkboxValue);
+        $this->assertTrue($checkboxValue->isMultiple());
+        $this->assertArrayNotHasKey('__other__', $checkboxValue->getOptions());
+        $this->assertArrayHasKey('parkir', $checkboxValue->getOptions());
+        $this->assertArrayHasKey('wifi', $checkboxValue->getOptions());
+
+        $scaleValue = $vr2Rules[1]->getComponentByStatePath('value', withHidden: true);
+        $this->assertInstanceOf(Select::class, $scaleValue);
+        $this->assertSame(['0', '1', '2', '3', '4'], array_map('strval', array_keys($scaleValue->getOptions())));
+
+        $ratingValue = $vr2Rules[2]->getComponentByStatePath('value', withHidden: true);
+        $this->assertInstanceOf(Select::class, $ratingValue);
+        $this->assertSame(['1', '2', '3'], array_map('strval', array_keys($ratingValue->getOptions())));
+
+        $dateOperator = $vr2Rules[3]->getComponentByStatePath('operator', withHidden: true);
+        $dateValue = $vr2Rules[3]->getComponentByStatePath('value', withHidden: true);
+        $this->assertSame(['equals', 'not_equals', 'is_empty', 'is_not_empty'], array_keys($dateOperator->getOptions()));
+        $this->assertInstanceOf(TextInput::class, $dateValue);
+        $this->assertStringContainsString('YYYY-MM-DD', (string) $dateValue->getPlaceholder());
+
+        $fileOperator = $vr2Rules[4]->getComponentByStatePath('operator', withHidden: true);
+        $this->assertSame(['is_empty', 'is_not_empty'], array_keys($fileOperator->getOptions()));
+        $this->assertNull($vr2Rules[4]->getComponentByStatePath('value', withHidden: true));
+
+        // 2. Simpan lalu buka ulang EditDynamicForm untuk memastikan format multi-select & nilai terhidrasi utuh
+        $component->call('save')->assertHasNoFormErrors();
+
+        $reopened = Livewire::test(EditDynamicForm::class, ['record' => $form->getRouteKey()]);
+        $hydratedRules = collect($reopened->get('data.logic_config.visibility_rules'))->keyBy('target_field_key');
+        $this->assertSame('menyimpan_tidak_patuh', collect($hydratedRules['skala_puas']['rules'])->first()['value']);
+        $this->assertSame(['parkir', 'wifi'], collect($hydratedRules['upload_bukti']['rules'])->first()['value']);
+
+        // 3. Mengganti Pertanyaan Sumber dari linear_scale (operator lte) ke file_upload mereset operator & value secara aman
+        $uploadVrKey = collect((array) $reopened->get('data.logic_config.visibility_rules'))
+            ->search(fn (array $item): bool => ($item['target_field_key'] ?? null) === 'upload_bukti');
+        $scaleRuleKey = collect((array) $reopened->get("data.logic_config.visibility_rules.{$uploadVrKey}.rules"))
+            ->search(fn (array $item): bool => ($item['source_field_key'] ?? null) === 'skala_puas');
+
+        $reopened
+            ->set("data.logic_config.visibility_rules.{$uploadVrKey}.rules.{$scaleRuleKey}.source_field_key", 'lampiran_awal')
+            ->assertSet("data.logic_config.visibility_rules.{$uploadVrKey}.rules.{$scaleRuleKey}.operator", 'is_empty')
+            ->assertSet("data.logic_config.visibility_rules.{$uploadVrKey}.rules.{$scaleRuleKey}.value", null);
+    }
+
+    public function test_wizard_and_publish_reject_invalid_choice_keys_empty_values_duplicates_and_trim_values(): void
+    {
+        $this->actingAs($this->marketing);
+
+        $baseSections = [
+            [
+                'section_key' => 'sec_1',
+                'title' => 'Bagian 1',
+                'fields' => [
+                    [
+                        'field_key' => 'kepatuhan',
+                        'type' => 'radio',
+                        'label' => 'Kepatuhan',
+                        'options' => [
+                            'choices' => [
+                                ['key' => 'tidak_menyimpan_patuh', 'label' => 'Tidak Menyimpan (Patuh)'],
+                                ['key' => 'menyimpan_tidak_patuh', 'label' => 'Menyimpan (Tidak Patuh)'],
+                            ],
+                        ],
+                    ],
+                    [
+                        'field_key' => 'upload_bukti',
+                        'type' => 'file_upload',
+                        'label' => 'Upload Bukti',
+                    ],
+                    [
+                        'field_key' => 'catatan',
+                        'type' => 'short_text',
+                        'label' => 'Catatan',
+                    ],
+                ],
+            ],
+            [
+                'section_key' => 'sec_2',
+                'title' => 'Bagian 2',
+                'fields' => [
+                    ['field_key' => 'penutup', 'type' => 'short_text', 'label' => 'Penutup'],
+                ],
+            ],
+        ];
+
+        // 1. Tolak nilai pembanding yang tidak cocok dengan choice.key (kasus nyata "Tidak Patuh")
+        Livewire::test(CreateDynamicForm::class)
+            ->fillForm([
+                'title' => 'Form Key Salah',
+                'slug' => 'form-key-salah',
+                'mode' => DynamicFormMode::Questionnaire->value,
+                'locale' => 'id',
+                'sections' => $baseSections,
+                'logic_config' => [
+                    'visibility_rules' => [[
+                        'target_field_key' => 'upload_bukti',
+                        'match' => 'all',
+                        'rules' => [[
+                            'source_field_key' => 'kepatuhan',
+                            'operator' => 'equals',
+                            'value' => 'Tidak Patuh',
+                        ]],
+                    ]],
+                ],
+            ])
+            ->call('create')
+            ->assertHasFormErrors();
+
+        $this->assertDatabaseMissing('dynamic_forms', ['slug' => 'form-key-salah']);
+
+        // 2. Tolak aturan duplikat (visibility_rules, choice_jumps, section_jumps)
+        Livewire::test(CreateDynamicForm::class)
+            ->fillForm([
+                'title' => 'Form Aturan Duplikat',
+                'slug' => 'form-aturan-duplikat',
+                'mode' => DynamicFormMode::Questionnaire->value,
+                'locale' => 'id',
+                'sections' => $baseSections,
+                'logic_config' => [
+                    'visibility_rules' => [
+                        [
+                            'target_field_key' => 'upload_bukti',
+                            'match' => 'all',
+                            'rules' => [[
+                                'source_field_key' => 'kepatuhan',
+                                'operator' => 'equals',
+                                'value' => 'menyimpan_tidak_patuh',
+                            ]],
+                        ],
+                        [
+                            'target_field_key' => 'upload_bukti',
+                            'match' => 'any',
+                            'rules' => [[
+                                'source_field_key' => 'kepatuhan',
+                                'operator' => 'equals',
+                                'value' => 'tidak_menyimpan_patuh',
+                            ]],
+                        ],
+                    ],
+                    'choice_jumps' => [
+                        ['source_field_key' => 'kepatuhan', 'choice_key' => 'menyimpan_tidak_patuh', 'go_to_section_key' => 'sec_2'],
+                        ['source_field_key' => 'kepatuhan', 'choice_key' => 'menyimpan_tidak_patuh', 'go_to_section_key' => '__submit__'],
+                    ],
+                    'section_jumps' => [
+                        ['section_key' => 'sec_1', 'action' => 'jump', 'target_section_key' => 'sec_2'],
+                        ['section_key' => 'sec_1', 'action' => 'submit', 'target_section_key' => null],
+                    ],
+                ],
+            ])
+            ->call('create')
+            ->assertNotified('Aturan Percabangan Logika Tidak Valid')
+            ->assertHasErrors();
+
+        $this->assertDatabaseMissing('dynamic_forms', ['slug' => 'form-aturan-duplikat']);
+
+        // 3. Tolak nilai pembanding kosong pada operator pembanding & operator tidak kompatibel pada file_upload
+        Livewire::test(CreateDynamicForm::class)
+            ->fillForm([
+                'title' => 'Form Kosong Dan Operator Salah',
+                'slug' => 'form-kosong-dan-operator-salah',
+                'mode' => DynamicFormMode::Questionnaire->value,
+                'locale' => 'id',
+                'sections' => $baseSections,
+                'logic_config' => [
+                    'visibility_rules' => [
+                        [
+                            'target_field_key' => 'upload_bukti',
+                            'match' => 'all',
+                            'rules' => [[
+                                'source_field_key' => 'kepatuhan',
+                                'operator' => 'equals',
+                                'value' => '   ',
+                            ]],
+                        ],
+                        [
+                            'target_field_key' => 'catatan',
+                            'match' => 'all',
+                            'rules' => [[
+                                'source_field_key' => 'upload_bukti',
+                                'operator' => 'gt',
+                                'value' => '1',
+                            ]],
+                        ],
+                    ],
+                ],
+            ])
+            ->call('create')
+            ->assertHasErrors();
+
+        $this->assertDatabaseMissing('dynamic_forms', ['slug' => 'form-kosong-dan-operator-salah']);
+
+        // 4. Trim spasi otomatis saat normalisasi & publikasi tetap menolak aturan tak valid di database
+        $versionService = app(DynamicFormVersionService::class);
+        $trimmed = $versionService->mergeLogicConfigIntoSections($baseSections, [
+            'visibility_rules' => [
+                [
+                    'target_field_key' => 'upload_bukti',
+                    'match' => 'all',
+                    'rules' => [[
+                        'source_field_key' => 'kepatuhan',
+                        'operator' => 'equals',
+                        'value' => '  menyimpan_tidak_patuh  ',
+                    ]],
+                ],
+                [
+                    'target_field_key' => 'catatan',
+                    'match' => 'all',
+                    'rules' => [[
+                        'source_field_key' => 'kepatuhan',
+                        'operator' => 'in',
+                        'value' => ['  menyimpan_tidak_patuh  ', ' tidak_menyimpan_patuh ', '   '],
+                    ]],
+                ],
+            ],
+        ]);
+
+        $this->assertSame(
+            'menyimpan_tidak_patuh',
+            $trimmed[0]['fields'][1]['conditional_logic']['visibility']['rules'][0]['value']
+        );
+        $this->assertSame(
+            ['menyimpan_tidak_patuh', 'tidak_menyimpan_patuh'],
+            $trimmed[0]['fields'][2]['conditional_logic']['visibility']['rules'][0]['value']
+        );
+
+        $badDraftForm = DynamicForm::factory()->create(['title' => 'Draft Buruk', 'slug' => 'draft-buruk']);
+        $badSections = $baseSections;
+        $badSections[0]['fields'][1]['conditional_logic'] = [
+            'visibility' => [
+                'enabled' => true,
+                'match' => 'all',
+                'rules' => [[
+                    'source_field_key' => 'kepatuhan',
+                    'operator' => 'equals',
+                    'value' => 'Tidak Patuh',
+                ]],
+            ],
+        ];
+        $versionService->syncDraftStructure($badDraftForm, $badSections, false);
+
+        $this->expectException(ValidationException::class);
+        $versionService->publishDraftVersion($badDraftForm);
+    }
+
+    public function test_step3_value_select_remounts_across_source_switches_normalizes_scalar_arrays_and_migrates_legacy_csv(): void
+    {
+        $this->actingAs($this->marketing);
+        $versionService = app(DynamicFormVersionService::class);
+
+        // 1. Legacy form dengan nilai string koma ("opt_a, opt_b") pada operator `in` untuk radio
+        //    harus terhidrasi sebagai array dan tersimpan ulang bersih tanpa menyentuh Step 3.
+        $legacyForm = DynamicForm::factory()->create([
+            'title' => 'Form Legacy Koma',
+            'slug' => 'form-legacy-koma',
+        ]);
+        $versionService->syncDraftStructure($legacyForm, [[
+            'section_key' => 'sec_1',
+            'title' => 'Bagian 1',
+            'fields' => [
+                [
+                    'field_key' => 'radio_a',
+                    'type' => 'radio',
+                    'label' => 'Radio A',
+                    'options' => [
+                        'choices' => [
+                            ['key' => 'opt_a', 'label' => 'Opsi A'],
+                            ['key' => 'opt_b', 'label' => 'Opsi B'],
+                        ],
+                    ],
+                ],
+                [
+                    'field_key' => 'radio_b',
+                    'type' => 'radio',
+                    'label' => 'Radio B',
+                    'options' => [
+                        'choices' => [
+                            ['key' => 'beta_1', 'label' => 'Beta 1'],
+                            ['key' => 'beta_2', 'label' => 'Beta 2'],
+                        ],
+                    ],
+                ],
+                [
+                    'field_key' => 'angka_sumber',
+                    'type' => 'short_text',
+                    'label' => 'Angka Sumber',
+                    'options' => ['subtype' => 'number'],
+                ],
+                [
+                    'field_key' => 'target_akhir',
+                    'type' => 'short_text',
+                    'label' => 'Target Akhir',
+                    'conditional_logic' => [
+                        'visibility' => [
+                            'enabled' => true,
+                            'match' => 'all',
+                            'rules' => [[
+                                'source_field_key' => 'radio_a',
+                                'operator' => 'in',
+                                'value' => 'opt_a, opt_b',
+                            ]],
+                        ],
+                    ],
+                ],
+            ],
+        ]], false);
+
+        $edit = Livewire::test(EditDynamicForm::class, ['record' => $legacyForm->getRouteKey()]);
+        $rulesState = array_values((array) $edit->get('data.logic_config.visibility_rules'));
+        $firstCond = array_values((array) ($rulesState[0]['rules'] ?? []))[0] ?? [];
+        $this->assertSame(['opt_a', 'opt_b'], $firstCond['value']);
+
+        $edit->call('save')->assertHasNoFormErrors();
+        $savedTarget = DynamicFormField::where('field_key', 'target_akhir')
+            ->where('dynamic_form_version_id', $legacyForm->latestDraftVersion()->id)
+            ->firstOrFail();
+        $this->assertSame(['opt_a', 'opt_b'], $savedTarget->conditional_logic['visibility']['rules'][0]['value']);
+
+        // 2. Berpindah source_field_key antar dua field bertipe Select (radio_a -> radio_b)
+        //    harus menghasilkan wire:key berbeda dan hasDynamicOptions: true agar wire:ignore
+        //    tidak membekukan opsi dropdown lama di browser.
+        $switchTest = Livewire::test(EditDynamicForm::class, ['record' => $legacyForm->getRouteKey()])
+            ->set('data.logic_config.visibility_rules', [
+                'r0' => [
+                    'target_field_key' => 'target_akhir',
+                    'match' => 'all',
+                    'rules' => [
+                        'c0' => [
+                            'source_field_key' => 'radio_a',
+                            'operator' => 'equals',
+                            'value' => 'opt_a',
+                        ],
+                    ],
+                ],
+            ]);
+
+        $htmlA = $switchTest->html();
+        preg_match('/wire:key="([^"]*rule_value_group\.value_select_single_[^"]+)"/', $htmlA, $matchA);
+        $this->assertNotEmpty($matchA[1] ?? null);
+        $posA = strpos($htmlA, 'selectFormComponent', (int) strpos($htmlA, $matchA[1]));
+        $this->assertStringContainsString('hasDynamicOptions: true', substr($htmlA, (int) $posA, 3500));
+
+        $switchTest->set('data.logic_config.visibility_rules.r0.rules.c0.source_field_key', 'radio_b');
+        $htmlB = $switchTest->html();
+        preg_match('/wire:key="([^"]*rule_value_group\.value_select_single_[^"]+)"/', $htmlB, $matchB);
+        $this->assertNotEmpty($matchB[1] ?? null);
+        $this->assertNotSame($matchA[1], $matchB[1]);
+
+        // 3. Berpindah operator dari `in` ("10, 20") ke `gt` pada short_text (number)
+        //    mereset nilai non-numerik agar input angka tidak menyimpan string koma basi.
+        $switchTest
+            ->set('data.logic_config.visibility_rules.r0.rules.c0.source_field_key', 'angka_sumber')
+            ->set('data.logic_config.visibility_rules.r0.rules.c0.operator', 'in')
+            ->set('data.logic_config.visibility_rules.r0.rules.c0.value', '10, 20')
+            ->set('data.logic_config.visibility_rules.r0.rules.c0.operator', 'gt');
+
+        $this->assertNull($switchTest->get('data.logic_config.visibility_rules.r0.rules.c0.value'));
+
+        // 4. mergeLogicConfigIntoSections merapikan spasi kunci aturan dan menormalisasi
+        //    array tunggal pada operator skalar menjadi string agar evaluator tidak gagal diam-diam.
+        $merged = $versionService->mergeLogicConfigIntoSections(
+            $versionService->loadEditableSectionsData($legacyForm),
+            [
+                'visibility_rules' => [[
+                    'target_field_key' => ' target_akhir ',
+                    'match' => 'all',
+                    'rules' => [[
+                        'source_field_key' => ' radio_a ',
+                        'operator' => 'equals',
+                        'value' => [' opt_a '],
+                    ]],
+                ]],
+            ]
+        );
+
+        $this->assertTrue($merged[0]['fields'][3]['conditional_logic']['visibility']['enabled']);
+        $this->assertSame('opt_a', $merged[0]['fields'][3]['conditional_logic']['visibility']['rules'][0]['value']);
+        $this->assertSame([], app(DynamicFormLogicEvaluator::class)->validateSchemaLogic($merged));
     }
 
     private function switchUser(User $user): void

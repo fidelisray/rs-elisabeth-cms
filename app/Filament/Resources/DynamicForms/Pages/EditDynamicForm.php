@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\DynamicForms\Pages;
 
+use App\Enums\DynamicFormStatus;
 use App\Filament\Resources\DynamicForms\Actions\DynamicFormShareAction;
 use App\Filament\Resources\DynamicForms\DynamicFormResource;
 use App\Filament\Resources\DynamicForms\Schemas\DynamicFormWizardSchema;
@@ -51,7 +52,11 @@ class EditDynamicForm extends EditRecord
         }
 
         if ($published) {
-            return "Versi Aktif saat ini: v{$published->version_number}. Perubahan pada pertanyaan akan otomatis tersimpan sebagai draf versi baru tanpa mengganggu data respons lama.";
+            $hasSubmissions = $published->submissions()->withTrashed()->exists();
+
+            return $hasSubmissions
+                ? "Versi Aktif saat ini: v{$published->version_number}. Karena sudah ada respons masuk, perubahan pertanyaan akan diterbitkan sebagai versi baru tanpa mengganggu data respons lama."
+                : "Versi Aktif saat ini: v{$published->version_number} (0 respons). Perubahan pertanyaan akan langsung memperbarui versi aktif ini saat disimpan.";
         }
 
         return 'Formulir masih berstatus Draf dan belum tampil pada Web Frontend.';
@@ -110,7 +115,8 @@ class EditDynamicForm extends EditRecord
                         } else {
                             $version = app(DynamicFormVersionService::class)->publishDraftVersion(
                                 $freshRecord,
-                                Auth::user()?->email
+                                Auth::user()?->email,
+                                consolidateIntoEmptyPublished: true,
                             );
                         }
                         $this->getRecord()->refresh();
@@ -140,7 +146,7 @@ class EditDynamicForm extends EditRecord
         $sections = $versionService->loadEditableSectionsData($form);
         $data['sections'] = $sections;
         $data['logic_config'] = $versionService->extractLogicConfigFromSections($sections);
-        $data['publish_now'] = false;
+        $data['publish_now'] = $form->status === DynamicFormStatus::Published;
 
         return $data;
     }
@@ -169,8 +175,12 @@ class EditDynamicForm extends EditRecord
             ]);
         }
 
+        $rawLogicErrors = $logicEvaluator->validateRawLogicConfig($logicConfig);
         $mergedSections = $versionService->mergeLogicConfigIntoSections($sections, $logicConfig);
-        $logicErrors = $logicEvaluator->validateSchemaLogic($mergedSections);
+        $logicErrors = array_values(array_unique([
+            ...$rawLogicErrors,
+            ...$logicEvaluator->validateSchemaLogic($mergedSections),
+        ]));
         if ($logicErrors !== []) {
             Notification::make()
                 ->danger()
@@ -201,10 +211,14 @@ class EditDynamicForm extends EditRecord
                 'closed_message' => $data['closed_message'] ?? null,
             ]);
 
-            $versionService->syncDraftStructure($record, $mergedSections, true);
+            $versionService->syncDraftStructure($record, $mergedSections, true, $publishNow);
 
             if ($publishNow) {
-                $versionService->publishDraftVersion($record, Auth::user()?->email);
+                $versionService->publishDraftVersion(
+                    $record,
+                    Auth::user()?->email,
+                    consolidateIntoEmptyPublished: true,
+                );
             }
 
             return $record->fresh();
