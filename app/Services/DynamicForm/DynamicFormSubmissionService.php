@@ -51,9 +51,15 @@ class DynamicFormSubmissionService
                 ->where('status', 'published')
                 ->firstOrFail();
 
+            $isEnglish = (($payload['locale'] ?? $lockedForm->locale) === 'en');
+
             if (isset($payload['version_id']) && (int) $payload['version_id'] !== $version->id) {
                 throw ValidationException::withMessages([
-                    'version_id' => ['Versi formulir telah diperbarui. Muat ulang formulir sebelum mengirim.'],
+                    'version_id' => [
+                        $isEnglish
+                            ? 'The form version has been updated. Please reload the page before submitting.'
+                            : 'Versi formulir telah diperbarui. Muat ulang formulir sebelum mengirim.',
+                    ],
                 ]);
             }
 
@@ -71,7 +77,11 @@ class DynamicFormSubmissionService
 
                     if ($duplicateExists) {
                         throw ValidationException::withMessages([
-                            'respondent_key' => ['Anda sudah pernah mengisi formulir ini sebelumnya.'],
+                            'respondent_key' => [
+                                $isEnglish
+                                    ? 'You have already submitted this form.'
+                                    : 'Anda sudah pernah mengisi formulir ini sebelumnya.',
+                            ],
                         ]);
                     }
                 }
@@ -108,14 +118,22 @@ class DynamicFormSubmissionService
 
                 if ($uploads->count() !== count($validated['upload_ids'])) {
                     throw ValidationException::withMessages([
-                        'answers' => ['Sebagian token berkas lampiran tidak ditemukan.'],
+                        'answers' => [
+                            $isEnglish
+                                ? 'Some uploaded file tokens could not be found.'
+                                : 'Sebagian token berkas lampiran tidak ditemukan.',
+                        ],
                     ]);
                 }
 
                 foreach ($uploads as $upload) {
                     if ($upload->submission_id !== null || $upload->attached_at !== null) {
                         throw ValidationException::withMessages([
-                            'answers' => ["Token berkas [{$upload->token}] sudah terpakai."],
+                            'answers' => [
+                                $isEnglish
+                                    ? "File token [{$upload->token}] has already been used."
+                                    : "Token berkas [{$upload->token}] sudah terpakai.",
+                            ],
                         ]);
                     }
 

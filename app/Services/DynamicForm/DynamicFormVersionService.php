@@ -573,6 +573,7 @@ class DynamicFormVersionService
                 'ends_at' => $source->ends_at,
                 'max_responses' => $source->max_responses,
                 'allow_multiple_submissions' => $source->allow_multiple_submissions,
+                'is_public_listed' => (bool) $source->is_public_listed,
                 'ticket_prefix' => $source->ticket_prefix,
                 'confirmation_message' => $source->confirmation_message,
                 'closed_message' => $source->closed_message,

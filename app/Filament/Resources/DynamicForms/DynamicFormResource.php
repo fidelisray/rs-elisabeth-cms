@@ -51,7 +51,9 @@ class DynamicFormResource extends Resource
                 ->columns(2)
                 ->schema([
                     TextEntry::make('title')->label('Judul Formulir'),
-                    TextEntry::make('slug')->label('Slug API'),
+                    TextEntry::make('slug')
+                        ->label('Path Web')
+                        ->formatStateUsing(fn (string $state): string => '/formulir/'.$state),
                     TextEntry::make('mode')
                         ->label('Mode')
                         ->formatStateUsing(fn (DynamicFormMode|string $state): string => $state instanceof DynamicFormMode
@@ -65,7 +67,17 @@ class DynamicFormResource extends Resource
                         ->badge()
                         ->formatStateUsing(fn (DynamicFormStatus|string $state): string => $state instanceof DynamicFormStatus
                             ? $state->label()
-                            : (string) $state),
+                            : (string) $state)
+                        ->color(fn (DynamicFormStatus|string $state): string => match ($state instanceof DynamicFormStatus ? $state : DynamicFormStatus::tryFrom((string) $state)) {
+                            DynamicFormStatus::Published => 'success',
+                            DynamicFormStatus::Closed => 'danger',
+                            default => 'gray',
+                        }),
+                    TextEntry::make('is_public_listed')
+                        ->label('Katalog Web')
+                        ->badge()
+                        ->formatStateUsing(fn (mixed $state): string => (bool) $state ? 'Katalog Publik' : 'Link / QR Saja')
+                        ->color(fn (mixed $state): string => (bool) $state ? 'success' : 'gray'),
                     TextEntry::make('publishedVersion.version_number')
                         ->label('Versi Terpublikasi')
                         ->formatStateUsing(fn ($state): string => $state ? 'v'.$state : 'Belum dipublikasikan'),

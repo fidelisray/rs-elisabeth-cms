@@ -153,6 +153,7 @@ class DynamicFormApiTest extends TestCase
             'mode' => DynamicFormMode::Feedback,
             'locale' => 'id',
             'max_responses' => 2,
+            'is_public_listed' => true,
         ]);
 
         DynamicForm::factory()->create([
@@ -160,26 +161,55 @@ class DynamicFormApiTest extends TestCase
             'status' => 'draft',
         ]);
 
+        $unlisted = $this->createPublishedForm([
+            'slug' => 'form-qr-khusus',
+            'mode' => DynamicFormMode::Feedback,
+            'locale' => 'id',
+            'is_public_listed' => false,
+        ]);
+
         $expired = $this->createPublishedForm([
             'slug' => 'form-kadaluarsa',
             'ends_at' => now()->subDay(),
             'closed_message' => 'Periode sudah berakhir.',
+            'is_public_listed' => true,
         ]);
 
         $enForm = $this->createPublishedForm([
             'slug' => 'english-survey',
             'locale' => 'en',
             'mode' => DynamicFormMode::Questionnaire,
+            'is_public_listed' => true,
         ]);
 
         $list = $this->withHmac()->getJson('/api/v1/cms/forms?mode=feedback&lang=id')->assertOk();
         $slugs = collect($list->json('data'))->pluck('slug')->all();
         $this->assertSame(['form-aktif'], $slugs);
+        $this->assertTrue((bool) $list->json('data.0.is_public_listed'));
+
+        // Unlisted form tidak bocor di ?listed_only=1, muncul di ?include_unlisted=1 tanpa bentrok cache,
+        // dan tetap bisa diakses langsung via GET /forms/{slug}.
+        $listedOnly = $this->withHmac()->getJson('/api/v1/cms/forms?mode=feedback&lang=id&listed_only=1')->assertOk();
+        $this->assertSame(['form-aktif'], collect($listedOnly->json('data'))->pluck('slug')->all());
+
+        $withUnlisted = $this->withHmac()->getJson('/api/v1/cms/forms?mode=feedback&lang=id&include_unlisted=1')->assertOk();
+        $withUnlistedSlugs = collect($withUnlisted->json('data'))->pluck('slug')->all();
+        $this->assertContains($active->slug, $withUnlistedSlugs);
+        $this->assertContains($unlisted->slug, $withUnlistedSlugs);
+
+        $defaultAfterUnlisted = $this->withHmac()->getJson('/api/v1/cms/forms?mode=feedback&lang=id')->assertOk();
+        $this->assertSame(['form-aktif'], collect($defaultAfterUnlisted->json('data'))->pluck('slug')->all());
+
+        $this->withHmac()->getJson('/api/v1/cms/forms/'.$unlisted->slug)
+            ->assertOk()
+            ->assertJsonPath('data.is_public_listed', false)
+            ->assertJsonPath('data.is_accepting_responses', true);
 
         $this->withHmac()->getJson('/api/v1/cms/forms/form-draft')->assertNotFound();
 
         $detailActive = $this->withHmac()->getJson('/api/v1/cms/forms/'.$active->slug)->assertOk();
         $detailActive->assertJsonPath('data.is_accepting_responses', true);
+        $detailActive->assertJsonPath('data.is_public_listed', true);
         $detailActive->assertJsonPath('data.remaining_quota', 2);
         $detailActive->assertJsonPath('data.published_version.version_number', 1);
 
@@ -503,5 +533,54 @@ class DynamicFormApiTest extends TestCase
         $this->signedFileUpload('/api/v1/cms/forms/'.$form->slug.'/uploads', 'berkas', $pdf)
             ->assertStatus(422)
             ->assertJsonPath('message', 'Formulir sedang ditutup sementara.');
+    }
+
+    public function test_allows_empty_answers_object_when_all_visible_fields_are_optional(): void
+    {
+        $form = $this->createPublishedForm([
+            'slug' => 'opsional-saja',
+        ], [[
+            'section_key' => 'sec_1',
+            'title' => 'Opsional',
+            'fields' => [
+                [
+                    'field_key' => 'catatan',
+                    'type' => 'short_text',
+                    'label' => 'Catatan Opsional',
+                    'is_required' => false,
+                    'options' => ['subtype' => 'text'],
+                ],
+            ],
+        ]]);
+
+        $this->signedJsonPost('/api/v1/cms/forms/'.$form->slug.'/submissions', [
+            'version_id' => $form->published_version_id,
+            'answers' => (object) [],
+        ])->assertStatus(201)->assertJsonPath('success', true);
+
+        // Menghilangkan key answers sepenuhnya tetap ditolak 422 dengan pesan terjemahan.
+        $this->signedJsonPost('/api/v1/cms/forms/'.$form->slug.'/submissions', [
+            'version_id' => $form->published_version_id,
+        ])->assertStatus(422)->assertJsonPath('errors.answers.0', 'Jawaban formulir wajib disertakan.');
+
+        // Form/submission locale 'en' mengembalikan pesan sistem duplikat berbahasa Inggris.
+        $enDedup = $this->createPublishedForm([
+            'slug' => 'en-once',
+            'locale' => 'en',
+            'allow_multiple_submissions' => false,
+        ]);
+        $this->signedJsonPost('/api/v1/cms/forms/'.$enDedup->slug.'/submissions', [
+            'version_id' => $enDedup->published_version_id,
+            'locale' => 'en',
+            'respondent_key' => 'en-user-1',
+            'answers' => ['unit' => ['selected' => 'igd'], 'skor' => 5],
+        ])->assertStatus(201);
+
+        $this->signedJsonPost('/api/v1/cms/forms/'.$enDedup->slug.'/submissions', [
+            'version_id' => $enDedup->published_version_id,
+            'locale' => 'en',
+            'respondent_key' => 'en-user-1',
+            'answers' => ['unit' => ['selected' => 'igd'], 'skor' => 4],
+        ])->assertStatus(422)->assertJsonPath('errors.respondent_key.0', 'You have already submitted this form.');
     }
 }

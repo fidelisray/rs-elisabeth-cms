@@ -37,6 +37,7 @@ class DynamicForm extends Model
         'ends_at',
         'max_responses',
         'allow_multiple_submissions',
+        'is_public_listed',
         'ticket_prefix',
         'confirmation_message',
         'closed_message',
@@ -54,6 +55,7 @@ class DynamicForm extends Model
             'ends_at' => 'datetime',
             'max_responses' => 'integer',
             'allow_multiple_submissions' => 'boolean',
+            'is_public_listed' => 'boolean',
         ];
     }
 

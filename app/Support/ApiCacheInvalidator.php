@@ -50,12 +50,13 @@ class ApiCacheInvalidator
         return self::keyForModule('doctors', $locale).'_v'.$version.'_'.hash('sha256', $specialty ?? '');
     }
 
-    public static function dynamicFormListKey(?string $locale = null, ?string $mode = null): string
+    public static function dynamicFormListKey(?string $locale = null, ?string $mode = null, bool $includeUnlisted = false): string
     {
         $version = Cache::rememberForever(self::baseKey('dynamic_forms').'_version', fn (): string => (string) Str::uuid());
         $langSegment = in_array($locale, ['id', 'en'], true) ? $locale : 'all';
+        $visibilitySegment = $includeUnlisted ? 'all_vis' : 'listed';
 
-        return self::baseKey('dynamic_forms').'_'.$langSegment.'_v'.$version.'_'.($mode ?? 'all');
+        return self::baseKey('dynamic_forms').'_'.$langSegment.'_v'.$version.'_'.($mode ?? 'all').'_'.$visibilitySegment;
     }
 
     public static function dynamicFormDetailKey(string $slug): string

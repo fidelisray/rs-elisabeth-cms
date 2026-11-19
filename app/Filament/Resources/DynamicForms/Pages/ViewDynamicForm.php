@@ -2,8 +2,10 @@
 
 namespace App\Filament\Resources\DynamicForms\Pages;
 
+use App\Filament\Resources\DynamicForms\Actions\DynamicFormShareAction;
 use App\Filament\Resources\DynamicForms\DynamicFormResource;
 use App\Livewire\DynamicFormLivePreview;
+use App\Models\DynamicForm;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
@@ -18,6 +20,9 @@ class ViewDynamicForm extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            DynamicFormShareAction::make()
+                ->record(fn (): DynamicForm => $this->getRecord()),
+
             Action::make('analytics')
                 ->label('Ringkasan & Analitik')
                 ->icon(Heroicon::OutlinedChartBar)

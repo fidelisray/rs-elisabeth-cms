@@ -13,7 +13,7 @@ class InvalidateWebFrontendCacheCommand extends Command
      * @var string
      */
     protected $signature = 'webhook:cache-invalidate
-                            {module=all : Module to invalidate (news, articles, promotions, facilities, room_facilities, banner_promotions, all)}
+                            {module=all : Module to invalidate (news, articles, promotions, facilities, room_facilities, banner_promotions, doctors, online_libraries, dynamic_forms, all)}
                             {--event=content.updated : Event type (content.updated, content.created, content.deleted)}
                             {--slug= : Specific entity slug (optional)}';
 

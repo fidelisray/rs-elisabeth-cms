@@ -12,6 +12,7 @@ use App\Filament\Resources\DynamicForms\Pages\CreateDynamicForm;
 use App\Filament\Resources\DynamicForms\Pages\EditDynamicForm;
 use App\Filament\Resources\DynamicForms\Pages\ListDynamicForms;
 use App\Filament\Resources\DynamicForms\Pages\ManageDynamicFormAnalytics;
+use App\Filament\Resources\DynamicForms\Pages\ViewDynamicForm;
 use App\Filament\Resources\DynamicFormSubmissions\DynamicFormSubmissionResource;
 use App\Filament\Resources\DynamicFormSubmissions\Pages\ListDynamicFormSubmissions;
 use App\Filament\Resources\DynamicFormSubmissions\Pages\ViewDynamicFormSubmission;
@@ -28,6 +29,7 @@ use App\Services\DynamicForm\DynamicFormLogicEvaluator;
 use App\Services\DynamicForm\DynamicFormSubmissionService;
 use App\Services\DynamicForm\DynamicFormVersionService;
 use Database\Seeders\DatabaseSeeder;
+use Filament\Actions\Testing\TestAction;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
@@ -107,6 +109,7 @@ class DynamicFormPanelTest extends TestCase
 
         $form = DynamicForm::where('slug', 'survei-poliklinik')->firstOrFail();
         $this->assertSame(DynamicFormStatus::Published, $form->status);
+        $this->assertFalse($form->is_public_listed);
         $this->assertNotNull($form->published_version_id);
         $v1 = $form->publishedVersion;
         $this->assertSame(1, $v1->version_number);
@@ -145,12 +148,14 @@ class DynamicFormPanelTest extends TestCase
                         ],
                     ],
                 ],
+                'is_public_listed' => true,
                 'publish_now' => false,
             ])
             ->call('save')
             ->assertHasNoFormErrors();
 
         $form->refresh();
+        $this->assertTrue($form->is_public_listed);
         $this->assertSame($v1->id, $form->published_version_id);
         $draftV2 = $form->latestDraftVersion();
         $this->assertNotNull($draftV2);
@@ -1294,6 +1299,194 @@ class DynamicFormPanelTest extends TestCase
         $this->assertTrue($choicesOut->has('_opsi_khusus'));
         $this->assertSame('sec_2', $choicesOut[$longKey2]['go_to_section_key']);
         $this->assertSame('__submit__', $choicesOut['_opsi_khusus']['go_to_section_key']);
+    }
+
+    public function test_share_link_qr_modal_table_columns_filters_action_group_and_rbac(): void
+    {
+        Config::set('web_frontend.public_url', 'http://rs-elisabeth-web.test');
+        Config::set('web_frontend.webhook_url', 'http://rs-elisabeth-web.test/api/internal/webhook/cache-invalidate');
+
+        $versionService = app(DynamicFormVersionService::class);
+        $sampleSections = [[
+            'section_key' => 'sec_1',
+            'title' => 'Bagian 1',
+            'fields' => [[
+                'field_key' => 'pertanyaan_1',
+                'type' => 'short_text',
+                'label' => 'Pertanyaan 1',
+                'is_required' => true,
+            ]],
+        ]];
+
+        $draftForm = DynamicForm::factory()->create([
+            'title' => 'Formulir Draf Belum Terbit',
+            'slug' => 'formulir-draf-belum-terbit',
+            'status' => DynamicFormStatus::Draft,
+            'is_public_listed' => false,
+        ]);
+        $versionService->syncDraftStructure($draftForm, $sampleSections, false);
+
+        $publishedListed = DynamicForm::factory()->create([
+            'title' => 'Survei Katalog Publik',
+            'slug' => 'survei-katalog-publik',
+            'is_public_listed' => true,
+        ]);
+        $versionService->syncDraftStructure($publishedListed, $sampleSections, false);
+        $versionService->publishDraftVersion($publishedListed);
+        $publishedListed->refresh();
+
+        $closedUnlisted = DynamicForm::factory()->create([
+            'title' => 'Survei QR Saja Ditutup',
+            'slug' => 'survei-qr-saja-ditutup',
+            'is_public_listed' => false,
+        ]);
+        $versionService->syncDraftStructure($closedUnlisted, $sampleSections, false);
+        $versionService->publishDraftVersion($closedUnlisted);
+        $versionService->closeForm($closedUnlisted->fresh());
+        $closedUnlisted->refresh();
+
+        $this->actingAs($this->marketing);
+
+        // 1. Tabel menampilkan path web (/formulir/...), badge Katalog Web, filter, aksi cepat, dan ActionGroup sekunder.
+        Livewire::test(ListDynamicForms::class)
+            ->assertSee('/formulir/survei-katalog-publik')
+            ->assertSee('/formulir/survei-qr-saja-ditutup')
+            ->assertDontSee('/api/v1/cms/forms/')
+            ->assertSee('Katalog Publik')
+            ->assertSee('Link / QR Saja')
+            ->assertCanRenderTableColumn('title')
+            ->assertCanRenderTableColumn('status')
+            ->assertCanRenderTableColumn('is_public_listed')
+            ->assertCanRenderTableColumn('submissions_count')
+            ->assertCanNotRenderTableColumn('mode')
+            ->assertActionVisible(TestAction::make('analytics')->table($publishedListed))
+            ->assertActionVisible(TestAction::make('shareLink')->table($publishedListed))
+            ->assertActionVisible(TestAction::make('shareLink')->table($closedUnlisted))
+            ->assertActionHidden(TestAction::make('shareLink')->table($draftForm))
+            ->assertActionVisible(TestAction::make('preview')->table($publishedListed))
+            ->assertActionVisible(TestAction::make('close')->table($publishedListed))
+            ->assertActionVisible(TestAction::make('reopen')->table($closedUnlisted))
+            ->assertActionVisible(TestAction::make('edit')->table($publishedListed))
+            ->filterTable('is_public_listed', true)
+            ->assertCanSeeTableRecords([$publishedListed])
+            ->assertCanNotSeeTableRecords([$closedUnlisted, $draftForm])
+            ->filterTable('is_public_listed', false)
+            ->assertCanSeeTableRecords([$closedUnlisted, $draftForm])
+            ->assertCanNotSeeTableRecords([$publishedListed]);
+
+        // 2. Modal Link & QR Code dari tabel menampilkan dua link, status katalog, preview QR, dan unduhan PNG/SVG.
+        Livewire::test(ListDynamicForms::class)
+            ->mountAction(TestAction::make('shareLink')->table($publishedListed))
+            ->assertMountedActionModalSee('http://rs-elisabeth-web.test/formulir/survei-katalog-publik')
+            ->assertMountedActionModalSee('http://rs-elisabeth-web.test/formulir/survei-katalog-publik?source=qr_barcode')
+            ->assertMountedActionModalSee('Katalog Publik')
+            ->assertMountedActionModalSee('web_public')
+            ->assertMountedActionModalSee('qr_barcode')
+            ->assertMountedActionModalSeeHtml('data:image/svg+xml;base64,')
+            ->assertMountedActionModalSeeHtml("copyLink('public', \$refs.publicUrlInput, \$el)")
+            ->assertMountedActionModalSeeHtml("copyLink('qr', \$refs.qrUrlInput, \$el)")
+            ->callAction('downloadPng')
+            ->assertFileDownloaded('qr-survei-katalog-publik.png')
+            ->assertActionMounted(TestAction::make('shareLink')->table($publishedListed))
+            ->callAction('downloadSvg')
+            ->assertFileDownloaded('qr-survei-katalog-publik.svg')
+            ->unmountAction()
+            ->assertActionNotMounted();
+
+        // 3. Halaman View & Edit menampilkan Path Web, status Katalog Web, dan header action Link & QR Code (tersembunyi di Draft).
+        $this->get(DynamicFormResource::getUrl('view', ['record' => $publishedListed]))
+            ->assertOk()
+            ->assertSee('/formulir/survei-katalog-publik')
+            ->assertSee('Katalog Publik')
+            ->assertDontSee('Slug API');
+
+        Livewire::test(ViewDynamicForm::class, ['record' => $publishedListed->getRouteKey()])
+            ->assertActionVisible('shareLink')
+            ->mountAction('shareLink')
+            ->assertMountedActionModalSee('http://rs-elisabeth-web.test/formulir/survei-katalog-publik?source=qr_barcode')
+            ->callAction('downloadPng')
+            ->assertFileDownloaded('qr-survei-katalog-publik.png')
+            ->callAction('downloadSvg')
+            ->assertFileDownloaded('qr-survei-katalog-publik.svg')
+            ->unmountAction()
+            ->assertActionNotMounted();
+
+        Livewire::test(ViewDynamicForm::class, ['record' => $draftForm->getRouteKey()])
+            ->assertActionHidden('shareLink');
+
+        Livewire::test(EditDynamicForm::class, ['record' => $closedUnlisted->getRouteKey()])
+            ->assertActionVisible('shareLink')
+            ->mountAction('shareLink')
+            ->assertMountedActionModalSee('Link / QR Saja')
+            ->assertMountedActionModalSee('Status formulir saat ini Ditutup')
+            ->callAction('downloadPng')
+            ->assertFileDownloaded('qr-survei-qr-saja-ditutup.png');
+
+        Livewire::test(EditDynamicForm::class, ['record' => $draftForm->getRouteKey()])
+            ->assertActionHidden('shareLink');
+
+        // 4. Fallback ke WEB_FRONTEND_WEBHOOK_URL saat WEB_FRONTEND_PUBLIC_URL kosong & error state saat keduanya kosong.
+        Config::set('web_frontend.public_url', null);
+        Config::set('web_frontend.webhook_url', 'https://portal.rs-elisabeth.test:8443/api/internal/webhook/cache-invalidate');
+
+        Livewire::test(ListDynamicForms::class)
+            ->mountAction(TestAction::make('shareLink')->table($publishedListed))
+            ->assertMountedActionModalSee('https://portal.rs-elisabeth.test:8443/formulir/survei-katalog-publik')
+            ->assertMountedActionModalSee('https://portal.rs-elisabeth.test:8443/formulir/survei-katalog-publik?source=qr_barcode');
+
+        Config::set('web_frontend.public_url', null);
+        Config::set('web_frontend.webhook_url', null);
+
+        Livewire::test(ListDynamicForms::class)
+            ->mountAction(TestAction::make('shareLink')->table($publishedListed))
+            ->assertMountedActionModalSee('URL Publik Web Belum Dikonfigurasi.')
+            ->assertActionHidden('downloadPng')
+            ->assertActionHidden('downloadSvg');
+
+        Config::set('web_frontend.public_url', 'http://rs-elisabeth-web.test');
+
+        // 5. RBAC: user dengan View:DynamicForm (tanpa Update) tetap bisa membuka Link & QR Code; tanpa View:DynamicForm ditolak.
+        $viewerRole = Role::findOrCreate('form_share_viewer', 'web');
+        $viewerRole->syncPermissions(['ViewAny:DynamicForm', 'View:DynamicForm']);
+        $viewerUser = User::factory()->create(['must_change_password' => false]);
+        $viewerUser->assignRole($viewerRole);
+        $this->switchUser($viewerUser);
+
+        Livewire::test(ListDynamicForms::class)
+            ->assertActionVisible(TestAction::make('shareLink')->table($publishedListed))
+            ->callAction([
+                TestAction::make('shareLink')->table($publishedListed),
+                TestAction::make('downloadPng'),
+            ])
+            ->assertFileDownloaded('qr-survei-katalog-publik.png');
+
+        $listOnlyRole = Role::findOrCreate('form_list_only_no_view', 'web');
+        $listOnlyRole->syncPermissions(['ViewAny:DynamicForm']);
+        $listOnlyUser = User::factory()->create(['must_change_password' => false]);
+        $listOnlyUser->assignRole($listOnlyRole);
+        $this->switchUser($listOnlyUser);
+
+        Livewire::test(ListDynamicForms::class)
+            ->assertActionHidden(TestAction::make('analytics')->table($publishedListed))
+            ->assertActionHidden(TestAction::make('shareLink')->table($publishedListed))
+            ->mountAction(TestAction::make('shareLink')->table($publishedListed))
+            ->assertActionNotMounted();
+
+        $this->switchUser($this->marketing);
+        Livewire::test(ListDynamicForms::class)
+            ->mountAction(TestAction::make('shareLink')->table($draftForm))
+            ->assertActionNotMounted();
+
+        // 6. Form yang di-soft-delete menyembunyikan Link & QR Code & Analitik, namun tetap bisa diakses Restore/Force Delete di ActionGroup oleh super_admin.
+        $this->switchUser($this->superAdmin);
+        $publishedListed->delete();
+
+        Livewire::test(ListDynamicForms::class)
+            ->filterTable('trashed', 'only')
+            ->assertActionHidden(TestAction::make('analytics')->table($publishedListed))
+            ->assertActionHidden(TestAction::make('shareLink')->table($publishedListed))
+            ->assertActionVisible(TestAction::make('restore')->table($publishedListed))
+            ->assertActionVisible(TestAction::make('forceDelete')->table($publishedListed));
     }
 
     private function switchUser(User $user): void

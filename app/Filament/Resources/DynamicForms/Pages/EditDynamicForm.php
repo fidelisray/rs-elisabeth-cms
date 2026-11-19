@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\DynamicForms\Pages;
 
+use App\Filament\Resources\DynamicForms\Actions\DynamicFormShareAction;
 use App\Filament\Resources\DynamicForms\DynamicFormResource;
 use App\Filament\Resources\DynamicForms\Schemas\DynamicFormWizardSchema;
 use App\Livewire\DynamicFormLivePreview;
@@ -59,6 +60,9 @@ class EditDynamicForm extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            DynamicFormShareAction::make()
+                ->record(fn (): DynamicForm => $this->getRecord()),
+
             Action::make('preview')
                 ->label('Pratinjau Interaktif')
                 ->icon(Heroicon::OutlinedEye)
@@ -191,6 +195,7 @@ class EditDynamicForm extends EditRecord
                 'ends_at' => $data['ends_at'] ?? null,
                 'max_responses' => $data['max_responses'] ?? null,
                 'allow_multiple_submissions' => (bool) ($data['allow_multiple_submissions'] ?? true),
+                'is_public_listed' => (bool) ($data['is_public_listed'] ?? false),
                 'ticket_prefix' => filled($data['ticket_prefix'] ?? null) ? strtoupper((string) $data['ticket_prefix']) : 'DFB',
                 'confirmation_message' => $data['confirmation_message'] ?? null,
                 'closed_message' => $data['closed_message'] ?? null,
