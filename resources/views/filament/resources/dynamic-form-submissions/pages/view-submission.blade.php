@@ -229,9 +229,16 @@
                                                 </p>
                                             </div>
                                             @if (! empty($fileItem['download_url']))
-                                                <a class="rse-dfs-download-btn" href="{{ $fileItem['download_url'] }}">
-                                                    Unduh Lampiran
-                                                </a>
+                                                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;">
+                                                    @if (! empty($fileItem['preview_url']))
+                                                        <a class="rse-dfs-download-btn" href="{{ $fileItem['preview_url'] }}" target="_blank" rel="noopener noreferrer">
+                                                            Lihat
+                                                        </a>
+                                                    @endif
+                                                    <a class="rse-dfs-download-btn" href="{{ $fileItem['download_url'] }}">
+                                                        Unduh Lampiran
+                                                    </a>
+                                                </div>
                                             @else
                                                 <span style="font-size: 0.75rem; color: var(--rse-s-text-secondary); font-weight: 600;">
                                                     {{ $canDownload ? 'Berkas tidak tersedia' : 'Akses unduh terbatas' }}

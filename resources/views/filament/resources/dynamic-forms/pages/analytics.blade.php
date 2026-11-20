@@ -404,9 +404,16 @@
                                                 <td>{{ $fileItem['submitted_at']?->format('d M Y H:i') ?? '-' }}</td>
                                                 <td>
                                                     @if ($canViewSubmissions && ! empty($fileItem['upload_id']))
-                                                        <a class="rse-dfa-link" href="{{ route('filament.admin.dynamic-forms.uploads.download', ['upload' => $fileItem['upload_id']]) }}">
-                                                            Unduh Berkas
-                                                        </a>
+                                                        <div style="display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;">
+                                                            @if (! empty($fileItem['can_inline_preview']))
+                                                                <a class="rse-dfa-link" href="{{ route('filament.admin.dynamic-forms.uploads.download', ['upload' => $fileItem['upload_id'], 'inline' => 1]) }}" target="_blank" rel="noopener noreferrer">
+                                                                    Lihat
+                                                                </a>
+                                                            @endif
+                                                            <a class="rse-dfa-link" href="{{ route('filament.admin.dynamic-forms.uploads.download', ['upload' => $fileItem['upload_id']]) }}">
+                                                                Unduh Berkas
+                                                            </a>
+                                                        </div>
                                                     @else
                                                         <span>Akses Terbatas</span>
                                                     @endif
