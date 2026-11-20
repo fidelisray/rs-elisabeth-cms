@@ -8,7 +8,7 @@ use App\Jobs\SendCacheInvalidationWebhookJob;
 use App\Models\FacilityService;
 use App\Models\RoomFacility;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
@@ -21,7 +21,7 @@ use Tests\Traits\GeneratesHmacHeaders;
 
 class LocalizedListSortingTest extends TestCase
 {
-    use GeneratesHmacHeaders, RefreshDatabase;
+    use GeneratesHmacHeaders, RefreshDatabase, SeedsTestRolesAndUsers;
 
     protected function setUp(): void
     {
@@ -117,7 +117,7 @@ class LocalizedListSortingTest extends TestCase
     #[DataProvider('modules')]
     public function test_actual_reorder_invalidates_both_locales_and_sends_one_webhook(string $model, string $path, string $cache, string $page): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
         $user = User::where('email', 'marketing@rs-elisabeth.com')->firstOrFail();
         $user->update(['must_change_password' => false]);
         $this->actingAs($user);

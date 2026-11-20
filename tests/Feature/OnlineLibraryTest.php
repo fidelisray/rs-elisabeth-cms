@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Filament\Resources\OnlineLibraries\Pages\CreateOnlineLibrary;
 use App\Models\OnlineLibrary;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
@@ -16,6 +16,7 @@ use Tests\TestCase;
 class OnlineLibraryTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     protected function setUp(): void
     {
@@ -73,7 +74,7 @@ class OnlineLibraryTest extends TestCase
 
     private function actAsMarketing(): User
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
 
         $user = User::where('email', 'marketing@rs-elisabeth.com')->first();
         $user->update(['must_change_password' => false]);

@@ -11,7 +11,7 @@ use App\Models\FacilityService;
 use App\Models\Role;
 use App\Models\RoomFacility;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
@@ -25,6 +25,7 @@ use Tests\TestCase;
 class MarketingReorderTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     private User $marketing;
 
@@ -35,7 +36,7 @@ class MarketingReorderTest extends TestCase
         config(['filesystems.media_disk' => 'media-test']);
         Storage::fake('media-test');
 
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
         $this->marketing = User::where('email', 'marketing@rs-elisabeth.com')->first();
         $this->marketing->update(['must_change_password' => false]);
         $this->actingAs($this->marketing);

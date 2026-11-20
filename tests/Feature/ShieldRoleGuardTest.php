@@ -8,7 +8,7 @@ use App\Models\User;
 use BezhanSalleh\FilamentShield\Resources\Roles\Pages\EditRole;
 use BezhanSalleh\FilamentShield\Resources\Roles\Pages\ListRoles;
 use BezhanSalleh\FilamentShield\Support\Utils;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -21,6 +21,7 @@ use Tests\TestCase;
 class ShieldRoleGuardTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     private User $admin;
 
@@ -28,7 +29,7 @@ class ShieldRoleGuardTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
         $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])->assertExitCode(0);
 
         $this->admin = User::where('email', 'admin@rs-elisabeth.com')->first();

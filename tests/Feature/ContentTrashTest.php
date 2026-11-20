@@ -15,7 +15,7 @@ use App\Models\News;
 use App\Models\Promotion;
 use App\Models\RoomFacility;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +32,7 @@ use Tests\TestCase;
 class ContentTrashTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     protected function setUp(): void
     {
@@ -39,7 +40,7 @@ class ContentTrashTest extends TestCase
         Bus::fake();
         config(['filesystems.media_disk' => 'media-test']);
         Storage::fake('media-test');
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
         $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])->assertExitCode(0);
     }
 

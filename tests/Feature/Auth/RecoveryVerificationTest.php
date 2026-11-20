@@ -9,7 +9,7 @@ use App\Models\Role;
 use App\Models\SuperAdminRecoveryCode;
 use App\Models\User;
 use App\Services\RecoveryCodeService;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -24,6 +24,7 @@ use Tests\TestCase;
 class RecoveryVerificationTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     private function admin(): User
     {
@@ -175,7 +176,7 @@ class RecoveryVerificationTest extends TestCase
 
     public function test_cli_init_normalizes_email_and_mixed_case_recovery_logs_in(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
         $this->assertSame(0, Artisan::call('app:super-admin:init', ['--email' => '  Admin@Example.TEST  ']));
         preg_match('/RECOVERY_CODE_1=([A-Z2-9-]+)/', Artisan::output(), $matches);
         $user = User::where('email', 'admin@example.test')->firstOrFail();
@@ -200,7 +201,7 @@ class RecoveryVerificationTest extends TestCase
 
     public function test_user_form_reports_duplicate_normalized_email_as_validation_error(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
         $user = $this->admin();
         $this->actingAs($user);
         $marketing = Role::findByName('marketing', 'web');

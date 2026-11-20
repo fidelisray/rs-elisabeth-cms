@@ -9,13 +9,13 @@ use App\Models\AuditLog;
 use App\Models\SuperAdminRecoveryCode;
 use App\Models\User;
 use App\Services\RecoveryCodeService;
-use Database\Seeders\DatabaseSeeder;
-use Database\Seeders\RoleAndPermissionSeeder;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Livewire;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Tests\TestCase;
 
 /**
@@ -24,13 +24,14 @@ use Tests\TestCase;
 class RecoveryCodeTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     /**
      * @return array{0: User, 1: list<string>}
      */
     private function initSuperAdminWithCodes(): array
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
 
         Artisan::call('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com']);
         $output = Artisan::output();
@@ -47,7 +48,7 @@ class RecoveryCodeTest extends TestCase
 
     public function test_init_super_admin_prints_and_stores_ten_hashed_recovery_codes(): void
     {
-        $this->seed(RoleAndPermissionSeeder::class);
+        $this->seed(PermissionSeeder::class);
 
         Artisan::call('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com']);
         $output = Artisan::output();

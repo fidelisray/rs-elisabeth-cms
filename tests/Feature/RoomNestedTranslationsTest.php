@@ -8,7 +8,7 @@ use App\Jobs\SendCacheInvalidationWebhookJob;
 use App\Models\RoomFacility;
 use App\Models\User;
 use App\Support\RoomNestedContent;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
@@ -24,7 +24,7 @@ use Tests\Traits\GeneratesHmacHeaders;
 
 class RoomNestedTranslationsTest extends TestCase
 {
-    use GeneratesHmacHeaders, RefreshDatabase;
+    use GeneratesHmacHeaders, RefreshDatabase, SeedsTestRolesAndUsers;
 
     protected function setUp(): void
     {
@@ -56,7 +56,7 @@ class RoomNestedTranslationsTest extends TestCase
 
     private function actAsMarketing(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
         $user = User::where('email', 'marketing@rs-elisabeth.com')->firstOrFail();
         $user->update(['must_change_password' => false]);
         $this->actingAs($user);

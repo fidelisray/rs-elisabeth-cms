@@ -7,7 +7,7 @@ use App\Filament\Resources\News\Pages\ListNews;
 use App\Models\FacilityService;
 use App\Models\News;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -18,13 +18,14 @@ use Tests\TestCase;
 class ContentTranslationFormTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     protected function setUp(): void
     {
         parent::setUp();
         config(['filesystems.media_disk' => 'media-test']);
         Storage::fake('media-test');
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
         $marketing = User::where('email', 'marketing@rs-elisabeth.com')->firstOrFail();
         $marketing->update(['must_change_password' => false]);
         $this->actingAs($marketing);

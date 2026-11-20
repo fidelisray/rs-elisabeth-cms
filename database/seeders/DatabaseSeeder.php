@@ -2,41 +2,15 @@
 
 namespace Database\Seeders;
 
-use App\Models\Article;
-use App\Models\BannerPromotion;
-use App\Models\FacilityService;
-use App\Models\News;
-use App\Models\Promotion;
-use App\Models\RoomFacility;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    // Hapus WithoutModelEvents agar Observer (created_by/updated_by) tetap berjalan
-    // use WithoutModelEvents;
-
     /**
      * Seed the application's database.
      */
     public function run(): void
     {
-        // 1. Buat dulu akun default (AdminUserSeeder tidak memasang role apa pun).
-        $this->call(AdminUserSeeder::class);
-
-        // 2. Buat role/permission, LALU pasang role ke akun yang sudah ada.
-        //    Urutan ini menjamin user sudah tersedia saat role di-assign.
-        $this->call(RoleAndPermissionSeeder::class);
-
-        // Data palsu (Faker) hanya di-generate jika kita berada di environment 'local'.
-        // Di mode production (--no-dev Docker), Faker tidak diinstall demi keamanan & performa.
-        if (app()->environment('local')) {
-            News::factory(10)->create();
-            Promotion::factory(5)->create();
-            Article::factory(15)->create();
-            FacilityService::factory(8)->create();
-            RoomFacility::factory(12)->create();
-            BannerPromotion::factory(3)->create();
-        }
+        $this->call(PermissionSeeder::class);
     }
 }

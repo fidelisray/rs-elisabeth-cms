@@ -10,8 +10,9 @@ use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 /**
- * MVP-1.1: seeder berjalan setiap rilis dan tidak boleh menimpa perubahan
- * permission yang dibuat admin lewat UI Shield.
+ * MVP-1.1: PermissionSeeder berjalan setiap rilis, hanya mengisi permissions,
+ * tidak membuat role/akun, tidak menimpa permission role buatan admin, dan
+ * secara additive menyinkronkan permission baru ke role super_admin yang sudah ada.
  */
 class SeederPermissionPreservationTest extends TestCase
 {
@@ -22,72 +23,23 @@ class SeederPermissionPreservationTest extends TestCase
         $this->seed(DatabaseSeeder::class);
     }
 
-    public function test_fresh_seed_gives_marketing_its_default_permissions(): void
+    public function test_fresh_seed_creates_expected_permissions_without_creating_roles(): void
     {
         $this->seedAll();
 
-        $marketing = Role::findByName('marketing', 'web');
-
-        // 8 modul konten x (ViewAny, View, Create, Update, Delete, DeleteAny) = 48,
-        // + Reorder untuk 3 modul, + View untuk 3 widget = 54,
-        // + Doctor: ViewAny, View, Update = 3; + baca Feedback/Kuesioner/DynamicFormSubmission = 6 -> 63.
-        $this->assertTrue($marketing->hasPermissionTo('Update:News'));
-        $this->assertTrue($marketing->hasPermissionTo('Delete:News'));
-        $this->assertTrue($marketing->hasPermissionTo('DeleteAny:News'));
-        $this->assertTrue($marketing->hasPermissionTo('Update:OnlineLibrary'));
-        $this->assertTrue($marketing->hasPermissionTo('Update:DynamicForm'));
-        $this->assertTrue($marketing->hasPermissionTo('View:DynamicFormSubmission'));
-        $this->assertCount(63, $marketing->permissions);
-    }
-
-    public function test_marketing_can_only_view_and_update_doctor_profiles(): void
-    {
-        $this->seedAll();
-
-        $marketing = Role::findByName('marketing', 'web');
-
-        foreach (['ViewAny', 'View', 'Update'] as $action) {
-            $this->assertTrue($marketing->hasPermissionTo("{$action}:Doctor"), "Marketing harus memiliki {$action}:Doctor.");
-        }
-
-        foreach (['Create', 'Delete', 'DeleteAny', 'Restore', 'ForceDelete'] as $action) {
-            $this->assertFalse($marketing->hasPermissionTo("{$action}:Doctor"), "Marketing tidak boleh memiliki {$action}:Doctor.");
-        }
-    }
-
-    public function test_marketing_never_receives_restore_or_force_delete(): void
-    {
-        $this->seedAll();
-
-        $marketing = Role::findByName('marketing', 'web');
-
-        foreach (['News', 'Article', 'Promotion', 'BannerPromotion', 'FacilityService', 'RoomFacility'] as $subject) {
-            foreach (['Restore', 'RestoreAny', 'ForceDelete', 'ForceDeleteAny'] as $action) {
-                $this->assertFalse(
-                    $marketing->hasPermissionTo("{$action}:{$subject}"),
-                    "Marketing tidak boleh memiliki {$action}:{$subject}."
-                );
-            }
-        }
-    }
-
-    public function test_super_admin_holds_restore_and_force_delete_for_content(): void
-    {
-        $this->seedAll();
-
-        $superAdmin = Role::findByName('super_admin', 'web');
-
-        foreach (['News', 'Article', 'Promotion', 'BannerPromotion', 'FacilityService', 'RoomFacility'] as $subject) {
-            $this->assertTrue($superAdmin->hasPermissionTo("Restore:{$subject}"));
-            $this->assertTrue($superAdmin->hasPermissionTo("ForceDelete:{$subject}"));
-        }
+        $this->assertSame(0, Role::count());
+        $this->assertTrue(Permission::where('name', 'Update:News')->exists());
+        $this->assertTrue(Permission::where('name', 'Restore:News')->exists());
+        $this->assertTrue(Permission::where('name', 'ForceDelete:News')->exists());
+        $this->assertTrue(Permission::where('name', 'View:FeedbackSectionWidget')->exists());
+        $this->assertTrue(Permission::where('name', 'Update:DynamicFormSubmission')->exists());
     }
 
     public function test_custom_permission_added_by_admin_survives_reseed(): void
     {
         $this->seedAll();
 
-        $marketing = Role::findByName('marketing', 'web');
+        $marketing = Role::findOrCreate('marketing', 'web');
         $marketing->givePermissionTo('Delete:News');
 
         $this->seedAll();
@@ -102,7 +54,8 @@ class SeederPermissionPreservationTest extends TestCase
     {
         $this->seedAll();
 
-        $marketing = Role::findByName('marketing', 'web');
+        $marketing = Role::findOrCreate('marketing', 'web');
+        $marketing->givePermissionTo(['ViewAny:Article', 'Create:Article']);
         $marketing->revokePermissionTo('Create:Article');
 
         $this->seedAll();
@@ -113,21 +66,22 @@ class SeederPermissionPreservationTest extends TestCase
         );
     }
 
-    public function test_missing_role_is_recreated_with_default_permissions(): void
+    public function test_deleted_custom_role_is_not_recreated_by_reseed(): void
     {
         $this->seedAll();
 
-        Role::findByName('marketing', 'web')->delete();
+        $marketing = Role::findOrCreate('marketing', 'web');
+        $marketing->delete();
 
         $this->seedAll();
 
-        $marketing = Role::findByName('marketing', 'web');
-        $this->assertCount(63, $marketing->permissions);
+        $this->assertFalse(Role::where('name', 'marketing')->exists());
     }
 
     public function test_new_permission_is_added_to_existing_super_admin(): void
     {
         $this->seedAll();
+        $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])->assertExitCode(0);
 
         // Permission baru muncul (mis. modul baru) setelah super_admin sudah ada.
         Permission::findOrCreate('View:ModulBaru', 'web');
@@ -136,44 +90,43 @@ class SeederPermissionPreservationTest extends TestCase
 
         $this->assertTrue(
             Role::findByName('super_admin', 'web')->fresh()->hasPermissionTo('View:ModulBaru'),
-            'super_admin harus otomatis mendapat permission baru.'
+            'super_admin harus otomatis mendapat permission baru secara additive.'
         );
     }
 
-    public function test_super_admin_always_has_every_permission(): void
+    public function test_super_admin_always_has_every_permission_after_init_and_reseed(): void
     {
         $this->seedAll();
+        $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])->assertExitCode(0);
 
         $superAdmin = Role::findByName('super_admin', 'web');
 
-        $this->assertSame(Permission::count(), $superAdmin->permissions()->count());
+        $this->assertSame(Permission::where('guard_name', 'web')->count(), $superAdmin->permissions()->count());
+
+        $this->seedAll();
+        $this->seedAll();
+
+        $this->assertSame(Permission::where('guard_name', 'web')->count(), $superAdmin->fresh()->permissions()->count());
     }
 
-    public function test_reseed_twice_does_not_change_permission_counts(): void
+    public function test_reseed_twice_does_not_duplicate_permissions(): void
     {
         $this->seedAll();
-        $before = [
-            'marketing' => Role::findByName('marketing', 'web')->permissions()->count(),
-            'staff' => Role::findByName('Staff IT', 'web')->permissions()->count(),
-            'super' => Role::findByName('super_admin', 'web')->permissions()->count(),
-        ];
+        $before = Permission::count();
 
         $this->seedAll();
         $this->seedAll();
 
-        $this->assertSame($before['marketing'], Role::findByName('marketing', 'web')->permissions()->count());
-        $this->assertSame($before['staff'], Role::findByName('Staff IT', 'web')->permissions()->count());
-        $this->assertSame($before['super'], Role::findByName('super_admin', 'web')->permissions()->count());
+        $this->assertSame($before, Permission::count());
     }
 
     public function test_renamed_widget_permissions_keep_role_and_direct_user_grants(): void
     {
         $this->seedAll();
         $legacy = Permission::findOrCreate('View:FeedbackStatsWidget', 'web');
-        $marketing = Role::findByName('marketing', 'web');
-        $marketing->revokePermissionTo('View:FeedbackSectionWidget');
+        $marketing = Role::findOrCreate('marketing', 'web');
         $marketing->givePermissionTo($legacy);
-        $user = User::where('email', 'it@rs-elisabeth.com')->firstOrFail();
+        $user = User::factory()->create(['email' => 'it@rs-elisabeth.com']);
         $user->givePermissionTo($legacy);
 
         $this->seedAll();
@@ -189,7 +142,8 @@ class SeederPermissionPreservationTest extends TestCase
     public function test_widget_reconciliation_command_does_not_grant_access_without_a_legacy_grant(): void
     {
         $this->seedAll();
-        $marketing = Role::findByName('marketing', 'web');
+        $marketing = Role::findOrCreate('marketing', 'web');
+        $marketing->givePermissionTo('View:QuestionnaireSectionWidget');
         $marketing->revokePermissionTo('View:QuestionnaireSectionWidget');
         $this->artisan('app:permissions:reconcile-widgets')->assertSuccessful();
         $this->assertFalse($marketing->fresh()->hasPermissionTo('View:QuestionnaireSectionWidget'));

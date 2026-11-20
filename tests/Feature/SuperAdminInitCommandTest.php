@@ -2,34 +2,43 @@
 
 namespace Tests\Feature;
 
+use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
-use Database\Seeders\RoleAndPermissionSeeder;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 /**
  * MVP-1.3 (K-6, K-18): super_admin dibuat oleh command dengan password acak
- * yang dicetak sekali. Tidak ada password tetap di kode.
+ * yang dicetak sekali. Tidak ada password tetap di kode, dan seeder tidak
+ * membuat akun maupun role.
  */
 class SuperAdminInitCommandTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function seedRolesOnly(): void
+    private function seedPermissionsOnly(): void
     {
-        $this->seed(RoleAndPermissionSeeder::class);
+        $this->seed(PermissionSeeder::class);
     }
 
-    public function test_creates_super_admin_with_random_password_and_forced_change(): void
+    public function test_creates_super_admin_role_and_user_with_random_password_and_forced_change(): void
     {
-        $this->seedRolesOnly();
+        $this->seedPermissionsOnly();
+
+        $this->assertFalse(Role::where('name', Role::SUPER_ADMIN)->exists());
 
         $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com', '--name' => 'Super Admin'])
             ->assertExitCode(0);
+
+        $role = Role::where('name', Role::SUPER_ADMIN)->where('guard_name', 'web')->first();
+        $this->assertNotNull($role);
+        $this->assertSame(Permission::where('guard_name', 'web')->count(), $role->permissions()->count());
 
         $admin = User::where('email', 'admin@rs-elisabeth.com')->first();
 
@@ -42,14 +51,14 @@ class SuperAdminInitCommandTest extends TestCase
 
     public function test_prints_the_password_once_and_it_actually_works(): void
     {
-        $this->seedRolesOnly();
+        $this->seedPermissionsOnly();
 
         Artisan::call('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com']);
         $output = Artisan::output();
 
         $this->assertStringContainsString('hanya ditampilkan SEKALI', $output);
 
-        preg_match('/PASSWORD=(\S+)/', $output, $m);
+        preg_match('/PASSWORD\s*:\s*(\S+)/', $output, $m);
         $this->assertNotEmpty($m[1] ?? null, 'Password harus tercetak di output.');
 
         $admin = User::where('email', 'admin@rs-elisabeth.com')->first();
@@ -59,10 +68,10 @@ class SuperAdminInitCommandTest extends TestCase
 
     public function test_password_is_random_between_runs(): void
     {
-        $this->seedRolesOnly();
+        $this->seedPermissionsOnly();
 
         Artisan::call('app:super-admin:init', ['--email' => 'a@rs-elisabeth.com']);
-        preg_match('/PASSWORD=(\S+)/', Artisan::output(), $first);
+        preg_match('/PASSWORD\s*:\s*(\S+)/', Artisan::output(), $first);
 
         // Akun super_admin tidak boleh dihapus (K-3). Instalasi baru disimulasikan dengan
         // mengosongkan tabel lewat query massal, yang memang tidak diproteksi penjaga.
@@ -70,14 +79,14 @@ class SuperAdminInitCommandTest extends TestCase
         DB::table('users')->delete();
 
         Artisan::call('app:super-admin:init', ['--email' => 'a@rs-elisabeth.com']);
-        preg_match('/PASSWORD=(\S+)/', Artisan::output(), $second);
+        preg_match('/PASSWORD\s*:\s*(\S+)/', Artisan::output(), $second);
 
         $this->assertNotSame($first[1], $second[1]);
     }
 
     public function test_second_run_fails_without_changing_anything(): void
     {
-        $this->seedRolesOnly();
+        $this->seedPermissionsOnly();
 
         $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])->assertExitCode(0);
         $before = User::where('email', 'admin@rs-elisabeth.com')->first();
@@ -92,31 +101,34 @@ class SuperAdminInitCommandTest extends TestCase
         $this->assertNull(User::where('email', 'lain@rs-elisabeth.com')->first());
     }
 
-    public function test_fails_if_roles_have_not_been_seeded(): void
+    public function test_fails_if_permissions_have_not_been_seeded(): void
     {
         $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])
             ->expectsOutputToContain('db:seed')
             ->assertExitCode(1);
 
         $this->assertSame(0, User::count());
+        $this->assertSame(0, Role::count());
     }
 
     public function test_rejects_invalid_email(): void
     {
-        $this->seedRolesOnly();
+        $this->seedPermissionsOnly();
 
         $this->artisan('app:super-admin:init', ['--email' => 'bukan-email'])
             ->assertExitCode(1);
 
-        $this->assertSame(0, User::role('super_admin')->count());
+        $this->assertSame(0, User::count());
+        $this->assertSame(0, Role::count());
     }
 
-    public function test_seeder_never_creates_super_admin_or_known_password(): void
+    public function test_seeder_never_creates_users_or_roles(): void
     {
         $this->seed(DatabaseSeeder::class);
 
-        $this->assertSame(0, User::role('super_admin')->count(), 'Seeder tidak boleh membuat super_admin.');
-        $this->assertNull(User::where('email', 'admin@rs-elisabeth.com')->first());
+        $this->assertSame(0, User::count(), 'Seeder tidak boleh membuat akun apa pun.');
+        $this->assertSame(0, Role::count(), 'Seeder tidak boleh membuat role apa pun.');
+        $this->assertGreaterThan(0, Permission::count(), 'Seeder harus mengisi tabel permissions.');
     }
 
     public function test_no_known_super_admin_password_remains_in_seeders(): void
@@ -132,17 +144,5 @@ class SuperAdminInitCommandTest extends TestCase
         }
 
         $this->assertStringNotContainsString('admin@123456', $source);
-    }
-
-    public function test_marketing_and_it_accounts_use_default_password_and_must_change_it(): void
-    {
-        $this->seed(DatabaseSeeder::class);
-
-        foreach (['marketing@rs-elisabeth.com', 'it@rs-elisabeth.com'] as $email) {
-            $user = User::where('email', $email)->first();
-
-            $this->assertTrue(Hash::check('123456', $user->password), "$email harus memakai password default K-9.");
-            $this->assertTrue($user->must_change_password, "$email wajib ganti password.");
-        }
     }
 }

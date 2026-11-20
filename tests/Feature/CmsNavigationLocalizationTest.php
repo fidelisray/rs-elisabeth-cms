@@ -30,7 +30,7 @@ use App\Models\Role;
 use App\Models\RoomFacility;
 use App\Models\User;
 use BezhanSalleh\FilamentShield\Resources\Roles\RoleResource;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
@@ -47,6 +47,7 @@ use Tests\TestCase;
 class CmsNavigationLocalizationTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     private User $superAdmin;
 
@@ -58,7 +59,7 @@ class CmsNavigationLocalizationTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
         $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])->assertExitCode(0);
 
         $this->superAdmin = User::where('email', 'admin@rs-elisabeth.com')->firstOrFail();

@@ -5,7 +5,7 @@ namespace Tests\Feature\Api\Cms;
 use App\Filament\Resources\Promotions\Pages\CreatePromotion;
 use App\Models\Promotion;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
@@ -22,7 +22,7 @@ use Tests\Traits\GeneratesHmacHeaders;
  */
 class PromotionDateRuleTest extends TestCase
 {
-    use GeneratesHmacHeaders, RefreshDatabase;
+    use GeneratesHmacHeaders, RefreshDatabase, SeedsTestRolesAndUsers;
 
     protected function setUp(): void
     {
@@ -219,7 +219,7 @@ class PromotionDateRuleTest extends TestCase
         config(['filesystems.media_disk' => 'media-test']);
         Storage::fake('media-test');
 
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
 
         $user = User::where('email', 'marketing@rs-elisabeth.com')->first();
         $user->update(['must_change_password' => false]);

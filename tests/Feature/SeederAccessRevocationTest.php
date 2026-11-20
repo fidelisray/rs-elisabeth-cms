@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -10,9 +11,9 @@ use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 /**
- * B1/B7: seeder berjalan setiap deploy, sehingga tidak boleh membatalkan
- * keputusan akses yang dibuat admin dan tidak boleh melanggar aturan satu
- * super_admin.
+ * B1/B7: seeder berjalan setiap deploy, sehingga tidak boleh membuat akun/role
+ * default, tidak boleh membatalkan keputusan akses yang dibuat admin, dan tidak
+ * boleh melanggar aturan satu super_admin.
  */
 class SeederAccessRevocationTest extends TestCase
 {
@@ -23,9 +24,6 @@ class SeederAccessRevocationTest extends TestCase
         $this->seed(DatabaseSeeder::class);
     }
 
-    /**
-     * super_admin dibuat lewat command (K-6), bukan seeder.
-     */
     private function initSuperAdmin(): User
     {
         $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])->assertExitCode(0);
@@ -33,38 +31,40 @@ class SeederAccessRevocationTest extends TestCase
         return User::where('email', 'admin@rs-elisabeth.com')->first();
     }
 
-    public function test_fresh_seed_assigns_default_roles_to_new_accounts(): void
+    public function test_fresh_seed_creates_no_users_and_no_roles(): void
     {
         $this->seedAll();
-        $this->initSuperAdmin();
 
-        $this->assertTrue(User::where('email', 'admin@rs-elisabeth.com')->first()->hasRole('super_admin'));
-        $this->assertTrue(User::where('email', 'marketing@rs-elisabeth.com')->first()->hasRole('marketing'));
-        $this->assertTrue(User::where('email', 'it@rs-elisabeth.com')->first()->hasRole('Staff IT'));
+        $this->assertSame(0, User::count());
+        $this->assertSame(0, Role::count());
     }
 
-    public function test_revoked_role_of_default_account_does_not_come_back_after_reseed(): void
+    public function test_revoked_role_of_staff_account_does_not_come_back_after_reseed(): void
     {
         $this->seedAll();
 
-        $marketing = User::where('email', 'marketing@rs-elisabeth.com')->first();
-        $marketing->syncRoles([]);
+        $marketingRole = Role::findOrCreate('marketing', 'web');
+        $staff = User::factory()->create(['email' => 'marketing@rs-elisabeth.com']);
+        $staff->assignRole($marketingRole);
+        $staff->syncRoles([]);
 
         $this->seedAll();
 
         $this->assertFalse(
-            $marketing->fresh()->hasRole('marketing'),
+            $staff->fresh()->hasRole('marketing'),
             'Role yang dicabut admin tidak boleh dikembalikan oleh seeder.'
         );
-        $this->assertSame(0, $marketing->fresh()->roles()->count());
+        $this->assertSame(0, $staff->fresh()->roles()->count());
     }
 
     public function test_extra_role_given_manually_is_not_stripped_by_reseed(): void
     {
         $this->seedAll();
 
-        $it = User::where('email', 'it@rs-elisabeth.com')->first();
-        $it->assignRole('marketing');
+        $staffItRole = Role::findOrCreate('Staff IT', 'web');
+        $marketingRole = Role::findOrCreate('marketing', 'web');
+        $it = User::factory()->create(['email' => 'it@rs-elisabeth.com']);
+        $it->assignRole([$staffItRole, $marketingRole]);
 
         $this->seedAll();
 
@@ -101,12 +101,15 @@ class SeederAccessRevocationTest extends TestCase
         $this->assertSame(1, User::role('super_admin')->count(), 'Harus tetap tepat satu super_admin.');
     }
 
-    public function test_existing_default_account_is_not_modified_by_reseed(): void
+    public function test_existing_account_is_not_modified_by_reseed(): void
     {
         $this->seedAll();
 
-        $it = User::where('email', 'it@rs-elisabeth.com')->first();
-        $it->update(['name' => 'Nama Diubah Admin', 'is_active' => false]);
+        $it = User::factory()->create([
+            'email' => 'it@rs-elisabeth.com',
+            'name' => 'Nama Diubah Admin',
+            'is_active' => false,
+        ]);
         $passwordBefore = $it->fresh()->password;
 
         $this->seedAll();
@@ -121,7 +124,9 @@ class SeederAccessRevocationTest extends TestCase
     {
         $this->seedAll();
 
-        $marketing = User::where('email', 'marketing@rs-elisabeth.com')->first();
+        $marketingRole = Role::findOrCreate('marketing', 'web');
+        $marketing = User::factory()->create(['email' => 'marketing@rs-elisabeth.com']);
+        $marketing->assignRole($marketingRole);
         $marketing->syncRoles([]);
 
         Artisan::call('db:seed', ['--force' => true]);
