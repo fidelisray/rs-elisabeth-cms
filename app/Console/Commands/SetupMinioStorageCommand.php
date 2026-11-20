@@ -10,17 +10,32 @@ use Illuminate\Console\Command;
  *
  * Tugas utama:
  * 1. Membuat bucket jika belum ada.
- * 2. Mengatur Bucket Policy menjadi "public-read" agar file yang diupload
- *    bisa diakses secara publik oleh modul WEB tanpa autentikasi.
+ * 2. Mengatur Bucket Policy "public-read" khusus pada daftar prefix folder
+ *    modul konten publik (PUBLIC_MEDIA_PREFIXES) agar aset publik dapat
+ *    diakses oleh modul WEB tanpa autentikasi, sementara folder privat
+ *    seperti "dynamic-forms/*" tetap tertutup (403 untuk akses anonim).
  *
  * Cara pakai:
- *   php artisan storage:setup-minio
- *
- * Cara integrasi di entrypoint.sh (opsional, jalankan saat container start):
  *   php artisan storage:setup-minio
  */
 class SetupMinioStorageCommand extends Command
 {
+    /**
+     * Daftar prefix direktori media publik yang diizinkan public-read pada bucket MinIO.
+     * Direktori di luar daftar ini (misal: dynamic-forms/*) otomatis bersifat privat.
+     *
+     * @var list<string>
+     */
+    public const PUBLIC_MEDIA_PREFIXES = [
+        'articles',
+        'banners',
+        'facility_services',
+        'news',
+        'online-libraries',
+        'promotions',
+        'room_facilities',
+    ];
+
     /**
      * The name and signature of the console command.
      */
@@ -29,7 +44,35 @@ class SetupMinioStorageCommand extends Command
     /**
      * The console command description.
      */
-    protected $description = 'Membuat bucket MinIO (jika belum ada) dan mengatur Bucket Policy menjadi public-read.';
+    protected $description = 'Membuat bucket MinIO (jika belum ada) dan mengatur Bucket Policy public-read khusus prefix media publik.';
+
+    /**
+     * Susun dokumen Bucket Policy S3/MinIO yang membatasi akses baca anonim
+     * hanya pada prefix folder modul konten publik.
+     *
+     * @return array<string, mixed>
+     */
+    public static function buildPublicReadPolicy(string $bucket): array
+    {
+        $trimmedBucket = trim($bucket);
+        $resources = array_map(
+            static fn (string $prefix): string => "arn:aws:s3:::{$trimmedBucket}/{$prefix}/*",
+            self::PUBLIC_MEDIA_PREFIXES
+        );
+
+        return [
+            'Version' => '2012-10-17',
+            'Statement' => [
+                [
+                    'Sid' => 'PublicReadGetObjectForPublicModulesOnly',
+                    'Effect' => 'Allow',
+                    'Principal' => '*',
+                    'Action' => 's3:GetObject',
+                    'Resource' => $resources,
+                ],
+            ],
+        ];
+    }
 
     /**
      * Execute the console command.
@@ -41,6 +84,7 @@ class SetupMinioStorageCommand extends Command
         $region = config('filesystems.disks.s3.region', 'us-east-1');
         $key = config('filesystems.disks.s3.key');
         $secret = config('filesystems.disks.s3.secret');
+        $usePathStyle = (bool) config('filesystems.disks.s3.use_path_style_endpoint', true);
 
         // Validasi: pastikan semua konfigurasi tersedia sebelum memulai
         if (empty($bucket) || empty($endpoint) || empty($key) || empty($secret)) {
@@ -53,19 +97,24 @@ class SetupMinioStorageCommand extends Command
         $this->info("Bucket target: {$bucket}");
 
         // Buat S3Client secara langsung menggunakan AWS SDK untuk akses fitur-fitur
-        // tingkat lanjut (seperti setBucketPolicy) yang tidak tersedia via Laravel Storage facade.
+        // tingkat lanjut (seperti putBucketPolicy) yang tidak tersedia via Laravel Storage facade.
         $s3 = new S3Client([
             'version' => 'latest',
             'region' => $region,
             'endpoint' => $endpoint,
-            'use_path_style_endpoint' => true,
+            'use_path_style_endpoint' => $usePathStyle,
+            'retries' => 1,
+            'http' => [
+                'connect_timeout' => 5,
+                'timeout' => 10,
+            ],
             'credentials' => [
                 'key' => $key,
                 'secret' => $secret,
             ],
         ]);
 
-        // --- Langkah 1: Buat bucket jika belum ada ---
+        // Langkah 1: Buat bucket jika belum ada
         try {
             if (! $s3->doesBucketExist($bucket)) {
                 $this->warn("Bucket '{$bucket}' tidak ditemukan. Membuat bucket baru...");
@@ -80,22 +129,9 @@ class SetupMinioStorageCommand extends Command
             return Command::FAILURE;
         }
 
-        // --- Langkah 2: Set Bucket Policy menjadi "public-read" ---
-        // Policy ini mengizinkan SIAPA SAJA (internet publik) untuk melakukan
-        // operasi "GetObject" (baca/unduh file) dari bucket ini.
-        // Ini adalah standar keamanan yang tepat untuk hosting media publik.
-        $publicReadPolicy = json_encode([
-            'Version' => '2012-10-17',
-            'Statement' => [
-                [
-                    'Sid' => 'PublicReadGetObject',
-                    'Effect' => 'Allow',
-                    'Principal' => '*',
-                    'Action' => 's3:GetObject',
-                    'Resource' => "arn:aws:s3:::{$bucket}/*",
-                ],
-            ],
-        ]);
+        // Langkah 2: Set Bucket Policy public-read khusus prefix modul konten publik
+        $policyArray = self::buildPublicReadPolicy((string) $bucket);
+        $publicReadPolicy = json_encode($policyArray, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
 
         try {
             $s3->putBucketPolicy([
@@ -103,15 +139,15 @@ class SetupMinioStorageCommand extends Command
                 'Policy' => $publicReadPolicy,
             ]);
 
-            $this->info('✓ Bucket Policy berhasil diatur menjadi public-read.');
+            $this->info('✓ Bucket Policy berhasil diatur ke mode prefix-scoped public-read.');
+            $this->info('  - Prefix publik (200 OK): '.implode(', ', array_map(static fn (string $p): string => "{$p}/*", self::PUBLIC_MEDIA_PREFIXES)));
+            $this->info('  - Prefix privat (403 Anonim): dynamic-forms/* dan seluruh path di luar whitelist');
             $this->newLine();
             $this->info('==========================================================');
-            $this->info(' Setup MinIO selesai! Semua file yang diupload ke bucket');
-            $this->info(" '{$bucket}' kini dapat diakses secara publik.");
+            $this->info(" Setup MinIO selesai untuk bucket '{$bucket}'.");
             $this->info('==========================================================');
 
             return Command::SUCCESS;
-
         } catch (\Throwable $e) {
             $this->error('Gagal mengatur Bucket Policy: '.$e->getMessage());
 

@@ -34,13 +34,14 @@ return [
     | Dynamic Form Private Upload Disk
     |--------------------------------------------------------------------------
     |
-    | Disk privat khusus lampiran responden form dinamis agar berkas sensitif
-    | terpisah dari bucket/disk media publik dan hanya diakses via endpoint
-    | admin yang terotorisasi.
+    | Disk privat khusus lampiran responden form dinamis. Secara default memakai
+    | disk "s3_private" yang berbagi bucket fisik MINIO_BUCKET dengan prefix
+    | "dynamic-forms/*" (tertutup dari akses publik lewat Bucket Policy prefix),
+    | tanpa mengekspos URL publik dan dapat dipisahkan ke MINIO_PRIVATE_BUCKET.
     |
     */
 
-    'dynamic_form_private_disk' => env('DYNAMIC_FORM_PRIVATE_DISK', 'local'),
+    'dynamic_form_private_disk' => env('DYNAMIC_FORM_PRIVATE_DISK', 's3_private'),
 
     /*
     |--------------------------------------------------------------------------
@@ -83,6 +84,19 @@ return [
             'url' => env('MINIO_URL_PUBLIC'),
             'endpoint' => env('MINIO_ENDPOINT'),
             'use_path_style_endpoint' => env('MINIO_USE_PATH_STYLE_ENDPOINT', true),
+            'throw' => false,
+            'report' => false,
+        ],
+
+        's3_private' => [
+            'driver' => 's3',
+            'key' => env('MINIO_PRIVATE_ACCESS_KEY', env('MINIO_ACCESS_KEY')),
+            'secret' => env('MINIO_PRIVATE_SECRET_KEY', env('MINIO_SECRET_KEY')),
+            'region' => env('MINIO_REGION', 'us-east-1'),
+            'bucket' => env('MINIO_PRIVATE_BUCKET', env('MINIO_BUCKET')),
+            'endpoint' => env('MINIO_ENDPOINT'),
+            'use_path_style_endpoint' => env('MINIO_USE_PATH_STYLE_ENDPOINT', true),
+            'visibility' => 'private',
             'throw' => false,
             'report' => false,
         ],

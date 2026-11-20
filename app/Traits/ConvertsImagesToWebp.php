@@ -2,12 +2,10 @@
 
 namespace App\Traits;
 
+use App\Services\Media\WebpImageConverter;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Drivers\Gd\Driver;
-use Intervention\Image\Encoders\WebpEncoder;
-use Intervention\Image\ImageManager;
 
 /**
  * Trait ConvertsImagesToWebp
@@ -40,7 +38,7 @@ trait ConvertsImagesToWebp
      * Kualitas output WebP (0-100).
      * 82 adalah sweet spot antara kualitas visual & ukuran file.
      */
-    protected int $webpQuality = 82;
+    protected int $webpQuality = WebpImageConverter::DEFAULT_QUALITY;
 
     /**
      * Disk media tunggal (config filesystems.media_disk). Sama dengan disk yang
@@ -144,14 +142,7 @@ trait ConvertsImagesToWebp
     }
 
     /**
-     * Lakukan konversi file gambar ke format WebP menggunakan Intervention Image v4.
-     *
-     * Alur kerja (kompatibel dengan S3/MinIO dan disk lokal):
-     * 1. Unduh konten binary file dari storage ke memori (RAM).
-     * 2. Decode gambar dari binary menggunakan Intervention Image.
-     * 3. Encode ke format WebP di memori.
-     * 4. Upload hasil WebP langsung ke storage tanpa menyentuh filesystem server.
-     * 5. Return path baru file WebP.
+     * Lakukan konversi file gambar ke format WebP menggunakan WebpImageConverter.
      *
      * @param  string  $disk  Nama disk yang digunakan (misal: 's3', 'public').
      * @param  string  $storagePath  Path relatif file di storage (misal: "news/abc.jpg").
@@ -160,36 +151,38 @@ trait ConvertsImagesToWebp
     protected function convertToWebp(string $disk, string $storagePath): ?string
     {
         try {
-            // 1. Unduh konten binary file dari storage (S3/MinIO/lokal) ke memori
-            $fileContent = Storage::disk($disk)->get($storagePath);
+            $converter = app(WebpImageConverter::class);
 
-            if (empty($fileContent)) {
+            // Guard awal: pastikan path memiliki ekstensi gambar yang dapat dikonversi
+            // sebelum membaca atau menulis objek ke storage.
+            $webpStoragePath = $converter->replaceExtensionWithWebp($storagePath);
+            if ($webpStoragePath === null || $webpStoragePath === $storagePath) {
                 return null;
             }
 
-            // 2. Decode gambar dari binary string
-            $manager = new ImageManager(new Driver);
-            $image = $manager->decode($fileContent);
+            $fileContent = Storage::disk($disk)->get($storagePath);
+            if (! is_string($fileContent) || $fileContent === '') {
+                return null;
+            }
 
-            // 3. Tentukan path baru dengan ekstensi .webp
-            $webpStoragePath = (string) preg_replace('/\.(jpe?g|png|gif|bmp)$/i', '.webp', $storagePath);
+            $encoded = $converter->encodeToWebp($fileContent, $this->webpQuality, [
+                'model' => static::class,
+                'disk' => $disk,
+                'path' => $storagePath,
+            ]);
 
-            // 4. Encode ke format WebP di memori menggunakan Intervention v4
-            $encoded = $image->encode(new WebpEncoder($this->webpQuality));
+            if ($encoded === null) {
+                return null;
+            }
 
-            // 5. Upload hasil konversi WebP ke storage (S3/MinIO/lokal)
-            //    Catatan: Visibilitas/akses publik diatur di level Bucket Policy
-            //    pada dashboard MinIO, bukan di sini (MinIO tidak mendukung per-object ACL).
             Storage::disk($disk)->put(
                 $webpStoragePath,
-                (string) $encoded,
+                $encoded,
                 ['ContentType' => 'image/webp']
             );
 
             return $webpStoragePath;
-
         } catch (\Throwable $e) {
-            // Log error tanpa menghentikan proses simpan data utama
             Log::warning('ConvertsImagesToWebp: Gagal mengkonversi gambar.', [
                 'model' => static::class,
                 'disk' => $disk,

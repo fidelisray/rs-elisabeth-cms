@@ -5,6 +5,7 @@ namespace App\Services\DynamicForm;
 use App\Enums\DynamicFormFieldType;
 use App\Enums\DynamicFormMode;
 use App\Enums\FeedbackTicketStatus;
+use App\Http\Controllers\Admin\DownloadDynamicFormUploadController;
 use App\Models\DynamicForm;
 use App\Models\DynamicFormSubmission;
 use App\Models\DynamicFormSubmissionAnswer;
@@ -576,14 +577,16 @@ class DynamicFormAnalyticsService
                 if (! is_array($file)) {
                     continue;
                 }
+                $mimeType = (string) ($file['mime_type'] ?? '');
                 $items[] = [
                     'submission_id' => $row->submission_id,
                     'ticket_number' => $row->submission?->ticket_number,
                     'submitted_at' => $row->submission?->submitted_at,
                     'upload_id' => $file['upload_id'] ?? null,
                     'original_name' => (string) ($file['original_name'] ?? 'berkas'),
-                    'mime_type' => (string) ($file['mime_type'] ?? ''),
+                    'mime_type' => $mimeType,
                     'size_bytes' => (int) ($file['size_bytes'] ?? 0),
+                    'can_inline_preview' => DownloadDynamicFormUploadController::supportsInlinePreview($mimeType),
                 ];
             }
         }

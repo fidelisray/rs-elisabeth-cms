@@ -7,6 +7,7 @@ use App\Enums\DynamicFormFieldType;
 use App\Enums\DynamicFormMode;
 use App\Enums\FeedbackTicketStatus;
 use App\Filament\Resources\DynamicFormSubmissions\DynamicFormSubmissionResource;
+use App\Http\Controllers\Admin\DownloadDynamicFormUploadController;
 use App\Models\DynamicFormSubmission;
 use App\Models\DynamicFormUpload;
 use App\Services\DynamicForm\DynamicFormLogicEvaluator;
@@ -245,11 +246,19 @@ class ViewDynamicFormSubmission extends ViewRecord
                     ? $uploadsById->get((int) $item['upload_id'])
                     : (isset($item['token']) ? $uploadsByToken->get((string) $item['token']) : null);
 
+                $mimeType = (string) ($item['mime_type'] ?? $upload?->mime_type ?? '');
+                $canPreview = $canDownload
+                    && $upload
+                    && DownloadDynamicFormUploadController::supportsInlinePreview($mimeType);
+
                 $files[] = [
                     'upload_id' => $upload?->id ?? ($item['upload_id'] ?? null),
                     'original_name' => (string) ($item['original_name'] ?? $upload?->original_name ?? 'berkas'),
-                    'mime_type' => (string) ($item['mime_type'] ?? $upload?->mime_type ?? ''),
+                    'mime_type' => $mimeType,
                     'size_bytes' => (int) ($item['size_bytes'] ?? $upload?->size_bytes ?? 0),
+                    'preview_url' => $canPreview
+                        ? route('filament.admin.dynamic-forms.uploads.download', ['upload' => $upload->id, 'inline' => 1])
+                        : null,
                     'download_url' => ($canDownload && $upload)
                         ? route('filament.admin.dynamic-forms.uploads.download', ['upload' => $upload->id])
                         : null,

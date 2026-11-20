@@ -8,10 +8,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Cms\UploadDynamicFormFileRequest;
 use App\Models\DynamicForm;
 use App\Models\DynamicFormUpload;
+use App\Services\Media\WebpImageConverter;
 use finfo;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use OpenApi\Attributes as OA;
+use Throwable;
 
 class DynamicFormUploadApiController extends Controller
 {
@@ -38,7 +41,7 @@ class DynamicFormUploadApiController extends Controller
         summary: 'Step-1 private file upload for a dynamic form field',
         security: [['HmacAuth' => []]],
         tags: ['DynamicForms'],
-        description: 'Validates MIME/extension/size against the published form schema and stores the file in private storage, returning a short-lived upload_token.'
+        description: 'Validates MIME/extension/size against the published form schema, converts JPG/PNG images to optimized WebP, and stores the file in private MinIO/storage, returning a short-lived upload_token.'
     )]
     #[OA\Parameter(name: 'slug', description: 'Dynamic form slug', in: 'path', required: true, schema: new OA\Schema(type: 'string'))]
     #[OA\Parameter(name: 'X-Content-SHA256', description: 'Hex SHA-256 hash of the uploaded file bytes; HMAC signs {timestamp}{consId}{X-Content-SHA256}', in: 'header', required: true, schema: new OA\Schema(type: 'string'))]
@@ -57,8 +60,11 @@ class DynamicFormUploadApiController extends Controller
     )]
     #[OA\Response(response: 201, description: 'File uploaded')]
     #[OA\Response(response: 422, description: 'Validation error')]
-    public function store(UploadDynamicFormFileRequest $request, string $slug): JsonResponse
-    {
+    public function store(
+        UploadDynamicFormFileRequest $request,
+        string $slug,
+        WebpImageConverter $webpConverter,
+    ): JsonResponse {
         $form = DynamicForm::query()
             ->with('publishedVersion')
             ->where('slug', $slug)
@@ -140,12 +146,58 @@ class DynamicFormUploadApiController extends Controller
             ], 422);
         }
 
-        $disk = (string) config('filesystems.dynamic_form_private_disk', 'local');
+        $disk = (string) config('filesystems.dynamic_form_private_disk', 's3_private');
         $directory = "dynamic-forms/{$form->id}/".now()->format('Y/m');
-        $storedFilename = Str::uuid()->toString().'.'.$ext;
-        $storedPath = $file->storeAs($directory, $storedFilename, ['disk' => $disk, 'visibility' => 'private']);
+        $rawName = str_replace('\\', '/', (string) $file->getClientOriginalName());
+        $originalName = Str::limit(basename($rawName), 240, '');
 
-        if (! is_string($storedPath) || $storedPath === '') {
+        $finalExt = $ext;
+        $finalMime = $detectedMime;
+        $finalSizeBytes = $sizeBytes;
+        $finalOriginalName = $originalName;
+        $storedPath = '';
+
+        // Konversi gambar raster (JPG/JPEG/PNG) ke WebP secara sinkron sebelum diunggah
+        // ke MinIO/storage, dengan fallback aman menyimpan berkas asli bila konversi gagal.
+        $webpBinary = null;
+        if ($realPath && $webpConverter->isConvertibleMime($detectedMime)) {
+            $webpBinary = $webpConverter->encodeFileToWebp($realPath, logContext: [
+                'form_id' => $form->id,
+                'field_key' => $fieldKey,
+                'original_ext' => $ext,
+            ]);
+        }
+
+        if ($webpBinary !== null && $webpBinary !== '') {
+            $finalExt = 'webp';
+            $finalMime = 'image/webp';
+            $finalSizeBytes = strlen($webpBinary);
+            if ($finalOriginalName !== '') {
+                $finalOriginalName = $webpConverter->replaceExtensionWithWebp($finalOriginalName)
+                    ?? ($finalOriginalName.'.webp');
+            }
+
+            $storedFilename = Str::uuid()->toString().'.webp';
+            $candidatePath = $directory.'/'.$storedFilename;
+            $written = Storage::disk($disk)->put($candidatePath, $webpBinary, [
+                'ContentType' => 'image/webp',
+            ]);
+
+            if ($written) {
+                $storedPath = $candidatePath;
+            }
+        } else {
+            $storedFilename = Str::uuid()->toString().'.'.$finalExt;
+            $storedResult = Storage::disk($disk)->putFileAs($directory, $file, $storedFilename, [
+                'ContentType' => $finalMime,
+            ]);
+
+            if (is_string($storedResult) && $storedResult !== '') {
+                $storedPath = $storedResult;
+            }
+        }
+
+        if ($storedPath === '') {
             return response()->json([
                 'success' => false,
                 'status_code' => 500,
@@ -154,22 +206,30 @@ class DynamicFormUploadApiController extends Controller
             ], 500);
         }
 
-        $rawName = str_replace('\\', '/', (string) $file->getClientOriginalName());
-        $originalName = Str::limit(basename($rawName), 240, '');
         $token = Str::uuid()->toString();
         $expiresAt = now()->addHours(24);
 
-        $upload = DynamicFormUpload::create([
-            'token' => $token,
-            'dynamic_form_id' => $form->id,
-            'field_key' => $fieldKey,
-            'disk' => $disk,
-            'storage_path' => $storedPath,
-            'original_name' => $originalName !== '' ? $originalName : $storedFilename,
-            'mime_type' => $detectedMime,
-            'size_bytes' => $sizeBytes,
-            'expires_at' => $expiresAt,
-        ]);
+        try {
+            $upload = DynamicFormUpload::create([
+                'token' => $token,
+                'dynamic_form_id' => $form->id,
+                'field_key' => $fieldKey,
+                'disk' => $disk,
+                'storage_path' => $storedPath,
+                'original_name' => $finalOriginalName !== '' ? $finalOriginalName : basename($storedPath),
+                'mime_type' => $finalMime,
+                'size_bytes' => $finalSizeBytes,
+                'expires_at' => $expiresAt,
+            ]);
+        } catch (Throwable $e) {
+            try {
+                Storage::disk($disk)->delete($storedPath);
+            } catch (Throwable) {
+                // Abaikan error pembersihan sekunder agar exception asli tetap tercatat.
+            }
+
+            throw $e;
+        }
 
         return response()->json([
             'success' => true,

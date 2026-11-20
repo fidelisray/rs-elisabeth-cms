@@ -22,6 +22,7 @@ use App\Models\AuditLog;
 use App\Models\DynamicForm;
 use App\Models\DynamicFormField;
 use App\Models\DynamicFormSubmission;
+use App\Models\DynamicFormSubmissionAnswer;
 use App\Models\DynamicFormUpload;
 use App\Models\DynamicFormVersion;
 use App\Models\Role;
@@ -39,6 +40,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -1308,6 +1310,7 @@ class DynamicFormPanelTest extends TestCase
 
     public function test_share_link_qr_modal_table_columns_filters_action_group_and_rbac(): void
     {
+        Http::fake();
         Config::set('web_frontend.public_url', 'http://rs-elisabeth-web.test');
         Config::set('web_frontend.webhook_url', 'http://rs-elisabeth-web.test/api/internal/webhook/cache-invalidate');
 
@@ -2131,6 +2134,164 @@ class DynamicFormPanelTest extends TestCase
         $this->assertTrue($merged[0]['fields'][3]['conditional_logic']['visibility']['enabled']);
         $this->assertSame('opt_a', $merged[0]['fields'][3]['conditional_logic']['visibility']['rules'][0]['value']);
         $this->assertSame([], app(DynamicFormLogicEvaluator::class)->validateSchemaLogic($merged));
+    }
+
+    public function test_inline_preview_and_attachment_download_support_unicode_filenames_and_enforce_mime_whitelist(): void
+    {
+        $form = DynamicForm::factory()->create([
+            'title' => 'Survei Lampiran WebP & PDF',
+            'slug' => 'survei-lampiran-webp-pdf',
+        ]);
+
+        $versionService = app(DynamicFormVersionService::class);
+        $versionService->syncDraftStructure($form, [[
+            'section_key' => 'sec_1',
+            'title' => 'Lampiran',
+            'fields' => [
+                [
+                    'field_key' => 'bukti_file',
+                    'type' => 'file_upload',
+                    'label' => 'Bukti File',
+                    'options' => [
+                        'allowed_extensions' => ['webp', 'pdf', 'txt'],
+                        'max_file_size_mb' => 5,
+                        'max_files' => 3,
+                    ],
+                ],
+            ],
+        ]]);
+        $published = $versionService->publishDraftVersion($form, $this->superAdmin->email);
+
+        Storage::disk('private-test')->put('dynamic-forms/test-preview.webp', 'RIFFxxxxWEBPVP8 ');
+        Storage::disk('private-test')->put('dynamic-forms/test-preview.pdf', "%PDF-1.4\n%%EOF");
+        Storage::disk('private-test')->put('dynamic-forms/test-note.txt', 'catatan teks biasa');
+
+        $submission = DynamicFormSubmission::factory()->create([
+            'dynamic_form_id' => $form->id,
+            'dynamic_form_version_id' => $published->id,
+            'answers' => [],
+        ]);
+
+        $webpUpload = DynamicFormUpload::create([
+            'token' => (string) Str::uuid(),
+            'dynamic_form_id' => $form->id,
+            'submission_id' => $submission->id,
+            'field_key' => 'bukti_file',
+            'disk' => 'private-test',
+            'storage_path' => 'dynamic-forms/test-preview.webp',
+            // Nama berkas mengandung karakter non-ASCII untuk memastikan HeaderUtils::makeDisposition tidak error 500
+            'original_name' => 'bukti_kepatuhan_日本語_★.webp',
+            'mime_type' => 'image/webp',
+            'size_bytes' => 16,
+            'expires_at' => now()->addDay(),
+            'attached_at' => now(),
+        ]);
+
+        $pdfUpload = DynamicFormUpload::create([
+            'token' => (string) Str::uuid(),
+            'dynamic_form_id' => $form->id,
+            'submission_id' => $submission->id,
+            'field_key' => 'bukti_file',
+            'disk' => 'private-test',
+            'storage_path' => 'dynamic-forms/test-preview.pdf',
+            'original_name' => 'panduan-audit.pdf',
+            'mime_type' => 'application/pdf',
+            'size_bytes' => 14,
+            'expires_at' => now()->addDay(),
+            'attached_at' => now(),
+        ]);
+
+        $txtUpload = DynamicFormUpload::create([
+            'token' => (string) Str::uuid(),
+            'dynamic_form_id' => $form->id,
+            'submission_id' => $submission->id,
+            'field_key' => 'bukti_file',
+            'disk' => 'private-test',
+            'storage_path' => 'dynamic-forms/test-note.txt',
+            'original_name' => 'catatan.txt',
+            'mime_type' => 'text/plain',
+            'size_bytes' => 18,
+            'expires_at' => now()->addDay(),
+            'attached_at' => now(),
+        ]);
+
+        $fileAnswerPayload = [
+            [
+                'upload_id' => $webpUpload->id,
+                'token' => $webpUpload->token,
+                'original_name' => $webpUpload->original_name,
+                'mime_type' => $webpUpload->mime_type,
+                'size_bytes' => $webpUpload->size_bytes,
+            ],
+            [
+                'upload_id' => $pdfUpload->id,
+                'token' => $pdfUpload->token,
+                'original_name' => $pdfUpload->original_name,
+                'mime_type' => $pdfUpload->mime_type,
+                'size_bytes' => $pdfUpload->size_bytes,
+            ],
+            [
+                'upload_id' => $txtUpload->id,
+                'token' => $txtUpload->token,
+                'original_name' => $txtUpload->original_name,
+                'mime_type' => $txtUpload->mime_type,
+                'size_bytes' => $txtUpload->size_bytes,
+            ],
+        ];
+
+        $submission->update(['answers' => ['bukti_file' => $fileAnswerPayload]]);
+        DynamicFormSubmissionAnswer::create([
+            'submission_id' => $submission->id,
+            'dynamic_form_id' => $form->id,
+            'dynamic_form_version_id' => $published->id,
+            'field_key' => 'bukti_file',
+            'field_type' => 'file_upload',
+            'value_text' => '3 berkas',
+            'value_json' => $fileAnswerPayload,
+            'created_at' => now(),
+        ]);
+
+        $this->switchUser($this->marketing);
+
+        // 1. Mode inline=1 pada image/webp (dengan nama file Unicode) berhasil 200 dengan disposition inline & CSP
+        $inlineWebpRes = $this->get(route('filament.admin.dynamic-forms.uploads.download', [
+            'upload' => $webpUpload->id,
+            'inline' => 1,
+        ]));
+        $inlineWebpRes->assertOk();
+        $this->assertStringStartsWith('inline;', (string) $inlineWebpRes->headers->get('Content-Disposition'));
+        $this->assertSame('image/webp', $inlineWebpRes->headers->get('Content-Type'));
+        $this->assertSame('nosniff', $inlineWebpRes->headers->get('X-Content-Type-Options'));
+        $this->assertNotEmpty($inlineWebpRes->headers->get('Content-Security-Policy'));
+        $this->assertSame('16', $inlineWebpRes->headers->get('Content-Length'));
+
+        // 2. Mode normal (tanpa inline=1) pada image/webp dengan nama file Unicode tetap attachment tanpa error 500
+        $attachWebpRes = $this->get(route('filament.admin.dynamic-forms.uploads.download', [
+            'upload' => $webpUpload->id,
+        ]));
+        $attachWebpRes->assertOk();
+        $this->assertStringStartsWith('attachment;', (string) $attachWebpRes->headers->get('Content-Disposition'));
+
+        // 3. Mode inline=1 pada text/plain (non-whitelist) dipaksa kembali menjadi attachment demi mencegah XSS
+        $inlineTxtRes = $this->get(route('filament.admin.dynamic-forms.uploads.download', [
+            'upload' => $txtUpload->id,
+            'inline' => 1,
+        ]));
+        $inlineTxtRes->assertOk();
+        $this->assertStringStartsWith('attachment;', (string) $inlineTxtRes->headers->get('Content-Disposition'));
+
+        // 4. Halaman Detail Submission & halaman Ringkasan Analitik merender tautan pratinjau inline (?inline=1) untuk WebP & PDF, namun tidak untuk TXT
+        $viewRes = $this->get(DynamicFormSubmissionResource::getUrl('view', ['record' => $submission]));
+        $viewRes->assertOk()
+            ->assertSee(route('filament.admin.dynamic-forms.uploads.download', ['upload' => $webpUpload->id, 'inline' => 1]), false)
+            ->assertSee(route('filament.admin.dynamic-forms.uploads.download', ['upload' => $pdfUpload->id, 'inline' => 1]), false)
+            ->assertDontSee(route('filament.admin.dynamic-forms.uploads.download', ['upload' => $txtUpload->id, 'inline' => 1]), false);
+
+        $analyticsRes = $this->get(DynamicFormResource::getUrl('analytics', ['record' => $form]));
+        $analyticsRes->assertOk()
+            ->assertSee(route('filament.admin.dynamic-forms.uploads.download', ['upload' => $webpUpload->id, 'inline' => 1]), false)
+            ->assertSee(route('filament.admin.dynamic-forms.uploads.download', ['upload' => $pdfUpload->id, 'inline' => 1]), false)
+            ->assertDontSee(route('filament.admin.dynamic-forms.uploads.download', ['upload' => $txtUpload->id, 'inline' => 1]), false);
     }
 
     private function switchUser(User $user): void

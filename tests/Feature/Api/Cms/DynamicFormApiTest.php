@@ -583,4 +583,78 @@ class DynamicFormApiTest extends TestCase
             'answers' => ['unit' => ['selected' => 'igd'], 'skor' => 4],
         ])->assertStatus(422)->assertJsonPath('errors.respondent_key.0', 'You have already submitted this form.');
     }
+
+    public function test_converts_uploaded_jpg_and_png_images_to_webp_on_private_disk_with_safe_fallback(): void
+    {
+        $form = $this->createPublishedForm([
+            'slug' => 'survei-webp-upload',
+        ], [[
+            'section_key' => 'sec_1',
+            'title' => 'Bukti Gambar',
+            'fields' => [
+                [
+                    'field_key' => 'upload_bukti',
+                    'type' => 'file_upload',
+                    'label' => 'Upload Bukti Screenshot',
+                    'is_required' => true,
+                    'options' => [
+                        // Hanya mencentang jpg & png (tanpa webp) untuk memverifikasi
+                        // bahwa konversi otomatis ke .webp tetap lolos submit Step-2.
+                        'allowed_extensions' => ['jpg', 'jpeg', 'png'],
+                        'max_file_size_mb' => 5,
+                        'max_files' => 2,
+                    ],
+                ],
+            ],
+        ]]);
+
+        // 1. Unggah PNG valid -> otomatis dikonversi ke .webp di disk privat
+        $pngFile = UploadedFile::fake()->image('Bukti Screenshot Login.png', 48, 36);
+        $pngRes = $this->signedFileUpload(
+            '/api/v1/cms/forms/'.$form->slug.'/uploads',
+            'upload_bukti',
+            $pngFile
+        )->assertStatus(201);
+
+        $pngToken = (string) $pngRes->json('data.upload_token');
+        $this->assertSame('image/webp', $pngRes->json('data.mime_type'));
+        $this->assertSame('Bukti Screenshot Login.webp', $pngRes->json('data.original_name'));
+
+        $pngUpload = DynamicFormUpload::where('token', $pngToken)->firstOrFail();
+        $this->assertSame('private-test', $pngUpload->disk);
+        $this->assertStringEndsWith('.webp', $pngUpload->storage_path);
+        $this->assertSame('image/webp', $pngUpload->mime_type);
+        Storage::disk('private-test')->assertExists($pngUpload->storage_path);
+
+        $storedWebpBytes = (string) Storage::disk('private-test')->get($pngUpload->storage_path);
+        $this->assertSame(strlen($storedWebpBytes), $pngUpload->size_bytes);
+        $this->assertSame('image/webp', (new \finfo(FILEINFO_MIME_TYPE))->buffer($storedWebpBytes));
+
+        // 2. Unggah JPG dengan header JPEG valid namun payload gambar rusak -> fallback aman menyimpan .jpg asli
+        $corruptJpg = UploadedFile::fake()->createWithContent(
+            'foto-kamera-rusak.jpg',
+            "\xFF\xD8\xFF\xE0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00data-korup-bukan-frame"
+        );
+        $fallbackRes = $this->signedFileUpload(
+            '/api/v1/cms/forms/'.$form->slug.'/uploads',
+            'upload_bukti',
+            $corruptJpg
+        )->assertStatus(201);
+
+        $fallbackToken = (string) $fallbackRes->json('data.upload_token');
+        $this->assertSame('image/jpeg', $fallbackRes->json('data.mime_type'));
+        $this->assertSame('foto-kamera-rusak.jpg', $fallbackRes->json('data.original_name'));
+
+        $fallbackUpload = DynamicFormUpload::where('token', $fallbackToken)->firstOrFail();
+        $this->assertStringEndsWith('.jpg', $fallbackUpload->storage_path);
+        Storage::disk('private-test')->assertExists($fallbackUpload->storage_path);
+
+        // 3. Submit Step-2 berhasil mengikat kedua token (hasil konversi .webp & fallback .jpg)
+        $this->signedJsonPost('/api/v1/cms/forms/'.$form->slug.'/submissions', [
+            'version_id' => $form->published_version_id,
+            'answers' => [
+                'upload_bukti' => [$pngToken, $fallbackToken],
+            ],
+        ])->assertStatus(201)->assertJsonPath('success', true);
+    }
 }

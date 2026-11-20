@@ -175,5 +175,21 @@ class WebpConversionSafetyTest extends TestCase
         $this->assertArrayHasKey('media_disk', $config);
         $this->assertSame('s3', $config['media_disk']);
         $this->assertArrayHasKey('s3', $config['disks']);
+        $this->assertArrayHasKey('s3_private', $config['disks']);
+        $this->assertSame('s3', $config['disks']['s3_private']['driver']);
+        $this->assertSame('private', $config['disks']['s3_private']['visibility']);
+        $this->assertArrayNotHasKey('url', $config['disks']['s3_private']);
+    }
+
+    public function test_non_image_extension_is_never_overwritten_by_webp_conversion(): void
+    {
+        $pdfContent = "%PDF-1.4\n1 0 obj\n<<>>\nendobj\n";
+        $news = $this->newsWithImage('news/dokumen.pdf', $pdfContent);
+
+        $this->convert($news);
+
+        Storage::disk($this->disk)->assertExists('news/dokumen.pdf');
+        $this->assertSame($pdfContent, Storage::disk($this->disk)->get('news/dokumen.pdf'));
+        $this->assertSame('news/dokumen.pdf', $news->fresh()->image_path);
     }
 }
