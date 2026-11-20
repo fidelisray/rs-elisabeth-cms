@@ -11,7 +11,7 @@ use App\Models\FacilityService;
 use App\Models\RoomFacility;
 use App\Models\User;
 use App\Support\ApiCacheInvalidator;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Cache;
@@ -26,7 +26,7 @@ use Tests\Traits\GeneratesHmacHeaders;
  */
 class ReorderCacheInvalidationTest extends TestCase
 {
-    use GeneratesHmacHeaders, RefreshDatabase;
+    use GeneratesHmacHeaders, RefreshDatabase, SeedsTestRolesAndUsers;
 
     /**
      * Hanya role dengan permission Reorder yang boleh drag-and-drop. Saat ini hanya
@@ -37,7 +37,7 @@ class ReorderCacheInvalidationTest extends TestCase
         config(['filesystems.media_disk' => 'media-test']);
         Storage::fake('media-test');
 
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
         $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])->assertExitCode(0);
 
         $user = User::where('email', 'admin@rs-elisabeth.com')->first();

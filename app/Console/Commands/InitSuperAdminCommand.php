@@ -10,6 +10,8 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Membuat akun super_admin PERTAMA dengan password acak dan 10 kode pemulihan (K-6, K-18, K-26).
@@ -44,10 +46,10 @@ class InitSuperAdminCommand extends Command
             return self::FAILURE;
         }
 
-        $role = Role::where('name', 'super_admin')->where('guard_name', 'web')->first();
+        $permissions = Permission::where('guard_name', 'web')->get();
 
-        if (! $role) {
-            $this->error('Role super_admin belum ada. Jalankan terlebih dahulu: php artisan db:seed --force');
+        if ($permissions->isEmpty()) {
+            $this->error('Permission belum tersedia. Jalankan terlebih dahulu: php artisan db:seed --force');
 
             return self::FAILURE;
         }
@@ -55,17 +57,22 @@ class InitSuperAdminCommand extends Command
         $password = Str::password(24, symbols: false);
         $codes = [];
 
-        $created = DB::transaction(function () use ($role, $email, $name, $password, $recoveryCodes, &$codes) {
-            // Kunci baris role agar dua eksekusi bersamaan tidak membuat dua super_admin.
-            Role::whereKey($role->getKey())->lockForUpdate()->first();
+        $created = DB::transaction(function () use ($permissions, $email, $name, $password, $recoveryCodes, &$codes) {
+            $existingRole = Role::where('name', Role::SUPER_ADMIN)
+                ->where('guard_name', 'web')
+                ->lockForUpdate()
+                ->first();
 
-            if (User::role('super_admin')->exists()) {
+            if ($existingRole && User::role(Role::SUPER_ADMIN)->exists()) {
                 return false;
             }
 
             if (User::where('email', $email)->exists()) {
                 return null;
             }
+
+            $role = $existingRole ?? Role::findOrCreate(Role::SUPER_ADMIN, 'web');
+            $role->givePermissionTo($permissions);
 
             $user = User::create([
                 'name' => $name,
@@ -78,6 +85,8 @@ class InitSuperAdminCommand extends Command
             $user->assignRole($role);
             $codes = $recoveryCodes->generateFor($user);
             AuditLog::record('super_admin.created', $user, ['source' => 'app:super-admin:init']);
+
+            app(PermissionRegistrar::class)->forgetCachedPermissions();
 
             return true;
         });

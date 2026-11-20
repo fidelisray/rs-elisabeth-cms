@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\News;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -18,6 +18,7 @@ use Tests\TestCase;
 class TranslatedSlugFormTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     protected function setUp(): void
     {
@@ -25,7 +26,7 @@ class TranslatedSlugFormTest extends TestCase
         Bus::fake();
         config(['filesystems.media_disk' => 'media-test']);
         Storage::fake('media-test');
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
         $marketing = User::where('email', 'marketing@rs-elisabeth.com')->firstOrFail();
         $marketing->update(['must_change_password' => false]);
         $this->actingAs($marketing);

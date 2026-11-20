@@ -6,7 +6,7 @@ use App\Filament\Resources\RoomFacilities\Pages\CreateRoomFacility;
 use App\Filament\Resources\RoomFacilities\Pages\EditRoomFacility;
 use App\Models\RoomFacility;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -19,13 +19,14 @@ use Tests\TestCase;
 class SlugStabilityTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     private function actAsMarketing(): void
     {
         config(['filesystems.media_disk' => 'media-test']);
         Storage::fake('media-test');
         Storage::disk('media-test')->put('rooms/test.webp', 'test image');
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
 
         $user = User::where('email', 'marketing@rs-elisabeth.com')->first();
         $user->update(['must_change_password' => false]);

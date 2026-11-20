@@ -5,7 +5,7 @@ namespace Tests\Feature\Console;
 use App\Console\Commands\ResetSuperAdminPasswordCommand;
 use App\Models\AuditLog;
 use App\Models\User;
-use Database\Seeders\RoleAndPermissionSeeder;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -21,10 +21,10 @@ class ResetSuperAdminPasswordCommandTest extends TestCase
 
     private function createActiveSuperAdmin(): array
     {
-        $this->seed(RoleAndPermissionSeeder::class);
+        $this->seed(PermissionSeeder::class);
 
         Artisan::call('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com']);
-        preg_match('/PASSWORD=(\S+)/', Artisan::output(), $matches);
+        preg_match('/PASSWORD\s*(?:=|:)\s*(\S+)/', Artisan::output(), $matches);
         $initialPassword = $matches[1];
 
         $admin = User::where('email', 'admin@rs-elisabeth.com')->firstOrFail();
@@ -35,7 +35,7 @@ class ResetSuperAdminPasswordCommandTest extends TestCase
 
     public function test_fails_when_no_super_admin_exists(): void
     {
-        $this->seed(RoleAndPermissionSeeder::class);
+        $this->seed(PermissionSeeder::class);
 
         $this->artisan('app:super-admin:reset-password', ['--force' => true])
             ->expectsOutputToContain('super_admin')

@@ -7,7 +7,7 @@ use App\Filament\Pages\Auth\ForcePasswordChange;
 use App\Filament\Pages\Auth\RecoveryLogin;
 use App\Models\AuditLog;
 use App\Models\User;
-use Database\Seeders\RoleAndPermissionSeeder;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
@@ -26,7 +26,7 @@ class AuditLogTest extends TestCase
 
     private function seedRolesOnly(): void
     {
-        $this->seed(RoleAndPermissionSeeder::class);
+        $this->seed(PermissionSeeder::class);
     }
 
     private function initAdmin(): User
@@ -144,7 +144,7 @@ class AuditLogTest extends TestCase
         $this->assertSame(0, $exitCode);
         $initOutput = Artisan::output();
 
-        preg_match('/PASSWORD=([A-Za-z0-9]{24})/', $initOutput, $pwMatch);
+        preg_match('/PASSWORD\s*(?:=|:)\s*([A-Za-z0-9]{24})/', $initOutput, $pwMatch);
         preg_match_all('/RECOVERY_CODE_\d+=([A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4})/', $initOutput, $codeMatches);
         $initPassword = $pwMatch[1];
         $initialCodes = $codeMatches[1];

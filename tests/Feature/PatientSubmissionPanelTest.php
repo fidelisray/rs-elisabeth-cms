@@ -12,7 +12,7 @@ use App\Models\Feedback;
 use App\Models\QuestionnaireResponse;
 use App\Models\Role;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -20,11 +20,12 @@ use Tests\TestCase;
 class PatientSubmissionPanelTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
     }
 
     public function test_all_roles_can_read_submission_lists_and_details_including_full_answers(): void

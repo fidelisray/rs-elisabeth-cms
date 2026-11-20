@@ -9,7 +9,7 @@ use App\Models\Doctor;
 use App\Models\User;
 use App\Services\DoctorApiService;
 use App\Services\DoctorSyncService;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Filament\Schemas\Schema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
@@ -19,12 +19,13 @@ use Tests\TestCase;
 class DoctorPolicyAndFormTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     protected function setUp(): void
     {
         parent::setUp();
         config(['rsapi.enabled' => true]);
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
         $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])->assertExitCode(0);
     }
 

@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -16,10 +16,11 @@ use Tests\TestCase;
 class EditUserSuperAdminTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     private function actAsSuperAdmin(): User
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
         $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])->assertExitCode(0);
 
         $admin = User::where('email', 'admin@rs-elisabeth.com')->first();

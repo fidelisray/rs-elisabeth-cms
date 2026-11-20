@@ -12,7 +12,7 @@ use App\Models\Promotion;
 use App\Models\RoomFacility;
 use App\Models\User;
 use App\Support\ApiCacheInvalidator;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -29,7 +29,7 @@ use Tests\Traits\GeneratesHmacHeaders;
 
 class LocaleCacheIsolationTest extends TestCase
 {
-    use GeneratesHmacHeaders, RefreshDatabase;
+    use GeneratesHmacHeaders, RefreshDatabase, SeedsTestRolesAndUsers;
 
     protected function setUp(): void
     {
@@ -282,7 +282,7 @@ class LocaleCacheIsolationTest extends TestCase
 
     public function test_banner_reorder_clears_every_locale_and_emits_one_webhook(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
         $user = User::where('email', 'marketing@rs-elisabeth.com')->firstOrFail();
         $user->update(['must_change_password' => false]);
         $this->actingAs($user);

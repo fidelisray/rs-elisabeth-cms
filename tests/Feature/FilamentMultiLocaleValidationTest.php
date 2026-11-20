@@ -10,7 +10,7 @@ use App\Models\Article;
 use App\Models\Promotion;
 use App\Models\RoomFacility;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -20,6 +20,7 @@ use Tests\TestCase;
 class FilamentMultiLocaleValidationTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     protected function setUp(): void
     {
@@ -30,7 +31,7 @@ class FilamentMultiLocaleValidationTest extends TestCase
 
     private function actAsMarketing(): User
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
 
         $user = User::where('email', 'marketing@rs-elisabeth.com')->first();
         $user->update(['must_change_password' => false]);

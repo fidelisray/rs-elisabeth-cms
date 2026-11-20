@@ -10,7 +10,7 @@ use App\Models\Feedback;
 use App\Models\QuestionnaireResponse;
 use App\Models\User;
 use App\Services\FeedbackService;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -22,12 +22,13 @@ use Tests\TestCase;
 class FeedbackDashboardTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
         $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])->assertExitCode(0);
 
         $user = User::where('email', 'marketing@rs-elisabeth.com')->firstOrFail();

@@ -31,7 +31,7 @@ use App\Services\DynamicForm\DynamicFormExportService;
 use App\Services\DynamicForm\DynamicFormLogicEvaluator;
 use App\Services\DynamicForm\DynamicFormSubmissionService;
 use App\Services\DynamicForm\DynamicFormVersionService;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Filament\Actions\Testing\TestAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -48,6 +48,7 @@ use Tests\TestCase;
 class DynamicFormPanelTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     private User $superAdmin;
 
@@ -59,7 +60,7 @@ class DynamicFormPanelTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
         $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])->assertExitCode(0);
 
         $this->superAdmin = User::where('email', 'admin@rs-elisabeth.com')->firstOrFail();

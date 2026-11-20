@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Filament\Resources\Articles\ArticleResource;
 use App\Models\Article;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -14,6 +14,7 @@ use Tests\TestCase;
 class ArticleTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     protected function setUp(): void
     {
@@ -131,7 +132,7 @@ class ArticleTest extends TestCase
      */
     public function test_article_resource_record_title_and_global_search_use_title_column(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
         $marketing = User::where('email', 'marketing@rs-elisabeth.com')->firstOrFail();
         $marketing->update(['must_change_password' => false]);
         $this->actingAs($marketing);

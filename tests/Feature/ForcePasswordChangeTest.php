@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Filament\Pages\Auth\ForcePasswordChange;
 use App\Models\Role;
 use App\Models\User;
-use Database\Seeders\DatabaseSeeder;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
@@ -19,6 +19,7 @@ use Tests\TestCase;
 class ForcePasswordChangeTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsTestRolesAndUsers;
 
     private function user(array $attributes = []): User
     {
@@ -108,7 +109,7 @@ class ForcePasswordChangeTest extends TestCase
 
     public function test_real_livewire_update_for_another_page_is_blocked(): void
     {
-        $this->seed(DatabaseSeeder::class);
+        $this->seedDefaultTestUsersAndRoles();
 
         $user = User::where('email', 'marketing@rs-elisabeth.com')->first();
 
