@@ -3,7 +3,6 @@
 namespace Tests\Feature\Api\Cms;
 
 use App\Enums\DynamicFormMode;
-use App\Enums\FeedbackTicketStatus;
 use App\Models\DynamicForm;
 use App\Models\DynamicFormSubmission;
 use App\Models\DynamicFormSubmissionAnswer;
@@ -280,11 +279,13 @@ class DynamicFormApiTest extends TestCase
             ],
         ])->assertStatus(201);
 
-        $ticket = $submitRes->json('data.ticket_number');
-        $this->assertStringStartsWith('KLP-', $ticket);
+        $submissionId = (int) $submitRes->json('data.submission_id');
+        $this->assertGreaterThan(0, $submissionId);
+        $this->assertNull($submitRes->json('data.ticket_number'));
 
-        $submission = DynamicFormSubmission::where('ticket_number', $ticket)->firstOrFail();
-        $this->assertSame(FeedbackTicketStatus::Baru, $submission->status);
+        $submission = DynamicFormSubmission::findOrFail($submissionId);
+        $this->assertNull($submission->ticket_number);
+        $this->assertNull($submission->status);
         $this->assertSame($submission->id, $uploadRecord->fresh()->submission_id);
         $this->assertNotNull($uploadRecord->fresh()->attached_at);
 

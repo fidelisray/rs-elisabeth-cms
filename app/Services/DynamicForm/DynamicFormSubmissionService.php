@@ -3,16 +3,13 @@
 namespace App\Services\DynamicForm;
 
 use App\Enums\DynamicFormFieldType;
-use App\Enums\DynamicFormMode;
 use App\Enums\DynamicFormStatus;
-use App\Enums\FeedbackTicketStatus;
 use App\Models\DynamicForm;
 use App\Models\DynamicFormSubmission;
 use App\Models\DynamicFormSubmissionAnswer;
 use App\Models\DynamicFormUpload;
 use App\Models\DynamicFormVersion;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class DynamicFormSubmissionService
@@ -94,16 +91,13 @@ class DynamicFormSubmissionService
                 (array) ($payload['answers'] ?? [])
             );
 
-            $isFeedback = $lockedForm->mode === DynamicFormMode::Feedback;
-            $ticketNumber = $isFeedback ? $this->generateTicketNumber($lockedForm) : null;
-            $status = $isFeedback ? FeedbackTicketStatus::Baru : null;
             $submittedAt = isset($payload['submitted_at']) ? now()->parse($payload['submitted_at']) : now();
 
             $submission = DynamicFormSubmission::create([
                 'dynamic_form_id' => $lockedForm->id,
                 'dynamic_form_version_id' => $version->id,
-                'ticket_number' => $ticketNumber,
-                'status' => $status,
+                'ticket_number' => null,
+                'status' => null,
                 'answers' => $validated['answers'],
                 'locale' => (string) ($payload['locale'] ?? $lockedForm->locale ?? app()->getLocale()),
                 'source' => (string) ($payload['source'] ?? 'web_public'),
@@ -148,20 +142,6 @@ class DynamicFormSubmissionService
 
             return $submission;
         });
-    }
-
-    private function generateTicketNumber(DynamicForm $form): string
-    {
-        $prefix = strtoupper((string) preg_replace('/[^A-Za-z0-9]/', '', (string) ($form->ticket_prefix ?: 'DFB')));
-        if ($prefix === '') {
-            $prefix = 'DFB';
-        }
-
-        do {
-            $ticket = $prefix.'-'.now()->format('Ymd').'-'.Str::upper(Str::random(6));
-        } while (DynamicFormSubmission::withTrashed()->where('ticket_number', $ticket)->exists());
-
-        return $ticket;
     }
 
     /**

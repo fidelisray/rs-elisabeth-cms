@@ -3,8 +3,6 @@
 namespace App\Services\DynamicForm;
 
 use App\Enums\DynamicFormFieldType;
-use App\Enums\DynamicFormMode;
-use App\Enums\FeedbackTicketStatus;
 use App\Models\DynamicForm;
 use App\Models\DynamicFormSubmission;
 use Illuminate\Support\Str;
@@ -97,17 +95,13 @@ class DynamicFormExportService
             fn (array $f): bool => ($f['type'] ?? '') !== DynamicFormFieldType::InfoBlock->value
         ));
 
-        $isFeedback = $form->mode === DynamicFormMode::Feedback;
-
-        $headers = ['ID Submission'];
-        if ($isFeedback) {
-            $headers[] = 'Nomor Tiket';
-            $headers[] = 'Status Tindak Lanjut';
-        }
-        $headers[] = 'Versi';
-        $headers[] = 'Bahasa';
-        $headers[] = 'Sumber';
-        $headers[] = 'Waktu Kirim';
+        $headers = [
+            'ID Submission',
+            'Versi',
+            'Bahasa',
+            'Sumber',
+            'Waktu Kirim',
+        ];
 
         $columns = [];
         foreach ($catalog as $field) {
@@ -145,18 +139,13 @@ class DynamicFormExportService
         $rows = [];
         /** @var DynamicFormSubmission $submission */
         foreach ($submissions as $submission) {
-            $row = [$submission->id];
-            if ($isFeedback) {
-                $statusLabel = $submission->status instanceof FeedbackTicketStatus
-                    ? $submission->status->label()
-                    : (string) ($submission->status ?? '');
-                $row[] = (string) ($submission->ticket_number ?? '');
-                $row[] = $statusLabel;
-            }
-            $row[] = $submission->version ? 'v'.$submission->version->version_number : '';
-            $row[] = strtoupper((string) $submission->locale);
-            $row[] = (string) $submission->source;
-            $row[] = optional($submission->submitted_at)->format('Y-m-d H:i:s') ?? '';
+            $row = [
+                $submission->id,
+                $submission->version ? 'v'.$submission->version->version_number : '',
+                strtoupper((string) $submission->locale),
+                (string) $submission->source,
+                optional($submission->submitted_at)->format('Y-m-d H:i:s') ?? '',
+            ];
 
             $answers = (array) ($submission->answers ?? []);
             foreach ($columns as $colDef) {

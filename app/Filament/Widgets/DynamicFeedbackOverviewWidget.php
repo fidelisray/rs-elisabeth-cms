@@ -2,9 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Enums\DynamicFormMode;
 use App\Enums\DynamicFormStatus;
-use App\Enums\FeedbackTicketStatus;
 use App\Filament\Resources\DynamicForms\DynamicFormResource;
 use App\Filament\Resources\DynamicFormSubmissions\DynamicFormSubmissionResource;
 use App\Models\DynamicForm;
@@ -14,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * Widget ringkasan formulir dinamis aktif dan tiket feedback dinamis berstatus baru.
+ * Widget ringkasan Custom Questionnaire Form aktif dan respons terbaru.
  */
 class DynamicFeedbackOverviewWidget extends Widget
 {
@@ -63,22 +61,22 @@ class DynamicFeedbackOverviewWidget extends Widget
                 ])->all();
         }
 
-        $newFeedbackCount = 0;
-        $latestNewTicketsPayload = [];
+        $totalSubmissionsCount = 0;
+        $latestSubmissionsPayload = [];
         if ($canViewSubmissions) {
-            $baseTicketQuery = DynamicFormSubmission::query()
-                ->where('status', FeedbackTicketStatus::Baru->value)
-                ->whereHas('form', fn ($q) => $q->whereNull('dynamic_forms.deleted_at')->where('mode', DynamicFormMode::Feedback->value));
+            $baseSubmissionQuery = DynamicFormSubmission::query()
+                ->whereHas('form', fn ($q) => $q->whereNull('dynamic_forms.deleted_at'));
 
-            $newFeedbackCount = (clone $baseTicketQuery)->count();
-            $latestNewTicketsPayload = (clone $baseTicketQuery)
+            $totalSubmissionsCount = (clone $baseSubmissionQuery)->count();
+            $latestSubmissionsPayload = (clone $baseSubmissionQuery)
                 ->with('form:id,title,mode')
                 ->orderByDesc('submitted_at')
                 ->limit(6)
                 ->get()
                 ->map(fn (DynamicFormSubmission $s): array => [
-                    'ticket_number' => $s->ticket_number ?? ('#'.$s->id),
+                    'response_label' => 'Response #'.$s->id,
                     'form_title' => $s->form?->title ?? '-',
+                    'mode_label' => $s->form?->mode?->label() ?? '-',
                     'submitted_at' => optional($s->submitted_at)->format('d M Y, H:i') ?? '-',
                     'view_url' => DynamicFormSubmissionResource::getUrl('view', ['record' => $s]),
                 ])->all();
@@ -88,9 +86,9 @@ class DynamicFeedbackOverviewWidget extends Widget
             'canViewForms' => $canViewForms,
             'canViewSubmissions' => $canViewSubmissions,
             'activeFormsCount' => $activeFormsCount,
-            'newFeedbackCount' => $newFeedbackCount,
+            'totalSubmissionsCount' => $totalSubmissionsCount,
             'activeForms' => $activeFormsPayload,
-            'latestNewTickets' => $latestNewTicketsPayload,
+            'latestSubmissions' => $latestSubmissionsPayload,
             'formsIndexUrl' => $canViewForms ? DynamicFormResource::getUrl('index') : null,
             'submissionsIndexUrl' => $canViewSubmissions ? DynamicFormSubmissionResource::getUrl('index') : null,
         ];

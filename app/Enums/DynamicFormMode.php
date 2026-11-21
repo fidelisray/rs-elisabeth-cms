@@ -11,7 +11,7 @@ enum DynamicFormMode: string
     {
         return match ($this) {
             self::Questionnaire => 'Kuesioner / Survei',
-            self::Feedback => 'Kritik, Saran & Tiket',
+            self::Feedback => 'Kritik & Saran',
         };
     }
 

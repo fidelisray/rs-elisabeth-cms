@@ -6,7 +6,6 @@ use App\Actions\FollowUpDynamicFormSubmission;
 use App\Actions\HardDeleteContent;
 use App\Enums\DynamicFormMode;
 use App\Enums\DynamicFormStatus;
-use App\Enums\FeedbackTicketStatus;
 use App\Filament\Resources\DynamicForms\DynamicFormResource;
 use App\Filament\Resources\DynamicForms\Pages\CreateDynamicForm;
 use App\Filament\Resources\DynamicForms\Pages\EditDynamicForm;
@@ -15,7 +14,6 @@ use App\Filament\Resources\DynamicForms\Pages\ManageDynamicFormAnalytics;
 use App\Filament\Resources\DynamicForms\Pages\ViewDynamicForm;
 use App\Filament\Resources\DynamicFormSubmissions\DynamicFormSubmissionResource;
 use App\Filament\Resources\DynamicFormSubmissions\Pages\ListDynamicFormSubmissions;
-use App\Filament\Resources\DynamicFormSubmissions\Pages\ViewDynamicFormSubmission;
 use App\Filament\Widgets\DynamicFeedbackOverviewWidget;
 use App\Livewire\DynamicFormLivePreview;
 use App\Models\AuditLog;
@@ -31,7 +29,6 @@ use App\Services\DynamicForm\DynamicFormExportService;
 use App\Services\DynamicForm\DynamicFormLogicEvaluator;
 use App\Services\DynamicForm\DynamicFormSubmissionService;
 use App\Services\DynamicForm\DynamicFormVersionService;
-use Tests\Concerns\SeedsTestRolesAndUsers;
 use Filament\Actions\Testing\TestAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -43,6 +40,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Tests\TestCase;
 
 class DynamicFormPanelTest extends TestCase
@@ -378,43 +376,30 @@ class DynamicFormPanelTest extends TestCase
         $this->get(DynamicFormSubmissionResource::getUrl('index'))->assertForbidden();
         $this->get($downloadUrl)->assertForbidden();
 
-        // Marketing boleh melihat submission & mengunduh lampiran, tapi tidak boleh followUp tanpa Update:DynamicFormSubmission
+        // Marketing boleh melihat submission & mengunduh lampiran, dan tidak ada mekanisme ticketing/followUp
         $this->switchUser($this->marketing);
         $this->get(DynamicFormSubmissionResource::getUrl('view', ['record' => $submission]))
             ->assertOk()
             ->assertSee('AC ruang tunggu mati')
-            ->assertSee('bukti-rahasia.pdf');
+            ->assertSee('bukti-rahasia.pdf')
+            ->assertDontSee('Nomor Tiket')
+            ->assertDontSee('Status & Catatan Tindak Lanjut');
 
         $downloadRes = $this->get($downloadUrl)->assertOk();
         $this->assertSame('nosniff', $downloadRes->headers->get('X-Content-Type-Options'));
 
-        Livewire::test(ViewDynamicFormSubmission::class, ['record' => $submission->getKey()])
-            ->assertActionHidden('followUp');
+        $this->assertNull($submission->ticket_number);
+        $this->assertNull($submission->status);
 
         // Immutability submission
         $this->assertFalse(DynamicFormSubmissionResource::canCreate());
         $this->assertFalse(DynamicFormSubmissionResource::canEdit($submission));
         $this->assertFalse(DynamicFormSubmissionResource::canDelete($submission));
 
-        // Super Admin dapat menindaklanjuti tiket feedback; catatan internal tidak bocor ke metadata AuditLog
+        // Pastikan baik mode feedback maupun questionnaire tidak mengizinkan followUp bahkan untuk super_admin
         $this->switchUser($this->superAdmin);
-        Livewire::test(ViewDynamicFormSubmission::class, ['record' => $submission->getKey()])
-            ->callAction('followUp', data: [
-                'status' => FeedbackTicketStatus::Diproses->value,
-                'internal_note' => 'Teknisi sedang menuju ruang tunggu.',
-            ])
-            ->assertHasNoActionErrors();
+        $this->assertFalse($this->superAdmin->can('followUp', $submission));
 
-        $submission->refresh();
-        $this->assertSame(FeedbackTicketStatus::Diproses, $submission->status);
-        $this->assertSame('Teknisi sedang menuju ruang tunggu.', $submission->internal_note);
-        $this->assertSame('AC ruang tunggu mati', $submission->answers['judul']);
-
-        $audit = AuditLog::where('action', 'dynamic_form_submission.followed_up')->sole();
-        $this->assertSame('diproses', $audit->metadata['status']);
-        $this->assertStringNotContainsString('Teknisi sedang menuju ruang tunggu.', json_encode($audit->metadata));
-
-        // Pastikan questionnaire mode tidak bisa di-followUp bahkan oleh super_admin
         $qForm = DynamicForm::factory()->create(['mode' => DynamicFormMode::Questionnaire]);
         $vService = app(DynamicFormVersionService::class);
         $vService->syncDraftStructure($qForm, [[
@@ -427,7 +412,7 @@ class DynamicFormPanelTest extends TestCase
 
         $this->assertFalse($this->superAdmin->can('followUp', $qSub));
         $this->expectException(AuthorizationException::class);
-        app(FollowUpDynamicFormSubmission::class)->handle($qSub, ['status' => 'selesai']);
+        app(FollowUpDynamicFormSubmission::class)->handle($submission, ['status' => 'selesai']);
     }
 
     public function test_duplicate_close_reopen_hard_delete_and_dashboard_widget(): void
@@ -436,8 +421,8 @@ class DynamicFormPanelTest extends TestCase
 
         // Empty state widget
         Livewire::test(DynamicFeedbackOverviewWidget::class)
-            ->assertSee('Formulir Dinamis')
-            ->assertSee('Belum ada formulir dinamis yang dipublikasikan.');
+            ->assertSee('Custom Questionnaire Form')
+            ->assertSee('Belum ada formulir kustom yang dipublikasikan.');
 
         $form = DynamicForm::factory()->feedback()->create([
             'title' => 'Form Sumber ID',
@@ -457,7 +442,7 @@ class DynamicFormPanelTest extends TestCase
 
         Livewire::test(DynamicFeedbackOverviewWidget::class)
             ->assertSee('Form Sumber ID')
-            ->assertSee('DFB-');
+            ->assertSee('Respons Terbaru Masuk');
 
         $copy = $versionService->duplicateForm($form, 'Form Salinan EN', null, 'en');
         $this->assertSame('en', $copy->locale);
@@ -562,7 +547,7 @@ class DynamicFormPanelTest extends TestCase
         }
 
         Livewire::test(ListDynamicFormSubmissions::class)
-            ->searchTable($sub->ticket_number)
+            ->searchTable('Survei Lengkap RS')
             ->assertCanSeeTableRecords([$sub]);
 
         Livewire::test(ListDynamicForms::class)
@@ -769,7 +754,7 @@ class DynamicFormPanelTest extends TestCase
         $this->get(DynamicFormSubmissionResource::getUrl('view', ['record' => $sub]))
             ->assertOk()
             ->assertSee('Form Dihapus Permanen')
-            ->assertSee($sub->ticket_number);
+            ->assertSee('Response #'.$sub->id);
 
         // Hard Delete oleh super_admin harus bersih tanpa error FK constraint
         $this->assertTrue(app(HardDeleteContent::class)->handle($formWithSubs->fresh()));
@@ -778,7 +763,7 @@ class DynamicFormPanelTest extends TestCase
         $this->assertDatabaseMissing('dynamic_form_uploads', ['id' => $upload->id]);
         Storage::disk('private-test')->assertMissing('dynamic-forms/to-delete.pdf');
 
-        // 3. Widget RBAC: role hanya punya ViewAny:DynamicForm tidak boleh melihat daftar tiket submission
+        // 3. Widget RBAC: role hanya punya ViewAny:DynamicForm tidak boleh melihat daftar respons terbaru
         $activeForm = DynamicForm::factory()->feedback()->create(['title' => 'Form Aktif Widget', 'slug' => 'form-aktif-widget']);
         $versionService->syncDraftStructure($activeForm, [[
             'section_key' => 's1',
@@ -786,7 +771,7 @@ class DynamicFormPanelTest extends TestCase
             'fields' => [['field_key' => 'pesan', 'type' => 'short_text', 'label' => 'Pesan']],
         ]], false);
         $versionService->publishDraftVersion($activeForm);
-        $widgetTicket = app(DynamicFormSubmissionService::class)->submit($activeForm->fresh(), ['answers' => ['pesan' => 'Test']]);
+        $widgetSub = app(DynamicFormSubmissionService::class)->submit($activeForm->fresh(), ['answers' => ['pesan' => 'Test']]);
 
         $formViewerRole = Role::findOrCreate('widget_form_viewer', 'web');
         $formViewerRole->syncPermissions(['View:DynamicFeedbackOverviewWidget', 'ViewAny:DynamicForm', 'View:DynamicForm']);
@@ -796,8 +781,9 @@ class DynamicFormPanelTest extends TestCase
 
         Livewire::test(DynamicFeedbackOverviewWidget::class)
             ->assertSee('Form Aktif Widget')
-            ->assertDontSee($widgetTicket->ticket_number)
-            ->assertDontSee('Tiket Baru Menunggu');
+            ->assertDontSee(DynamicFormSubmissionResource::getUrl('view', ['record' => $widgetSub]))
+            ->assertDontSee('Total Respons Masuk')
+            ->assertDontSee('Respons Terbaru Masuk');
     }
 
     public function test_analytics_livewire_export_actions_empty_filter_and_legacy_matrix_rows(): void
@@ -1001,11 +987,12 @@ class DynamicFormPanelTest extends TestCase
         $this->switchUser($submissionViewer);
 
         Livewire::test(DynamicFeedbackOverviewWidget::class)
-            ->assertSee($ticket->ticket_number)
-            ->assertSee('Tiket Baru Menunggu')
+            ->assertSee(DynamicFormSubmissionResource::getUrl('view', ['record' => $ticket]))
+            ->assertSee('Total Respons Masuk')
+            ->assertSee('Respons Terbaru Masuk')
             ->assertDontSee('Formulir Aktif:')
-            ->assertDontSee('Kelola Dynamic Forms')
-            ->assertDontSee('Formulir Dinamis Terpublikasi');
+            ->assertDontSee('Kelola Custom Questionnaire Form')
+            ->assertDontSee('Formulir Kustom Terpublikasi');
     }
 
     public function test_orphan_upload_returns_404_and_soft_deleted_submission_upload_enforces_attachment_policy(): void
@@ -2293,6 +2280,137 @@ class DynamicFormPanelTest extends TestCase
             ->assertSee(route('filament.admin.dynamic-forms.uploads.download', ['upload' => $webpUpload->id, 'inline' => 1]), false)
             ->assertSee(route('filament.admin.dynamic-forms.uploads.download', ['upload' => $pdfUpload->id, 'inline' => 1]), false)
             ->assertDontSee(route('filament.admin.dynamic-forms.uploads.download', ['upload' => $txtUpload->id, 'inline' => 1]), false);
+    }
+
+    public function test_step2_builder_uses_wizard_step_wire_ignore_renderless_blur_and_scoped_partial_renders(): void
+    {
+        $this->actingAs($this->marketing);
+
+        // 1. CreateDynamicForm: semua 4 <form class="fi-sc-wizard-step"> memiliki wire:ignore.self,
+        //    Repeater memiliki overflow-anchor: none, tombol ergonomis tampil, dan Enter dicegah pada TextInput Step 2.
+        $create = Livewire::test(CreateDynamicForm::class);
+        $html = $create->html();
+
+        preg_match_all('/<form\b[^>]*class="[^"]*\bfi-sc-wizard-step\b[^"]*"[^>]*>/i', $html, $stepForms);
+        $this->assertCount(4, $stepForms[0]);
+        foreach ($stepForms[0] as $formTag) {
+            $this->assertStringContainsString('wire:ignore.self', $formTag);
+        }
+
+        $this->assertStringContainsString('overflow-anchor: none;', $html);
+        $this->assertStringContainsString('Tambah Bagian (Section)', $html);
+        $this->assertStringContainsString('Tambah Pertanyaan', $html);
+        $this->assertStringContainsString('x-on:keydown.enter.prevent', $html);
+
+        // 2. Step 1: title -> renderless auto-slug, mode -> tanpa ticket_prefix
+        $titleField = $create->instance()->form->getComponentByStatePath('title', withHidden: true);
+        $this->assertTrue($titleField->isRenderlessAfterStateUpdated());
+        $this->assertNull($create->instance()->form->getComponentByStatePath('ticket_prefix', withHidden: true));
+
+        $create
+            ->set('data.title', 'Survei Uji Stabilitas Scroll')
+            ->assertSet('data.slug', 'survei-uji-stabilitas-scroll')
+            ->set('data.mode', DynamicFormMode::Feedback->value)
+            ->assertHasNoErrors();
+
+        // 3. Step 2: field auto-key memakai skipRenderAfterStateUpdated(), type menargetkan partial render field_config,
+        //    dan pergantian type / subtype / allow_other berjalan tanpa error & menjaga kunci tetap sinkron.
+        $sections = $create->get('data.sections');
+        $secKey = array_key_first($sections);
+        $fldKey = array_key_first($sections[$secKey]['fields']);
+
+        $secTitleComponent = $create->instance()->form->getComponentByStatePath("sections.{$secKey}.title", withHidden: true);
+        $fldLabelComponent = $create->instance()->form->getComponentByStatePath("sections.{$secKey}.fields.{$fldKey}.label", withHidden: true);
+        $fldConfigKey = "form.sections.{$secKey}.fields.{$fldKey}.field_config";
+        $fldConfigComponent = $create->instance()->form->getComponent($fldConfigKey, withHidden: true, isAbsoluteKey: true);
+
+        $this->assertTrue($secTitleComponent->isRenderlessAfterStateUpdated());
+        $this->assertTrue($fldLabelComponent->isRenderlessAfterStateUpdated());
+        $this->assertNotNull($fldConfigComponent);
+        $this->assertSame($fldConfigKey, $fldConfigComponent->getKey());
+
+        // Blur title & label: key terisi otomatis namun render HTML penuh dilewati (skipRender -> partials kosong, tanpa full morph)
+        $create
+            ->set("data.sections.{$secKey}.title", 'Data Lokasi Kerja')
+            ->assertSet("data.sections.{$secKey}.section_key", 'data_lokasi_kerja')
+            ->set("data.sections.{$secKey}.fields.{$fldKey}.label", 'Apakah Pengguna Patuh?')
+            ->assertSet("data.sections.{$secKey}.fields.{$fldKey}.field_key", 'apakah_pengguna_patuh');
+        $this->assertSame([], $create->effects['partials'] ?? []);
+        $this->assertArrayNotHasKey('html', $create->effects);
+
+        // Ganti subtype, type, dan allow_other: hanya me-render partial Group field_config milik kartu pertanyaan ini
+        $create->set("data.sections.{$secKey}.fields.{$fldKey}.options.subtype", 'number');
+        $this->assertArrayHasKey("schema-component::{$fldConfigKey}", $create->effects['partials'] ?? []);
+        $this->assertArrayNotHasKey('html', $create->effects);
+
+        $create->set("data.sections.{$secKey}.fields.{$fldKey}.type", 'radio');
+        $this->assertArrayHasKey("schema-component::{$fldConfigKey}", $create->effects['partials'] ?? []);
+        $this->assertArrayNotHasKey('html', $create->effects);
+
+        $create->set("data.sections.{$secKey}.fields.{$fldKey}.options.allow_other", true)
+            ->assertHasNoErrors();
+        $this->assertArrayHasKey("schema-component::{$fldConfigKey}", $create->effects['partials'] ?? []);
+        $this->assertArrayNotHasKey('html', $create->effects);
+
+        $choices = $create->get("data.sections.{$secKey}.fields.{$fldKey}.options.choices");
+        $this->assertCount(2, $choices);
+        $choiceKeys = array_keys($choices);
+        $choiceLabelComponent = $create->instance()->form->getComponentByStatePath(
+            "sections.{$secKey}.fields.{$fldKey}.options.choices.{$choiceKeys[0]}.label",
+            withHidden: true
+        );
+        $this->assertTrue($choiceLabelComponent->isRenderlessAfterStateUpdated());
+
+        $create
+            ->set("data.sections.{$secKey}.fields.{$fldKey}.options.choices.{$choiceKeys[0]}.label", 'Patuh')
+            ->set("data.sections.{$secKey}.fields.{$fldKey}.options.choices.{$choiceKeys[1]}.label", 'Tidak Patuh')
+            ->assertSet("data.sections.{$secKey}.fields.{$fldKey}.options.choices.{$choiceKeys[0]}.key", 'patuh')
+            ->assertSet("data.sections.{$secKey}.fields.{$fldKey}.options.choices.{$choiceKeys[1]}.key", 'tidak_patuh');
+        $this->assertArrayNotHasKey('html', $create->effects);
+
+        // 4. EditDynamicForm: perubahan di Langkah 2 + panggilan partiallyRenderSchemaComponent untuk Step 3 & Step 4
+        //    berjalan mulus dan menyegarkan opsi pertanyaan Langkah 3 serta ringkasan kesiapan Langkah 4.
+        $form = DynamicForm::factory()->create([
+            'title' => 'Form Edit Partial Sync',
+            'slug' => 'form-edit-partial-sync',
+        ]);
+        $versionService = app(DynamicFormVersionService::class);
+        $versionService->syncDraftStructure($form, [[
+            'section_key' => 'sec_awal',
+            'title' => 'Bagian Awal',
+            'fields' => [[
+                'field_key' => 'pertanyaan_awal',
+                'type' => 'short_text',
+                'label' => 'Pertanyaan Awal',
+                'is_required' => true,
+            ]],
+        ]], false);
+        $versionService->publishDraftVersion($form, $this->marketing->email);
+
+        $edit = Livewire::test(EditDynamicForm::class, ['record' => $form->getRouteKey()]);
+        $editHtml = $edit->html();
+        $this->assertStringContainsString('partiallyRenderSchemaComponent', $editHtml);
+        $this->assertStringContainsString('form.step_conditional_logic_body', $editHtml);
+        $this->assertStringContainsString('form.step_readiness_summary', $editHtml);
+
+        $editSections = $edit->get('data.sections');
+        $editSecKey = array_key_first($editSections);
+        $editSections[$editSecKey]['fields']['fld_baru_item'] = [
+            'field_key' => 'pertanyaan_baru_step2',
+            'type' => 'short_text',
+            'label' => 'Pertanyaan Baru Step 2',
+            'is_required' => false,
+        ];
+        $edit->set('data.sections', $editSections);
+
+        $edit->call('partiallyRenderSchemaComponent', 'form.step_conditional_logic_body')
+            ->assertHasNoErrors();
+        $this->assertArrayHasKey('schema-component::form.step_conditional_logic_body', $edit->effects['partials'] ?? []);
+
+        $edit->call('partiallyRenderSchemaComponent', 'form.step_readiness_summary')
+            ->assertHasNoErrors();
+        $summaryPartialHtml = (string) ($edit->effects['partials']['schema-component::form.step_readiness_summary'] ?? '');
+        $this->assertStringContainsString('Pertanyaan Input: 2', $summaryPartialHtml);
     }
 
     private function switchUser(User $user): void

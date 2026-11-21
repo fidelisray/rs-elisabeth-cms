@@ -2,20 +2,14 @@
 
 namespace App\Filament\Resources\DynamicFormSubmissions\Pages;
 
-use App\Actions\FollowUpDynamicFormSubmission;
 use App\Enums\DynamicFormFieldType;
 use App\Enums\DynamicFormMode;
-use App\Enums\FeedbackTicketStatus;
 use App\Filament\Resources\DynamicFormSubmissions\DynamicFormSubmissionResource;
 use App\Http\Controllers\Admin\DownloadDynamicFormUploadController;
 use App\Models\DynamicFormSubmission;
 use App\Models\DynamicFormUpload;
 use App\Services\DynamicForm\DynamicFormLogicEvaluator;
 use App\Services\DynamicForm\DynamicFormVersionService;
-use Filament\Actions\Action;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
@@ -28,42 +22,7 @@ class ViewDynamicFormSubmission extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            Action::make('followUp')
-                ->label('Tindak lanjut')
-                ->color('primary')
-                ->authorize(fn (): bool => Gate::allows('followUp', $this->getRecord()))
-                ->visible(fn (): bool => Gate::allows('followUp', $this->getRecord()))
-                ->schema([
-                    Select::make('status')
-                        ->label('Status Tindak Lanjut')
-                        ->options(FeedbackTicketStatus::options())
-                        ->required(),
-                    Textarea::make('internal_note')
-                        ->label('Catatan Internal')
-                        ->rows(4)
-                        ->maxLength(5000),
-                ])
-                ->fillForm(function (): array {
-                    /** @var DynamicFormSubmission $record */
-                    $record = $this->getRecord();
-                    $statusVal = $record->status instanceof FeedbackTicketStatus
-                        ? $record->status->value
-                        : (string) ($record->status ?? FeedbackTicketStatus::Baru->value);
-
-                    return [
-                        'status' => $statusVal,
-                        'internal_note' => $record->internal_note,
-                    ];
-                })
-                ->action(function (array $data): void {
-                    /** @var DynamicFormSubmission $record */
-                    $record = $this->getRecord();
-                    app(FollowUpDynamicFormSubmission::class)->handle($record, $data);
-                    $record->refresh();
-                    Notification::make()->title('Tindak lanjut disimpan')->success()->send();
-                }),
-        ];
+        return [];
     }
 
     /**
