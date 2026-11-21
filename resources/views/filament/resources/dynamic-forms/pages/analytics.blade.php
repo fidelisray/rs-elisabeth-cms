@@ -5,8 +5,6 @@
         $totalResponses = (int) ($summary['total_submissions'] ?? 0);
         $lastSubmittedAt = $summary['last_submitted_at'] ?? null;
         $avgFillRate = $summary['avg_fill_rate'] ?? null;
-        $statusCounts = (array) ($summary['status_counts'] ?? []);
-        $isFeedbackMode = $formRecord->mode === \App\Enums\DynamicFormMode::Feedback;
     @endphp
 
     <div class="rse-dfa-root">
@@ -240,21 +238,12 @@
             </div>
 
             <div class="rse-dfa-kpi">
-                @if ($isFeedbackMode)
-                    <p style="font-size: 0.75rem; font-weight: 700; color: var(--rse-a-text-secondary); margin: 0 0 0.375rem;">
-                        Status Tiket Feedback
-                    </p>
-                    <p style="font-size: 0.9375rem; font-weight: 700; margin: 0;">
-                        Baru: {{ $statusCounts['baru'] ?? 0 }} · Diproses: {{ $statusCounts['diproses'] ?? 0 }} · Selesai: {{ $statusCounts['selesai'] ?? 0 }}
-                    </p>
-                @else
-                    <p style="font-size: 0.75rem; font-weight: 700; color: var(--rse-a-text-secondary); margin: 0 0 0.375rem;">
-                        Rata-Rata Keterisian Pertanyaan
-                    </p>
-                    <p style="font-size: 1.75rem; font-weight: 800; margin: 0;">
-                        {{ $avgFillRate !== null ? $avgFillRate.'%' : 'Belum ada data' }}
-                    </p>
-                @endif
+                <p style="font-size: 0.75rem; font-weight: 700; color: var(--rse-a-text-secondary); margin: 0 0 0.375rem;">
+                    Rata-Rata Keterisian Pertanyaan
+                </p>
+                <p style="font-size: 1.75rem; font-weight: 800; margin: 0;">
+                    {{ $avgFillRate !== null ? $avgFillRate.'%' : 'Belum ada data' }}
+                </p>
             </div>
 
             <div class="rse-dfa-kpi">

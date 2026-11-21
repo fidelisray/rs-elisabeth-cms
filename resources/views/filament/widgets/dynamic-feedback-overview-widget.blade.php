@@ -81,9 +81,9 @@
         </style>
 
         <x-filament::section>
-            <x-slot name="heading">Formulir Dinamis & Tiket Feedback Baru</x-slot>
+            <x-slot name="heading">Custom Questionnaire Form & Respons Terbaru</x-slot>
             <x-slot name="description">
-                Ringkasan formulir terpublikasi dan daftar tiket masukan baru yang menunggu tindak lanjut.
+                Ringkasan formulir kustom terpublikasi dan daftar respons terbaru yang masuk.
             </x-slot>
 
             <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem;">
@@ -95,16 +95,16 @@
                     @endif
                     @if ($canViewSubmissions)
                         <span style="padding: 0.375rem 0.75rem; border-radius: 0.375rem; background-color: var(--rse-w-badge-bg); color: var(--rse-w-badge-text); font-size: 0.8125rem; font-weight: 700;">
-                            Tiket Baru Menunggu: {{ $newFeedbackCount }}
+                            Total Respons Masuk: {{ $totalSubmissionsCount }}
                         </span>
                     @endif
                 </div>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
                     @if ($formsIndexUrl)
-                        <a href="{{ $formsIndexUrl }}" class="rse-dfw-cta">Kelola Dynamic Forms</a>
+                        <a href="{{ $formsIndexUrl }}" class="rse-dfw-cta">Kelola Custom Questionnaire Form</a>
                     @endif
                     @if ($submissionsIndexUrl)
-                        <a href="{{ $submissionsIndexUrl }}" class="rse-dfw-link">Semua Form Submissions</a>
+                        <a href="{{ $submissionsIndexUrl }}" class="rse-dfw-link">Semua Custom Questionnaire Responses</a>
                     @endif
                 </div>
             </div>
@@ -113,11 +113,11 @@
                 @if ($canViewForms)
                     <div class="rse-dfw-box">
                         <h3 style="font-size: 0.875rem; font-weight: 700; margin: 0 0 0.75rem;">
-                            Formulir Dinamis Terpublikasi
+                            Formulir Kustom Terpublikasi
                         </h3>
                         @if ($activeForms === [])
                             <p style="font-size: 0.8125rem; color: var(--rse-w-text-secondary); margin: 0;">
-                                Belum ada formulir dinamis yang dipublikasikan. Buat dan publikasikan formulir di menu Dynamic Forms.
+                                Belum ada formulir kustom yang dipublikasikan. Buat dan publikasikan formulir di menu Custom Questionnaire Form.
                             </p>
                         @else
                             <div style="display: flex; flex-direction: column; gap: 0.5rem;">
@@ -140,23 +140,23 @@
                 @if ($canViewSubmissions)
                     <div class="rse-dfw-box">
                         <h3 style="font-size: 0.875rem; font-weight: 700; margin: 0 0 0.75rem;">
-                            Tiket Feedback Baru Terbaru
+                            Respons Terbaru Masuk
                         </h3>
-                        @if ($latestNewTickets === [])
+                        @if ($latestSubmissions === [])
                             <p style="font-size: 0.8125rem; color: var(--rse-w-text-secondary); margin: 0;">
-                                Tidak ada tiket feedback berstatus baru saat ini.
+                                Belum ada respons yang masuk saat ini.
                             </p>
                         @else
                             <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                                @foreach ($latestNewTickets as $ticket)
+                                @foreach ($latestSubmissions as $item)
                                     <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 0.375rem; background-color: var(--rse-w-surface); border: 1px solid var(--rse-w-divider);">
                                         <div style="min-width: 0; flex: 1 1 12rem;">
-                                            <p style="font-size: 0.875rem; font-weight: 700; margin: 0;">{{ $ticket['ticket_number'] }}</p>
+                                            <p style="font-size: 0.875rem; font-weight: 700; margin: 0;">{{ $item['response_label'] }}</p>
                                             <p style="font-size: 0.75rem; color: var(--rse-w-text-secondary); margin: 0; overflow-wrap: anywhere;">
-                                                {{ $ticket['form_title'] }} · {{ $ticket['submitted_at'] }}
+                                                {{ $item['form_title'] }} ({{ $item['mode_label'] }}) · {{ $item['submitted_at'] }}
                                             </p>
                                         </div>
-                                        <a href="{{ $ticket['view_url'] }}" class="rse-dfw-link">Lihat</a>
+                                        <a href="{{ $item['view_url'] }}" class="rse-dfw-link">Lihat</a>
                                     </div>
                                 @endforeach
                             </div>

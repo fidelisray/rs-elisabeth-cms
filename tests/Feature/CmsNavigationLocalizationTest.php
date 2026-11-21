@@ -30,7 +30,6 @@ use App\Models\Role;
 use App\Models\RoomFacility;
 use App\Models\User;
 use BezhanSalleh\FilamentShield\Resources\Roles\RoleResource;
-use Tests\Concerns\SeedsTestRolesAndUsers;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
@@ -42,6 +41,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Js;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Tests\TestCase;
 
 class CmsNavigationLocalizationTest extends TestCase
@@ -177,16 +177,16 @@ class CmsNavigationLocalizationTest extends TestCase
                 'sort' => 2,
             ],
             DynamicFormResource::class => [
-                'nav' => 'Dynamic Forms',
-                'plural' => 'Dynamic Forms',
-                'singular' => 'Dynamic Form',
+                'nav' => 'Custom Questionnaire Form',
+                'plural' => 'Custom Questionnaire Forms',
+                'singular' => 'Custom Questionnaire Form',
                 'group' => 'Patient Feedback',
                 'sort' => 3,
             ],
             DynamicFormSubmissionResource::class => [
-                'nav' => 'Form Submissions',
-                'plural' => 'Form Submissions',
-                'singular' => 'Form Submission',
+                'nav' => 'Custom Questionnaire Responses',
+                'plural' => 'Custom Questionnaire Responses',
+                'singular' => 'Custom Questionnaire Response',
                 'group' => 'Patient Feedback',
                 'sort' => 4,
             ],
@@ -249,7 +249,7 @@ class CmsNavigationLocalizationTest extends TestCase
             ],
             [
                 'label' => 'Patient Feedback',
-                'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires', 'Dynamic Forms', 'Form Submissions'],
+                'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires', 'Custom Questionnaire Form', 'Custom Questionnaire Responses'],
             ],
             [
                 'label' => 'Access Control',
@@ -304,8 +304,8 @@ class CmsNavigationLocalizationTest extends TestCase
             'Patient Feedback',
             'Feedback & Suggestions',
             'Satisfaction Questionnaires',
-            'Dynamic Forms',
-            'Form Submissions',
+            'Custom Questionnaire Form',
+            'Custom Questionnaire Responses',
             'Access Control',
             'User Management',
             'Roles',
@@ -354,8 +354,8 @@ class CmsNavigationLocalizationTest extends TestCase
             'Online Library',
             'Feedback & Suggestions',
             'Satisfaction Questionnaires',
-            'Dynamic Forms',
-            'Form Submissions',
+            'Custom Questionnaire Form',
+            'Custom Questionnaire Responses',
             'User Management',
             'Roles',
         ], $renderedItemLabels);
@@ -453,7 +453,7 @@ class CmsNavigationLocalizationTest extends TestCase
             ],
             [
                 'label' => 'Patient Feedback',
-                'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires', 'Dynamic Forms', 'Form Submissions'],
+                'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires', 'Custom Questionnaire Form', 'Custom Questionnaire Responses'],
             ],
         ];
 
@@ -842,11 +842,11 @@ class CmsNavigationLocalizationTest extends TestCase
         $expectedSectionLabels = [
             'Article',
             'Banner Promotion',
+            'Custom Questionnaire Form',
+            'Custom Questionnaire Response',
             'Doctor Profile',
-            'Dynamic Form',
             'Facility & Service',
             'Feedback',
-            'Form Submission',
             'Inpatient Room',
             'News',
             'Online Library',

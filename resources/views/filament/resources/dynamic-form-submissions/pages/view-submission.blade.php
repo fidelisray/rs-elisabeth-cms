@@ -1,11 +1,4 @@
 <x-filament-panels::page>
-    @php
-        $statusEnum = $submission->status instanceof \App\Enums\FeedbackTicketStatus
-            ? $submission->status
-            : \App\Enums\FeedbackTicketStatus::tryFrom((string) $submission->status);
-        $statusValue = $statusEnum?->value ?? 'baru';
-    @endphp
-
     <div class="rse-dfs-root">
         <style>
             .rse-dfs-root {
@@ -137,14 +130,6 @@
                         {{ optional($submission->submitted_at)->format('d M Y, H:i') ?? '-' }}
                     </p>
                 </div>
-                @if ($isFeedback)
-                    <div>
-                        <p style="font-size: 0.75rem; color: var(--rse-s-text-secondary); margin: 0;">Nomor Tiket</p>
-                        <p style="font-size: 0.875rem; font-weight: 700; margin: 0.125rem 0 0;">
-                            {{ $submission->ticket_number ?? '-' }}
-                        </p>
-                    </div>
-                @endif
                 <div>
                     <p style="font-size: 0.75rem; color: var(--rse-s-text-secondary); margin: 0;">Bahasa / Sumber</p>
                     <p style="font-size: 0.875rem; font-weight: 700; margin: 0.125rem 0 0;">
@@ -153,27 +138,6 @@
                 </div>
             </div>
         </div>
-
-        @if ($isFeedback)
-            @php
-                $badgeStyle = match ($statusValue) {
-                    'selesai' => 'background-color: var(--rse-s-ok-bg); color: var(--rse-s-ok-text);',
-                    'diproses' => 'background-color: var(--rse-s-sky-bg); color: var(--rse-s-sky-text);',
-                    default => 'background-color: var(--rse-s-amber-bg); color: var(--rse-s-amber-text);',
-                };
-            @endphp
-            <div class="rse-dfs-card">
-                <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.75rem;">
-                    <h2 style="font-size: 1rem; font-weight: 700; margin: 0;">Status & Catatan Tindak Lanjut</h2>
-                    <span style="padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 700; {{ $badgeStyle }}">
-                        {{ $statusEnum?->label() ?? ucfirst($statusValue) }}
-                    </span>
-                </div>
-                <p style="font-size: 0.875rem; color: var(--rse-s-text-secondary); margin: 0;">
-                    {{ filled($submission->internal_note) ? $submission->internal_note : 'Belum ada catatan tindak lanjut internal.' }}
-                </p>
-            </div>
-        @endif
 
         @if ($renderedSections === [] && $orphanItems === [])
             <div class="rse-dfs-card" style="text-align: center; padding: 2rem;">

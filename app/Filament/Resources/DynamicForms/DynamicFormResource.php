@@ -27,11 +27,11 @@ class DynamicFormResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
-    protected static ?string $navigationLabel = 'Dynamic Forms';
+    protected static ?string $navigationLabel = 'Custom Questionnaire Form';
 
-    protected static ?string $modelLabel = 'Dynamic Form';
+    protected static ?string $modelLabel = 'Custom Questionnaire Form';
 
-    protected static ?string $pluralModelLabel = 'Dynamic Forms';
+    protected static ?string $pluralModelLabel = 'Custom Questionnaire Forms';
 
     protected static string|\UnitEnum|null $navigationGroup = 'Patient Feedback';
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use App\Enums\DynamicFormMode;
 use App\Models\DynamicFormSubmission;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Foundation\Auth\User as AuthUser;
@@ -40,11 +39,7 @@ class DynamicFormSubmissionPolicy
 
     public function followUp(AuthUser $authUser, DynamicFormSubmission $submission): bool
     {
-        $submission->loadMissing('form');
-
-        return $this->isActive($authUser)
-            && $authUser->can('Update:DynamicFormSubmission')
-            && $submission->form?->mode === DynamicFormMode::Feedback;
+        return false;
     }
 
     public function downloadAttachment(AuthUser $authUser, DynamicFormSubmission $submission): bool

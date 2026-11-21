@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\DynamicFormSubmissions\Tables;
 
 use App\Enums\DynamicFormMode;
-use App\Enums\FeedbackTicketStatus;
 use App\Models\DynamicFormVersion;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
@@ -23,14 +22,6 @@ class DynamicFormSubmissionsTable
                     ->label('ID')
                     ->sortable()
                     ->searchable(),
-
-                TextColumn::make('ticket_number')
-                    ->label('Nomor Tiket')
-                    ->placeholder('-')
-                    ->badge()
-                    ->color('warning')
-                    ->searchable()
-                    ->sortable(),
 
                 TextColumn::make('form.title')
                     ->label('Formulir')
@@ -52,20 +43,6 @@ class DynamicFormSubmissionsTable
                     ->formatStateUsing(fn ($state): string => $state ? 'v'.$state : '-')
                     ->badge()
                     ->color('gray'),
-
-                TextColumn::make('status')
-                    ->label('Status Tiket')
-                    ->placeholder('-')
-                    ->badge()
-                    ->formatStateUsing(fn (FeedbackTicketStatus|string|null $state): string => $state instanceof FeedbackTicketStatus
-                        ? $state->label()
-                        : (FeedbackTicketStatus::tryFrom((string) $state)?->label() ?? '-'))
-                    ->color(fn (FeedbackTicketStatus|string|null $state): string => match ($state instanceof FeedbackTicketStatus ? $state : FeedbackTicketStatus::tryFrom((string) $state)) {
-                        FeedbackTicketStatus::Baru => 'warning',
-                        FeedbackTicketStatus::Diproses => 'info',
-                        FeedbackTicketStatus::Selesai => 'success',
-                        default => 'gray',
-                    }),
 
                 TextColumn::make('locale')
                     ->label('Bahasa')
@@ -96,10 +73,6 @@ class DynamicFormSubmissionsTable
 
                         return $query->whereHas('form', fn (Builder $formQuery) => $formQuery->where('mode', $value));
                     }),
-
-                SelectFilter::make('status')
-                    ->label('Status Tiket Feedback')
-                    ->options(FeedbackTicketStatus::options()),
 
                 SelectFilter::make('dynamic_form_version_id')
                     ->label('Versi Formulir')
