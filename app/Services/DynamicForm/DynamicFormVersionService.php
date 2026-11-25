@@ -4,6 +4,7 @@ namespace App\Services\DynamicForm;
 
 use App\Enums\DynamicFormFieldType;
 use App\Enums\DynamicFormStatus;
+use App\Enums\DynamicFormTextFormatPreset;
 use App\Models\AuditLog;
 use App\Models\DynamicForm;
 use App\Models\DynamicFormField;
@@ -19,6 +20,7 @@ class DynamicFormVersionService
 {
     public function __construct(
         private readonly DynamicFormLogicEvaluator $logicEvaluator,
+        private readonly DynamicFormHtmlSanitizer $htmlSanitizer,
     ) {}
 
     /**
@@ -35,7 +37,13 @@ class DynamicFormVersionService
         }
 
         if (is_array($version->schema_snapshot) && ! empty($version->schema_snapshot['sections']) && $version->sections()->count() === 0) {
-            return array_values((array) $version->schema_snapshot['sections']);
+            return array_values(array_map(function (array $section): array {
+                $section['fields'] = array_values(array_map(function (array $field): array {
+                    return $this->hydrateEditableShortTextFormat($field);
+                }, (array) ($section['fields'] ?? [])));
+
+                return $section;
+            }, (array) $version->schema_snapshot['sections']));
         }
 
         return $version->sections()
@@ -54,7 +62,7 @@ class DynamicFormVersionService
                         'target_section_key' => $nextRule['target_section_key'] ?? null,
                     ],
                     'fields' => $section->fields->map(function (DynamicFormField $field): array {
-                        return [
+                        return $this->hydrateEditableShortTextFormat([
                             'field_key' => $field->field_key,
                             'type' => $field->type->value,
                             'label' => $field->label,
@@ -65,7 +73,7 @@ class DynamicFormVersionService
                             'options' => $field->options ?? [],
                             'validation_rules' => $field->validation_rules ?? [],
                             'conditional_logic' => $field->conditional_logic ?? [],
-                        ];
+                        ]);
                     })->values()->all(),
                 ];
             })->values()->all();
@@ -127,8 +135,16 @@ class DynamicFormVersionService
                     $usedFieldKeys
                 );
 
-                $options = $this->normalizeFieldOptions($type, (array) ($rawField['options'] ?? []));
-                $validationRules = $this->normalizeValidationRules($type, (array) ($rawField['validation_rules'] ?? []));
+                $rawOptions = (array) ($rawField['options'] ?? []);
+                $rawValidationRules = (array) ($rawField['validation_rules'] ?? []);
+                if ($type === DynamicFormFieldType::ShortText && filled($rawOptions['text_format'] ?? null)) {
+                    $split = DynamicFormTextFormatPreset::splitUnifiedFormat((string) $rawOptions['text_format']);
+                    $rawOptions['subtype'] = $split['subtype'];
+                    $rawValidationRules['format_preset'] = $split['format_preset'];
+                }
+
+                $options = $this->normalizeFieldOptions($type, $rawOptions);
+                $validationRules = $this->normalizeValidationRules($type, $rawValidationRules, $options);
                 $conditionalLogic = $this->normalizeConditionalLogic((array) ($rawField['conditional_logic'] ?? []));
 
                 $fields[] = [
@@ -148,7 +164,9 @@ class DynamicFormVersionService
             $normalized[] = [
                 'section_key' => $sectionKey,
                 'title' => $title,
-                'description' => filled($rawSection['description'] ?? null) ? trim((string) $rawSection['description']) : null,
+                'description' => $this->htmlSanitizer->sanitize(
+                    isset($rawSection['description']) ? (string) $rawSection['description'] : null
+                ),
                 'sort_order' => $sectionIdx + 1,
                 'next_section_rule' => [
                     'action' => $nextAction,
@@ -717,6 +735,29 @@ class DynamicFormVersionService
     }
 
     /**
+     * Hydrate field virtual `options.text_format` untuk dropdown tunggal "Format Jawaban" di Wizard.
+     *
+     * @param  array<string, mixed>  $field
+     * @return array<string, mixed>
+     */
+    private function hydrateEditableShortTextFormat(array $field): array
+    {
+        if (($field['type'] ?? null) !== DynamicFormFieldType::ShortText->value) {
+            return $field;
+        }
+
+        $options = (array) ($field['options'] ?? []);
+        $rules = (array) ($field['validation_rules'] ?? []);
+        $options['text_format'] = DynamicFormTextFormatPreset::resolveShortTextFormat(
+            isset($options['subtype']) ? (string) $options['subtype'] : null,
+            isset($rules['format_preset']) ? (string) $rules['format_preset'] : null,
+        );
+        $field['options'] = $options;
+
+        return $field;
+    }
+
+    /**
      * @param  array<string, mixed>  $raw
      * @return array<string, mixed>
      */
@@ -829,13 +870,18 @@ class DynamicFormVersionService
 
     /**
      * @param  array<string, mixed>  $raw
+     * @param  array<string, mixed>  $options
      * @return array<string, mixed>
      */
-    private function normalizeValidationRules(DynamicFormFieldType $type, array $raw): array
+    private function normalizeValidationRules(DynamicFormFieldType $type, array $raw, array $options = []): array
     {
         $rules = [];
+        $shortTextSubtype = (string) ($options['subtype'] ?? 'text');
 
-        if (in_array($type, [DynamicFormFieldType::ShortText, DynamicFormFieldType::LongText], true)) {
+        if (
+            $type === DynamicFormFieldType::LongText
+            || ($type === DynamicFormFieldType::ShortText && ! in_array($shortTextSubtype, ['number', 'phone'], true))
+        ) {
             if (isset($raw['min_length']) && is_numeric($raw['min_length']) && (int) $raw['min_length'] >= 0) {
                 $rules['min_length'] = (int) $raw['min_length'];
             }
@@ -845,13 +891,23 @@ class DynamicFormVersionService
         }
 
         if ($type === DynamicFormFieldType::ShortText) {
-            if (isset($raw['min_value']) && $raw['min_value'] !== '' && is_numeric($raw['min_value'])) {
-                $rules['min_value'] = (float) $raw['min_value'];
+            if ($shortTextSubtype === 'number') {
+                if (isset($raw['min_value']) && $raw['min_value'] !== '' && is_numeric($raw['min_value'])) {
+                    $rules['min_value'] = (float) $raw['min_value'];
+                }
+                if (isset($raw['max_value']) && $raw['max_value'] !== '' && is_numeric($raw['max_value'])) {
+                    $rules['max_value'] = (float) $raw['max_value'];
+                }
             }
-            if (isset($raw['max_value']) && $raw['max_value'] !== '' && is_numeric($raw['max_value'])) {
-                $rules['max_value'] = (float) $raw['max_value'];
-            }
-            if (filled($raw['pattern'] ?? null)) {
+
+            $preset = $shortTextSubtype === 'text' && filled($raw['format_preset'] ?? null)
+                ? DynamicFormTextFormatPreset::tryFrom((string) $raw['format_preset'])
+                : null;
+
+            if ($preset !== null) {
+                $rules['format_preset'] = $preset->value;
+            } elseif ($shortTextSubtype === 'text' && filled($raw['pattern'] ?? null)) {
+                // Pertahankan pola regex lama secara senyap untuk kompatibilitas formulir existing.
                 $rules['pattern'] = trim((string) $raw['pattern']);
             }
         }

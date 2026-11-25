@@ -181,6 +181,25 @@
             font-weight: 600;
             cursor: pointer;
         }
+
+        .rse-p-rich-text {
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: var(--rse-p-text-secondary);
+            overflow-wrap: anywhere;
+        }
+
+        .rse-p-rich-text p { margin: 0 0 0.5rem; }
+        .rse-p-rich-text li > p { margin: 0; }
+        .rse-p-rich-text p:last-child { margin-bottom: 0; }
+        .rse-p-rich-text h2, .rse-p-rich-text h3 { color: var(--rse-p-text); font-weight: 700; margin: 0.625rem 0 0.375rem; }
+        .rse-p-rich-text h2 { font-size: 1rem; }
+        .rse-p-rich-text h3 { font-size: 0.9375rem; }
+        .rse-p-rich-text ul, .rse-p-rich-text ol { margin: 0.375rem 0 0.5rem; padding-left: 1.25rem; }
+        .rse-p-rich-text ul { list-style-type: disc; }
+        .rse-p-rich-text ol { list-style-type: decimal; }
+        .rse-p-rich-text blockquote { margin: 0.5rem 0; padding: 0.375rem 0.75rem; border-left: 3px solid var(--rse-p-accent); background-color: var(--rse-p-muted); }
+        .rse-p-rich-text a { color: var(--rse-p-accent); text-decoration: underline; }
     </style>
 
     <div class="rse-preview-banner">
@@ -197,6 +216,12 @@
             </button>
         </div>
     </div>
+
+    @if (! empty($formDescription))
+        <div class="rse-preview-card rse-p-rich-text" style="margin-bottom: 1rem; background-color: var(--rse-p-muted);">
+            {!! app(\App\Services\DynamicForm\DynamicFormHtmlSanitizer::class)->sanitize($formDescription) !!}
+        </div>
+    @endif
 
     <div wire:loading.flex wire:target="nextSection,previousSection,resetPreview" style="align-items: center; gap: 0.5rem; padding: 0.625rem 0.875rem; margin-bottom: 0.75rem; border-radius: 0.5rem; background-color: var(--rse-p-muted); border: 1px solid var(--rse-p-divider); font-size: 0.8125rem;">
         <span>Memproses aturan percabangan dan validasi bagian...</span>
@@ -235,13 +260,16 @@
         <div class="rse-preview-card">
             <div style="margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--rse-p-divider);">
                 <p style="font-size: 0.75rem; font-weight: 600; color: var(--rse-p-text-secondary); margin: 0 0 0.25rem;">
-                    Bagian {{ count($sectionHistory) }} (Kunci: {{ $currentSection['section_key'] }})
+                    Bagian {{ count($sectionHistory) }}
                 </p>
                 <h3 style="font-size: 1.0625rem; font-weight: 700; margin: 0;">{{ $currentSection['title'] }}</h3>
-                @if (! empty($currentSection['description']))
-                    <p style="font-size: 0.875rem; color: var(--rse-p-text-secondary); margin: 0.375rem 0 0;">
-                        {{ $currentSection['description'] }}
-                    </p>
+                @php
+                    $safeSectionDesc = app(\App\Services\DynamicForm\DynamicFormHtmlSanitizer::class)->sanitize($currentSection['description'] ?? null);
+                @endphp
+                @if ($safeSectionDesc !== null)
+                    <div class="rse-p-rich-text" style="margin-top: 0.5rem;">
+                        {!! $safeSectionDesc !!}
+                    </div>
                 @endif
             </div>
 
@@ -294,6 +322,7 @@
                         @if ($fType === 'short_text')
                             @php
                                 $subtype = (string) ($fOpts['subtype'] ?? 'text');
+                                $formatPreset = (string) (($field['validation_rules']['format_preset'] ?? ''));
                                 $inputType = match ($subtype) {
                                     'email' => 'email',
                                     'number' => 'number',
@@ -301,13 +330,19 @@
                                     'phone' => 'tel',
                                     default => 'text',
                                 };
+                                $inputMode = match (true) {
+                                    $subtype === 'phone' => 'tel',
+                                    $subtype === 'text' && $formatPreset === 'digits_only' => 'numeric',
+                                    default => null,
+                                };
                             @endphp
                             <input
                                 id="pv-input-{{ $fKey }}"
                                 type="{{ $inputType }}"
+                                @if ($inputMode) inputmode="{{ $inputMode }}" @endif
                                 class="rse-preview-input"
                                 wire:model.live="answers.{{ $fKey }}"
-                                placeholder="{{ $field['placeholder'] ?? 'Ketik jawaban Anda' }}"
+                                placeholder="{{ $field['placeholder'] ?? ($subtype === 'phone' ? 'Contoh: 081234567890' : 'Ketik jawaban Anda') }}"
                             />
                         @elseif ($fType === 'long_text')
                             <textarea

@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Models\DynamicForm;
 use App\Models\DynamicFormUpload;
+use App\Services\DynamicForm\DynamicFormHtmlSanitizer;
 use App\Services\DynamicForm\DynamicFormSubmissionValidator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -198,5 +199,129 @@ class DynamicFormSubmissionValidatorTest extends TestCase
                 $this->assertArrayHasKey('answers.lampiran', $e->errors());
             }
         }
+    }
+
+    public function test_validates_text_format_presets_indonesian_phone_numbers_and_legacy_pattern_fallback(): void
+    {
+        $form = DynamicForm::factory()->create();
+
+        $schema = [
+            'sections' => [[
+                'section_key' => 's1',
+                'sort_order' => 1,
+                'fields' => [
+                    [
+                        'field_key' => 'nama',
+                        'type' => 'short_text',
+                        'label' => 'Nama Lengkap',
+                        'is_required' => true,
+                        'sort_order' => 1,
+                        'options' => ['subtype' => 'text'],
+                        'validation_rules' => ['format_preset' => 'letters_spaces'],
+                    ],
+                    [
+                        'field_key' => 'nik',
+                        'type' => 'short_text',
+                        'label' => 'NIK',
+                        'is_required' => true,
+                        'sort_order' => 2,
+                        'options' => ['subtype' => 'text'],
+                        'validation_rules' => ['format_preset' => 'digits_only', 'min_length' => 16, 'max_length' => 16],
+                    ],
+                    [
+                        'field_key' => 'kode_rm',
+                        'type' => 'short_text',
+                        'label' => 'Kode RM',
+                        'is_required' => true,
+                        'sort_order' => 3,
+                        'options' => ['subtype' => 'text'],
+                        'validation_rules' => ['format_preset' => 'code_dash'],
+                    ],
+                    [
+                        'field_key' => 'hp',
+                        'type' => 'short_text',
+                        'label' => 'Nomor HP',
+                        'is_required' => true,
+                        'sort_order' => 4,
+                        'options' => ['subtype' => 'phone'],
+                    ],
+                    [
+                        'field_key' => 'legacy_kode',
+                        'type' => 'short_text',
+                        'label' => 'Kode Lama',
+                        'is_required' => false,
+                        'sort_order' => 5,
+                        'options' => ['subtype' => 'text'],
+                        'validation_rules' => ['pattern' => '^REG-[0-9]{4}$'],
+                    ],
+                ],
+            ]],
+        ];
+
+        $validated = $this->validator->validate($form, $schema, [
+            'nama' => "dr. Budi Santoso, Sp.PD-KGEH Ma'ruf",
+            'nik' => '0033740101900001',
+            'kode_rm' => 'RM-001234',
+            'hp' => '+62 812-3456-7890',
+            'legacy_kode' => 'REG-2026',
+        ]);
+
+        $this->assertSame('0033740101900001', $validated['answers']['nik']);
+        $this->assertSame('+62 812-3456-7890', $validated['answers']['hp']);
+
+        // Uji seluruh varian valid & tidak valid untuk nomor telepon Indonesia (10-13 digit lokal)
+        foreach (['0812345678', '0812345678901', '+6281234567890', '6281234567890', '0812-3456-7890', '0812.3456.7890'] as $validPhone) {
+            $this->assertTrue(DynamicFormSubmissionValidator::isValidIndonesianPhone($validPhone), "Expected valid phone: {$validPhone}");
+        }
+        foreach (['081234567', '08123456789012', '08012345678', '0248310076', '1234567890', '0812abcd7890', ''] as $invalidPhone) {
+            $this->assertFalse(DynamicFormSubmissionValidator::isValidIndonesianPhone($invalidPhone), "Expected invalid phone: {$invalidPhone}");
+        }
+
+        // Uji penolakan karakter ilegal + pesan error spesifik
+        try {
+            $this->validator->validate($form, $schema, [
+                'nama' => 'Budi 123',
+                'nik' => '3374ABC101900001',
+                'kode_rm' => 'RM 001!',
+                'hp' => '081234567',
+                'legacy_kode' => 'SALAH',
+            ]);
+            $this->fail('Format tidak valid seharusnya ditolak.');
+        } catch (ValidationException $e) {
+            $errors = $e->errors();
+            $this->assertStringContainsString('huruf, spasi, dan tanda baca nama umum', $errors['answers.nama'][0]);
+            $this->assertStringContainsString('hanya boleh berisi angka', $errors['answers.nik'][0]);
+            $this->assertStringContainsString('huruf, angka, dan tanda hubung', $errors['answers.kode_rm'][0]);
+            $this->assertStringContainsString('nomor telepon Indonesia', $errors['answers.hp'][0]);
+            $this->assertStringContainsString('tidak sesuai pola yang diminta', $errors['answers.legacy_kode'][0]);
+        }
+    }
+
+    public function test_html_sanitizer_preserves_safe_formatting_strips_xss_and_normalizes_empty_markup(): void
+    {
+        $sanitizer = app(DynamicFormHtmlSanitizer::class);
+
+        $this->assertNull($sanitizer->sanitize(null));
+        $this->assertNull($sanitizer->sanitize('   '));
+        $this->assertNull($sanitizer->sanitize('<p></p>'));
+        $this->assertNull($sanitizer->sanitize('<p><br>&nbsp;</p>'));
+
+        $dirty = '<h2>Petunjuk</h2><p>Isi <strong>dengan jujur</strong></p><ul><li>Item 1</li></ul>'
+            .'<a href="https://rs-elisabeth.com/info" target="_blank">Panduan</a> '
+            .'<a href="javascript:alert(1)">XSS</a>'
+            .'<script>alert(1)</script><img src="x" onerror="alert(2)">';
+
+        $clean = (string) $sanitizer->sanitize($dirty);
+        $this->assertStringContainsString('<h2>Petunjuk</h2>', $clean);
+        $this->assertStringContainsString('<strong>dengan jujur</strong>', $clean);
+        $this->assertStringContainsString('<ul><li>Item 1</li></ul>', $clean);
+        $this->assertStringContainsString('href="https://rs-elisabeth.com/info"', $clean);
+        $this->assertStringContainsString('rel="noopener noreferrer"', $clean);
+        $this->assertStringNotContainsString('<script', $clean);
+        $this->assertStringNotContainsString('<img', $clean);
+        $this->assertStringNotContainsString('javascript:', $clean);
+        $this->assertStringNotContainsString('onerror', $clean);
+
+        $this->assertSame('Petunjuk Isi dengan jujur Item 1 Panduan XSS', $sanitizer->toPlainText($clean));
     }
 }

@@ -30,6 +30,8 @@ use App\Services\DynamicForm\DynamicFormLogicEvaluator;
 use App\Services\DynamicForm\DynamicFormSubmissionService;
 use App\Services\DynamicForm\DynamicFormVersionService;
 use Filament\Actions\Testing\TestAction;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -2338,8 +2340,10 @@ class DynamicFormPanelTest extends TestCase
         $this->assertSame([], $create->effects['partials'] ?? []);
         $this->assertArrayNotHasKey('html', $create->effects);
 
-        // Ganti subtype, type, dan allow_other: hanya me-render partial Group field_config milik kartu pertanyaan ini
-        $create->set("data.sections.{$secKey}.fields.{$fldKey}.options.subtype", 'number');
+        // Ganti Format Jawaban (text_format), type, dan allow_other: hanya me-render partial Group field_config milik kartu pertanyaan ini
+        $create->set("data.sections.{$secKey}.fields.{$fldKey}.options.text_format", 'number')
+            ->assertSet("data.sections.{$secKey}.fields.{$fldKey}.options.subtype", 'number')
+            ->assertSet("data.sections.{$secKey}.fields.{$fldKey}.validation_rules.format_preset", null);
         $this->assertArrayHasKey("schema-component::{$fldConfigKey}", $create->effects['partials'] ?? []);
         $this->assertArrayNotHasKey('html', $create->effects);
 
@@ -2411,6 +2415,94 @@ class DynamicFormPanelTest extends TestCase
             ->assertHasNoErrors();
         $summaryPartialHtml = (string) ($edit->effects['partials']['schema-component::form.step_readiness_summary'] ?? '');
         $this->assertStringContainsString('Pertanyaan Input: 2', $summaryPartialHtml);
+    }
+
+    public function test_wizard_hides_internal_keys_clones_uniquely_supports_unified_text_format_rich_descriptions_and_distinct_styles(): void
+    {
+        $this->actingAs($this->marketing);
+
+        // 1. Halaman HTTP Create menyuntikkan stylesheet pembedaan warna Bagian (Amber) vs Pertanyaan (Biru Sky)
+        $createPage = $this->get(DynamicFormResource::getUrl('create'))->assertOk();
+        $createPage->assertSee('data-rse-dynamic-form-builder-styles', false);
+        $createPage->assertSee('rse-df-sections-repeater', false);
+        $createPage->assertSee('rse-df-fields-repeater', false);
+        $createPage->assertDontSee('Kunci Bagian (section_key)');
+        $createPage->assertDontSee('Kunci Field (field_key)');
+        $createPage->assertDontSee('Pola Regex Opsional');
+
+        // 2. Verifikasi tipe komponen Hidden (kunci internal), RichEditor (deskripsi form & bagian), dan 1 dropdown Format Jawaban
+        $create = Livewire::test(CreateDynamicForm::class);
+        $sections = $create->get('data.sections');
+        $secKey = array_key_first($sections);
+        $fldKey = array_key_first($sections[$secKey]['fields']);
+
+        $schema = $create->instance()->form;
+        $this->assertInstanceOf(RichEditor::class, $schema->getComponentByStatePath('description', withHidden: true));
+        $this->assertInstanceOf(RichEditor::class, $schema->getComponentByStatePath("sections.{$secKey}.description", withHidden: true));
+        $this->assertInstanceOf(Hidden::class, $schema->getComponentByStatePath("sections.{$secKey}.section_key", withHidden: true));
+        $this->assertInstanceOf(Hidden::class, $schema->getComponentByStatePath("sections.{$secKey}.fields.{$fldKey}.field_key", withHidden: true));
+        $this->assertInstanceOf(Select::class, $schema->getComponentByStatePath("sections.{$secKey}.fields.{$fldKey}.options.text_format", withHidden: true));
+
+        // 3. Isi Rich Text dengan XSS + Format Jawaban digits_only + uji Clone pada Field dan Section agar key tetap unik
+        $create
+            ->set('data.title', 'Survei Identitas Pasien')
+            ->set('data.slug', 'survei-identitas-pasien')
+            ->set('data.description', '<p>Mohon isi <strong>data pasien</strong> dengan benar.</p><script>alert(1)</script>')
+            ->set("data.sections.{$secKey}.title", 'Data Utama')
+            ->set("data.sections.{$secKey}.description", '<ul><li>Siapkan KTP</li></ul><img src="x" onerror="alert(2)">')
+            ->set("data.sections.{$secKey}.fields.{$fldKey}.label", 'NIK Pasien')
+            ->set("data.sections.{$secKey}.fields.{$fldKey}.options.text_format", 'digits_only')
+            ->assertSet("data.sections.{$secKey}.fields.{$fldKey}.options.subtype", 'text')
+            ->assertSet("data.sections.{$secKey}.fields.{$fldKey}.validation_rules.format_preset", 'digits_only')
+            ->set("data.sections.{$secKey}.fields.{$fldKey}.validation_rules.min_length", 16)
+            ->set("data.sections.{$secKey}.fields.{$fldKey}.validation_rules.max_length", 16);
+
+        // Clone field & clone section: kunci otomatis diregenerasi unik sehingga simpan tidak pernah gagal duplikat
+        $create->callAction(
+            TestAction::make('clone')->schemaComponent("sections.{$secKey}.fields")->arguments(['item' => $fldKey])
+        );
+        $fieldsAfterClone = $create->get("data.sections.{$secKey}.fields");
+        $this->assertCount(2, $fieldsAfterClone);
+        $fieldKeysAfterClone = array_values(array_map(fn (array $f): string => (string) ($f['field_key'] ?? ''), $fieldsAfterClone));
+        $this->assertCount(2, array_unique($fieldKeysAfterClone));
+
+        $create->callAction(
+            TestAction::make('clone')->schemaComponent('sections')->arguments(['item' => $secKey])
+        );
+        $sectionsAfterClone = $create->get('data.sections');
+        $this->assertCount(2, $sectionsAfterClone);
+        $sectionKeysAfterClone = array_values(array_map(fn (array $s): string => (string) ($s['section_key'] ?? ''), $sectionsAfterClone));
+        $this->assertCount(2, array_unique($sectionKeysAfterClone));
+
+        $create->call('create')->assertHasNoFormErrors();
+
+        $form = DynamicForm::where('slug', 'survei-identitas-pasien')->firstOrFail();
+        $this->assertStringContainsString('<strong>data pasien</strong>', (string) $form->description);
+        $this->assertStringNotContainsString('<script', (string) $form->description);
+
+        $savedSections = app(DynamicFormVersionService::class)->loadEditableSectionsData($form);
+        $this->assertStringContainsString('<ul><li><p>Siapkan KTP</p></li></ul>', (string) $savedSections[0]['description']);
+        $this->assertStringNotContainsString('<img', (string) $savedSections[0]['description']);
+        $this->assertSame('text', $savedSections[0]['fields'][0]['options']['subtype']);
+        $this->assertSame('digits_only', $savedSections[0]['fields'][0]['validation_rules']['format_preset']);
+        $this->assertSame('digits_only', $savedSections[0]['fields'][0]['options']['text_format']);
+
+        // 4. Halaman View, Edit, dan Live Preview merender Rich Text aman & menghidrasi Format Jawaban
+        $this->get(DynamicFormResource::getUrl('view', ['record' => $form]))
+            ->assertOk()
+            ->assertSee('<strong>data pasien</strong>', false)
+            ->assertDontSee('alert(1)', false);
+
+        Livewire::test(DynamicFormLivePreview::class, ['formId' => $form->id])
+            ->assertSee('<strong>data pasien</strong>', false)
+            ->assertSee('<ul><li><p>Siapkan KTP</p></li></ul>', false)
+            ->assertDontSee('(Kunci:');
+
+        $edit = Livewire::test(EditDynamicForm::class, ['record' => $form->getRouteKey()]);
+        $editSections = $edit->get('data.sections');
+        $editSecKey = array_key_first($editSections);
+        $editFldKey = array_key_first($editSections[$editSecKey]['fields']);
+        $edit->assertSet("data.sections.{$editSecKey}.fields.{$editFldKey}.options.text_format", 'digits_only');
     }
 
     private function switchUser(User $user): void
