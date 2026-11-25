@@ -71,6 +71,9 @@ class DynamicFormLivePreview extends Component
         if ($customSchema !== null) {
             $this->schema = $customSchema;
             $this->sourceLabel = 'Skema Editor';
+            if (array_key_exists('description', $customSchema)) {
+                $this->formDescription = app(DynamicFormHtmlSanitizer::class)->sanitize($customSchema['description']);
+            }
         } else {
             $version = $form->latestDraftVersion() ?? $form->publishedVersion()->first() ?? $form->latestVersion();
             if (! $version) {

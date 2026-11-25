@@ -323,5 +323,69 @@ class DynamicFormSubmissionValidatorTest extends TestCase
         $this->assertStringNotContainsString('onerror', $clean);
 
         $this->assertSame('Petunjuk Isi dengan jujur Item 1 Panduan XSS', $sanitizer->toPlainText($clean));
+
+        // Uji array dokumen TipTap mentah dari state Livewire RichEditor (kosong, berformat, dan array tidak valid)
+        $emptyTipTapDoc = [
+            'type' => 'doc',
+            'content' => [
+                ['type' => 'paragraph', 'content' => []],
+            ],
+        ];
+        $this->assertNull($sanitizer->sanitize($emptyTipTapDoc));
+        $this->assertNull($sanitizer->sanitize(['invalid' => 'payload']));
+
+        $richTipTapDoc = [
+            'type' => 'doc',
+            'content' => [
+                [
+                    'type' => 'heading',
+                    'attrs' => ['level' => 2],
+                    'content' => [['type' => 'text', 'text' => 'Aturan Pengisian']],
+                ],
+                [
+                    'type' => 'paragraph',
+                    'content' => [
+                        ['type' => 'text', 'text' => 'Harap isi '],
+                        ['type' => 'text', 'marks' => [['type' => 'bold']], 'text' => 'dengan teliti'],
+                        ['type' => 'text', 'text' => ' dan baca '],
+                        [
+                            'type' => 'text',
+                            'marks' => [[
+                                'type' => 'link',
+                                'attrs' => ['href' => 'https://rs-elisabeth.com/panduan', 'target' => '_blank'],
+                            ]],
+                            'text' => 'Panduan',
+                        ],
+                        ['type' => 'text', 'text' => ' '],
+                        [
+                            'type' => 'text',
+                            'marks' => [[
+                                'type' => 'link',
+                                'attrs' => ['href' => 'javascript:alert(1)'],
+                            ]],
+                            'text' => 'Bahaya',
+                        ],
+                    ],
+                ],
+                [
+                    'type' => 'bulletList',
+                    'content' => [[
+                        'type' => 'listItem',
+                        'content' => [[
+                            'type' => 'paragraph',
+                            'content' => [['type' => 'text', 'text' => 'Siapkan nomor RM']],
+                        ]],
+                    ]],
+                ],
+            ],
+        ];
+
+        $cleanFromTipTap = (string) $sanitizer->sanitize($richTipTapDoc);
+        $this->assertStringContainsString('<h2>Aturan Pengisian</h2>', $cleanFromTipTap);
+        $this->assertStringContainsString('<strong>dengan teliti</strong>', $cleanFromTipTap);
+        $this->assertStringContainsString('href="https://rs-elisabeth.com/panduan"', $cleanFromTipTap);
+        $this->assertStringContainsString('rel="noopener noreferrer"', $cleanFromTipTap);
+        $this->assertStringContainsString('Siapkan nomor RM', $cleanFromTipTap);
+        $this->assertStringNotContainsString('javascript:', $cleanFromTipTap);
     }
 }

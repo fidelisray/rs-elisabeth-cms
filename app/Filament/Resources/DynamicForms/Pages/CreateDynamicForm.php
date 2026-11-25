@@ -76,7 +76,7 @@ class CreateDynamicForm extends CreateRecord
             $form = DynamicForm::create([
                 'title' => $data['title'],
                 'slug' => $data['slug'],
-                'description' => $sanitizer->sanitize(isset($data['description']) ? (string) $data['description'] : null),
+                'description' => $sanitizer->sanitize($data['description'] ?? null),
                 'mode' => $data['mode'],
                 'locale' => $data['locale'] ?? 'id',
                 'status' => DynamicFormStatus::Draft,

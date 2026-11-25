@@ -2,6 +2,7 @@
 
 namespace App\Services\DynamicForm;
 
+use Filament\Forms\Components\RichEditor\RichContentRenderer;
 use Illuminate\Support\Str;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
@@ -11,11 +12,12 @@ class DynamicFormHtmlSanitizer
     private ?HtmlSanitizer $sanitizer = null;
 
     /**
-     * Sanitasi HTML dari RichEditor untuk deskripsi formulir dan bagian,
-     * lalu ubah HTML kosong (seperti <p></p> atau &nbsp;) menjadi null.
+     * Sanitasi HTML atau dokumen array TipTap dari RichEditor untuk deskripsi formulir dan bagian,
+     * lalu ubah konten kosong (seperti <p></p>, dokumen TipTap kosong, atau &nbsp;) menjadi null.
      */
-    public function sanitize(?string $html): ?string
+    public function sanitize(mixed $input): ?string
     {
+        $html = $this->normalizeToHtml($input);
         if ($html === null) {
             return null;
         }
@@ -49,8 +51,9 @@ class DynamicFormHtmlSanitizer
         return $clean;
     }
 
-    public function toPlainText(?string $html, ?int $limit = null): ?string
+    public function toPlainText(mixed $input, ?int $limit = null): ?string
     {
+        $html = $this->normalizeToHtml($input);
         if ($html === null || trim($html) === '') {
             return null;
         }
@@ -64,6 +67,37 @@ class DynamicFormHtmlSanitizer
         }
 
         return $limit !== null ? Str::limit($normalized, $limit) : $normalized;
+    }
+
+    /**
+     * Ubah input mentah (string HTML atau array JSON TipTap dari Livewire state) menjadi string HTML.
+     */
+    private function normalizeToHtml(mixed $input): ?string
+    {
+        if ($input === null) {
+            return null;
+        }
+
+        if (is_string($input)) {
+            return $input;
+        }
+
+        if (! is_array($input)) {
+            return null;
+        }
+
+        $looksLikeTipTap = (isset($input['type']) && is_string($input['type']))
+            || (isset($input['content']) && is_array($input['content']));
+
+        if (! $looksLikeTipTap) {
+            return null;
+        }
+
+        try {
+            return RichContentRenderer::make($input)->toUnsafeHtml();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     private function sanitizer(): HtmlSanitizer
