@@ -11,6 +11,7 @@ use App\Filament\Resources\DynamicForms\Pages\ManageDynamicFormAnalytics;
 use App\Filament\Resources\DynamicForms\Pages\ViewDynamicForm;
 use App\Filament\Resources\DynamicForms\Tables\DynamicFormsTable;
 use App\Models\DynamicForm;
+use App\Services\DynamicForm\DynamicFormHtmlSanitizer;
 use BackedEnum;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
@@ -84,7 +85,13 @@ class DynamicFormResource extends Resource
                     TextEntry::make('starts_at')->label('Waktu Mulai')->dateTime('d M Y H:i')->placeholder('Langsung aktif'),
                     TextEntry::make('ends_at')->label('Waktu Berakhir')->dateTime('d M Y H:i')->placeholder('Tidak dibatasi'),
                     TextEntry::make('max_responses')->label('Kuota Respons')->placeholder('Tidak dibatasi'),
-                    TextEntry::make('description')->label('Deskripsi')->placeholder('Tidak ada deskripsi.')->columnSpanFull(),
+                    TextEntry::make('description')
+                        ->label('Deskripsi')
+                        ->placeholder('Tidak ada deskripsi.')
+                        ->formatStateUsing(fn (?string $state): ?string => app(DynamicFormHtmlSanitizer::class)->sanitize($state))
+                        ->html()
+                        ->prose()
+                        ->columnSpanFull(),
                 ])->columnSpanFull(),
         ]);
     }

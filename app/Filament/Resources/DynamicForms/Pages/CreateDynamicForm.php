@@ -6,6 +6,7 @@ use App\Enums\DynamicFormStatus;
 use App\Filament\Resources\DynamicForms\DynamicFormResource;
 use App\Filament\Resources\DynamicForms\Schemas\DynamicFormWizardSchema;
 use App\Models\DynamicForm;
+use App\Services\DynamicForm\DynamicFormHtmlSanitizer;
 use App\Services\DynamicForm\DynamicFormLogicEvaluator;
 use App\Services\DynamicForm\DynamicFormVersionService;
 use Filament\Notifications\Notification;
@@ -70,10 +71,12 @@ class CreateDynamicForm extends CreateRecord
         }
 
         return DB::transaction(function () use ($data, $mergedSections, $publishNow, $versionService): DynamicForm {
+            $sanitizer = app(DynamicFormHtmlSanitizer::class);
+
             $form = DynamicForm::create([
                 'title' => $data['title'],
                 'slug' => $data['slug'],
-                'description' => $data['description'] ?? null,
+                'description' => $sanitizer->sanitize(isset($data['description']) ? (string) $data['description'] : null),
                 'mode' => $data['mode'],
                 'locale' => $data['locale'] ?? 'id',
                 'status' => DynamicFormStatus::Draft,

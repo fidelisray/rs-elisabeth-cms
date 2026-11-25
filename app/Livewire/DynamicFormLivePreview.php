@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Enums\DynamicFormFieldType;
 use App\Models\DynamicForm;
+use App\Services\DynamicForm\DynamicFormHtmlSanitizer;
 use App\Services\DynamicForm\DynamicFormLogicEvaluator;
 use App\Services\DynamicForm\DynamicFormSubmissionValidator;
 use App\Services\DynamicForm\DynamicFormVersionService;
@@ -64,7 +65,7 @@ class DynamicFormLivePreview extends Component
         }
 
         $this->formTitle = $form->title;
-        $this->formDescription = $form->description;
+        $this->formDescription = app(DynamicFormHtmlSanitizer::class)->sanitize($form->description);
         $this->formMode = $form->mode->value;
 
         if ($customSchema !== null) {

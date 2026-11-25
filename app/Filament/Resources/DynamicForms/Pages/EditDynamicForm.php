@@ -8,6 +8,7 @@ use App\Filament\Resources\DynamicForms\DynamicFormResource;
 use App\Filament\Resources\DynamicForms\Schemas\DynamicFormWizardSchema;
 use App\Livewire\DynamicFormLivePreview;
 use App\Models\DynamicForm;
+use App\Services\DynamicForm\DynamicFormHtmlSanitizer;
 use App\Services\DynamicForm\DynamicFormLogicEvaluator;
 use App\Services\DynamicForm\DynamicFormVersionService;
 use Filament\Actions\Action;
@@ -195,10 +196,12 @@ class EditDynamicForm extends EditRecord
         }
 
         return DB::transaction(function () use ($record, $data, $mergedSections, $publishNow, $versionService): DynamicForm {
+            $sanitizer = app(DynamicFormHtmlSanitizer::class);
+
             $record->update([
                 'title' => $data['title'],
                 'slug' => $data['slug'],
-                'description' => $data['description'] ?? null,
+                'description' => $sanitizer->sanitize(isset($data['description']) ? (string) $data['description'] : null),
                 'mode' => $data['mode'],
                 'locale' => $data['locale'] ?? 'id',
                 'starts_at' => $data['starts_at'] ?? null,

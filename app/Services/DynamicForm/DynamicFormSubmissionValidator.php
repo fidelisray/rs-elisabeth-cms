@@ -3,6 +3,7 @@
 namespace App\Services\DynamicForm;
 
 use App\Enums\DynamicFormFieldType;
+use App\Enums\DynamicFormTextFormatPreset;
 use App\Models\DynamicForm;
 use App\Models\DynamicFormUpload;
 use DateTimeImmutable;
@@ -192,9 +193,8 @@ class DynamicFormSubmissionValidator
         }
 
         if ($subtype === 'phone') {
-            $digits = preg_replace('/[^0-9]/', '', $trimmed) ?? '';
-            if (! preg_match('/^\+?[0-9\s\-().]{7,20}$/', $trimmed) || strlen($digits) < 7 || strlen($digits) > 16) {
-                $errors[] = "Format nomor telepon pada [{$label}] tidak valid.";
+            if (! self::isValidIndonesianPhone($trimmed)) {
+                $errors[] = "Format nomor telepon Indonesia pada [{$label}] tidak valid. Gunakan awalan 08 atau +628 (10-13 digit angka).";
             }
         }
 
@@ -202,14 +202,24 @@ class DynamicFormSubmissionValidator
         $minLength = isset($rules['min_length']) ? (int) $rules['min_length'] : null;
         $maxLength = isset($rules['max_length']) ? min(500, (int) $rules['max_length']) : 500;
 
-        if ($minLength !== null && $len < $minLength) {
-            $errors[] = "Jawaban [{$label}] minimal {$minLength} karakter.";
-        }
-        if ($len > $maxLength) {
-            $errors[] = "Jawaban [{$label}] maksimal {$maxLength} karakter.";
+        if ($subtype !== 'phone') {
+            if ($minLength !== null && $len < $minLength) {
+                $errors[] = "Jawaban [{$label}] minimal {$minLength} karakter.";
+            }
+            if ($len > $maxLength) {
+                $errors[] = "Jawaban [{$label}] maksimal {$maxLength} karakter.";
+            }
         }
 
-        if (filled($rules['pattern'] ?? null)) {
+        $preset = $subtype === 'text' && filled($rules['format_preset'] ?? null)
+            ? DynamicFormTextFormatPreset::tryFrom((string) $rules['format_preset'])
+            : null;
+
+        if ($preset !== null) {
+            if (! $preset->matches($trimmed)) {
+                $errors[] = $preset->errorMessage($label);
+            }
+        } elseif (filled($rules['pattern'] ?? null)) {
             $pattern = (string) $rules['pattern'];
             $regex = str_starts_with($pattern, '/') ? $pattern : '/'.str_replace('/', '\/', $pattern).'/u';
             if (@preg_match($regex, $trimmed) !== 1) {
@@ -218,6 +228,22 @@ class DynamicFormSubmissionValidator
         }
 
         return $trimmed;
+    }
+
+    /**
+     * Validasi nomor telepon seluler Indonesia: awalan 08, +628, atau 628 (digit ke-3 bernilai 1-9),
+     * setara 10-13 digit lokal dengan toleransi pemisah spasi, tanda hubung (-), atau titik (.).
+     */
+    public static function isValidIndonesianPhone(string $value): bool
+    {
+        $trimmed = trim($value);
+        if ($trimmed === '' || preg_match('/^\+?[0-9\s\-.]+$/', $trimmed) !== 1) {
+            return false;
+        }
+
+        $compact = preg_replace('/[\s\-.]/', '', $trimmed) ?? '';
+
+        return preg_match('/^(?:\+62|62|0)8[1-9][0-9]{7,10}$/', $compact) === 1;
     }
 
     /**

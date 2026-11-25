@@ -58,6 +58,16 @@ class AdminPanelProvider extends PanelProvider
                     .'</a></div>'
                 ),
             )
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                static function (): string {
+                    if (! request()->routeIs('filament.admin.resources.dynamic-forms.create', 'filament.admin.resources.dynamic-forms.edit')) {
+                        return '';
+                    }
+
+                    return view('filament.resources.dynamic-forms.styles.wizard-builder-styles')->render();
+                },
+            )
             ->colors([
                 'primary' => Color::Amber,
             ])

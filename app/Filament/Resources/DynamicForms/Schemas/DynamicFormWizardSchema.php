@@ -4,11 +4,15 @@ namespace App\Filament\Resources\DynamicForms\Schemas;
 
 use App\Enums\DynamicFormFieldType;
 use App\Enums\DynamicFormMode;
+use App\Enums\DynamicFormTextFormatPreset;
 use App\Services\DynamicForm\DynamicFormLogicEvaluator;
 use App\Services\DynamicForm\DynamicFormVersionService;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -20,6 +24,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\Wizard\Step;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Js;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -95,14 +100,28 @@ class DynamicFormWizardSchema
                             ->required()
                             ->helperText('Setiap formulir menggunakan satu bahasa. Gunakan aksi Duplikat Form untuk versi bahasa lain.'),
 
-                        Textarea::make('description')
-                            ->label('Deskripsi Formulir (Opsional)')
-                            ->rows(3)
-                            ->maxLength(2000)
-                            ->placeholder('Penjelasan singkat tujuan pengisian formulir untuk responden.')
-                            ->columnSpanFull(),
+                        self::makeDescriptionRichEditor(
+                            'description',
+                            'Deskripsi Formulir (Opsional)',
+                            'Penjelasan singkat tujuan pengisian atau petunjuk umum formulir untuk responden.',
+                        ),
                     ]),
             ]);
+    }
+
+    private static function makeDescriptionRichEditor(string $name, string $label, string $placeholder): RichEditor
+    {
+        return RichEditor::make($name)
+            ->label($label)
+            ->placeholder($placeholder)
+            ->toolbarButtons([
+                ['bold', 'italic', 'underline', 'strike'],
+                ['h2', 'h3', 'blockquote'],
+                ['bulletList', 'orderedList', 'link'],
+                ['undo', 'redo'],
+            ])
+            ->maxLength(8000)
+            ->columnSpanFull();
     }
 
     private static function stepSectionsAndFields(): Step
@@ -135,6 +154,41 @@ class DynamicFormWizardSchema
                 Repeater::make('sections')
                     ->label('Daftar Bagian (Section)')
                     ->addActionLabel('Tambah Bagian (Section)')
+                    ->addAction(fn (Action $action): Action => $action->color('primary')->icon(Heroicon::OutlinedFolderPlus))
+                    ->cloneAction(fn (Action $action): Action => $action->action(function (array $arguments, Repeater $component): void {
+                        $items = (array) ($component->getRawState() ?? []);
+                        $sourceKey = $arguments['item'] ?? null;
+                        if ($sourceKey === null || ! isset($items[$sourceKey]) || ! is_array($items[$sourceKey])) {
+                            return;
+                        }
+
+                        $cloned = $items[$sourceKey];
+                        $cloned['section_key'] = 'sec_auto_'.Str::lower(Str::random(5));
+
+                        if (is_array($cloned['fields'] ?? null)) {
+                            $rekeyedFields = [];
+                            foreach ($cloned['fields'] as $fieldItem) {
+                                if (! is_array($fieldItem)) {
+                                    continue;
+                                }
+                                $fieldItem['field_key'] = 'fld_auto_'.Str::lower(Str::random(5));
+                                $rekeyedFields[(string) Str::uuid()] = $fieldItem;
+                            }
+                            $cloned['fields'] = $rekeyedFields;
+                        }
+
+                        $newUuid = $component->generateUuid();
+                        if ($newUuid) {
+                            $items[$newUuid] = $cloned;
+                        } else {
+                            $items[] = $cloned;
+                        }
+
+                        $component->rawState($items);
+                        $component->collapsed(false, shouldMakeComponentCollapsible: false);
+                        $component->callAfterStateUpdated();
+                        $component->shouldPartiallyRenderAfterActionsCalled() ? $component->partiallyRender() : null;
+                    }))
                     ->required()
                     ->minItems(1)
                     ->defaultItems(1)
@@ -142,16 +196,23 @@ class DynamicFormWizardSchema
                     ->collapsible()
                     ->cloneable()
                     ->itemNumbers()
-                    ->extraAttributes(['style' => 'overflow-anchor: none;'])
+                    ->extraAttributes([
+                        'style' => 'overflow-anchor: none;',
+                        'class' => 'rse-df-sections-repeater',
+                    ])
                     ->itemLabel(fn (array $state): string => filled($state['title'] ?? null)
                         ? (string) $state['title']
                         : 'Bagian Baru')
                     ->schema([
+                        Hidden::make('section_key')
+                            ->default(fn (): string => 'sec_auto_'.Str::lower(Str::random(5))),
+
                         TextInput::make('title')
                             ->label('Judul Bagian')
                             ->placeholder('Contoh: Data Kunjungan Pasien')
                             ->required()
                             ->maxLength(255)
+                            ->columnSpanFull()
                             ->live(onBlur: true)
                             ->skipRenderAfterStateUpdated()
                             ->extraInputAttributes($preventEnter + ['x-on:input' => $syncSectionHeaderJs])
@@ -166,24 +227,38 @@ class DynamicFormWizardSchema
                                 }
                             }),
 
-                        TextInput::make('section_key')
-                            ->label('Kunci Bagian (section_key)')
-                            ->required()
-                            ->default(fn (): string => 'sec_auto_'.Str::lower(Str::random(5)))
-                            ->regex('/^[a-z0-9_]+$/')
-                            ->maxLength(80)
-                            ->extraInputAttributes($preventEnter)
-                            ->helperText('Huruf kecil, angka, atau garis bawah (_). Dipakai untuk aturan lompat section.'),
-
-                        Textarea::make('description')
-                            ->label('Deskripsi Bagian (Opsional)')
-                            ->rows(2)
-                            ->maxLength(1500)
-                            ->columnSpanFull(),
+                        self::makeDescriptionRichEditor(
+                            'description',
+                            'Deskripsi Bagian (Opsional)',
+                            'Tambahkan petunjuk pengisian atau informasi pembuka untuk bagian ini.',
+                        ),
 
                         Repeater::make('fields')
                             ->label('Daftar Pertanyaan & Blok Informasi')
                             ->addActionLabel('Tambah Pertanyaan')
+                            ->addAction(fn (Action $action): Action => $action->color('info')->icon(Heroicon::OutlinedPlusCircle))
+                            ->cloneAction(fn (Action $action): Action => $action->action(function (array $arguments, Repeater $component): void {
+                                $items = (array) ($component->getRawState() ?? []);
+                                $sourceKey = $arguments['item'] ?? null;
+                                if ($sourceKey === null || ! isset($items[$sourceKey]) || ! is_array($items[$sourceKey])) {
+                                    return;
+                                }
+
+                                $cloned = $items[$sourceKey];
+                                $cloned['field_key'] = 'fld_auto_'.Str::lower(Str::random(5));
+
+                                $newUuid = $component->generateUuid();
+                                if ($newUuid) {
+                                    $items[$newUuid] = $cloned;
+                                } else {
+                                    $items[] = $cloned;
+                                }
+
+                                $component->rawState($items);
+                                $component->collapsed(false, shouldMakeComponentCollapsible: false);
+                                $component->callAfterStateUpdated();
+                                $component->shouldPartiallyRenderAfterActionsCalled() ? $component->partiallyRender() : null;
+                            }))
                             ->required()
                             ->minItems(1)
                             ->defaultItems(1)
@@ -192,7 +267,10 @@ class DynamicFormWizardSchema
                             ->cloneable()
                             ->itemNumbers()
                             ->columnSpanFull()
-                            ->extraAttributes(['style' => 'overflow-anchor: none;'])
+                            ->extraAttributes([
+                                'style' => 'overflow-anchor: none;',
+                                'class' => 'rse-df-fields-repeater',
+                            ])
                             ->itemLabel(function (array $state): string {
                                 $label = filled($state['label'] ?? null) ? (string) $state['label'] : 'Pertanyaan Baru';
                                 $type = DynamicFormFieldType::tryFrom((string) ($state['type'] ?? ''));
@@ -200,25 +278,15 @@ class DynamicFormWizardSchema
                                 return $type ? "{$label} ({$type->label()})" : $label;
                             })
                             ->schema([
-                                Select::make('type')
-                                    ->label('Tipe Input')
-                                    ->options(DynamicFormFieldType::options())
-                                    ->default(DynamicFormFieldType::ShortText->value)
-                                    ->required()
-                                    ->live()
-                                    ->afterStateUpdated(static function (Component $component): void {
-                                        $component->getContainer()->getComponent('field_config', withHidden: true)?->partiallyRender();
-                                    })
-                                    ->extraInputAttributes([
-                                        'data-df-field-type' => '1',
-                                        'x-on:change' => $syncFieldHeaderJs,
-                                    ]),
+                                Hidden::make('field_key')
+                                    ->default(fn (): string => 'fld_auto_'.Str::lower(Str::random(5))),
 
                                 TextInput::make('label')
                                     ->label('Pertanyaan / Judul Blok')
                                     ->placeholder('Tuliskan pertanyaan atau judul informasi')
                                     ->required()
                                     ->maxLength(255)
+                                    ->columnSpan(['default' => 1, 'md' => 2])
                                     ->live(onBlur: true)
                                     ->skipRenderAfterStateUpdated()
                                     ->extraInputAttributes($preventEnter + [
@@ -236,52 +304,45 @@ class DynamicFormWizardSchema
                                         }
                                     }),
 
-                                TextInput::make('field_key')
-                                    ->label('Kunci Field (field_key)')
+                                Select::make('type')
+                                    ->label('Tipe Input')
+                                    ->options(DynamicFormFieldType::options())
+                                    ->default(DynamicFormFieldType::ShortText->value)
                                     ->required()
-                                    ->default(fn (): string => 'fld_auto_'.Str::lower(Str::random(5)))
-                                    ->regex('/^[a-z0-9_]+$/')
-                                    ->maxLength(80)
-                                    ->extraInputAttributes($preventEnter)
-                                    ->helperText('Jaga agar stabil lintas versi untuk penyelarasan analitik.'),
+                                    ->columnSpan(['default' => 1, 'md' => 1])
+                                    ->live()
+                                    ->afterStateUpdated(static function (Component $component): void {
+                                        $component->getContainer()->getComponent('field_config', withHidden: true)?->partiallyRender();
+                                    })
+                                    ->extraInputAttributes([
+                                        'data-df-field-type' => '1',
+                                        'x-on:change' => $syncFieldHeaderJs,
+                                    ]),
 
                                 Group::make([
-                                    Toggle::make('is_required')
-                                        ->label('Wajib Diisi')
-                                        ->default(false)
-                                        ->visible(fn (Get $get): bool => self::fieldType($get) !== DynamicFormFieldType::InfoBlock),
+                                    // Konfigurasi Short Text (1 dropdown tunggal Format Jawaban)
+                                    Hidden::make('options.subtype')
+                                        ->default('text'),
 
-                                    TextInput::make('help_text')
-                                        ->label('Teks Bantuan (Opsional)')
-                                        ->maxLength(500)
-                                        ->extraInputAttributes($preventEnter)
-                                        ->visible(fn (Get $get): bool => self::fieldType($get) !== DynamicFormFieldType::InfoBlock),
+                                    Hidden::make('validation_rules.format_preset'),
 
-                                    TextInput::make('placeholder')
-                                        ->label('Placeholder Input (Opsional)')
-                                        ->maxLength(255)
-                                        ->extraInputAttributes($preventEnter)
-                                        ->visible(fn (Get $get): bool => in_array(self::fieldType($get), [
-                                            DynamicFormFieldType::ShortText,
-                                            DynamicFormFieldType::LongText,
-                                            DynamicFormFieldType::Dropdown,
-                                            DynamicFormFieldType::Date,
-                                            DynamicFormFieldType::Time,
-                                        ], true)),
-
-                                    // Konfigurasi Short Text
-                                    Select::make('options.subtype')
-                                        ->label('Sub-Validasi Teks Singkat')
-                                        ->options([
-                                            'text' => 'Teks Bebas',
-                                            'email' => 'Alamat Email',
-                                            'phone' => 'Nomor Telepon',
-                                            'number' => 'Angka / Numerik',
-                                            'url' => 'Tautan URL (http/https)',
-                                        ])
+                                    Select::make('options.text_format')
+                                        ->label('Format Jawaban')
+                                        ->options(DynamicFormTextFormatPreset::unifiedShortTextOptions())
                                         ->default('text')
+                                        ->selectablePlaceholder(false)
+                                        ->helperText('Tentukan jenis data atau batas karakter yang diterima responden.')
+                                        ->columnSpanFull()
                                         ->live()
-                                        ->afterStateUpdated(static function (Component $component): void {
+                                        ->afterStateHydrated(static function (Select $component, Get $get): void {
+                                            if (blank($component->getState())) {
+                                                $component->state(self::shortTextFormat($get));
+                                            }
+                                        })
+                                        ->afterStateUpdated(static function (Set $set, Component $component, ?string $state): void {
+                                            $split = DynamicFormTextFormatPreset::splitUnifiedFormat($state);
+                                            $set('options.subtype', $split['subtype']);
+                                            $set('validation_rules.format_preset', $split['format_preset']);
                                             $component->getContainer()->getParentComponent()?->partiallyRender();
                                         })
                                         ->visible(fn (Get $get): bool => self::fieldType($get) === DynamicFormFieldType::ShortText),
@@ -293,7 +354,7 @@ class DynamicFormWizardSchema
                                         ->extraInputAttributes($preventEnter)
                                         ->visible(fn (Get $get): bool => (
                                             self::fieldType($get) === DynamicFormFieldType::ShortText
-                                            && ($get('options.subtype') ?? 'text') !== 'number'
+                                            && ! in_array(self::shortTextFormat($get), ['number', 'phone'], true)
                                         ) || self::fieldType($get) === DynamicFormFieldType::LongText),
 
                                     TextInput::make('validation_rules.max_length')
@@ -310,7 +371,7 @@ class DynamicFormWizardSchema
                                         })
                                         ->visible(fn (Get $get): bool => (
                                             self::fieldType($get) === DynamicFormFieldType::ShortText
-                                            && ($get('options.subtype') ?? 'text') !== 'number'
+                                            && ! in_array(self::shortTextFormat($get), ['number', 'phone'], true)
                                         ) || self::fieldType($get) === DynamicFormFieldType::LongText),
 
                                     TextInput::make('validation_rules.min_value')
@@ -318,7 +379,7 @@ class DynamicFormWizardSchema
                                         ->numeric()
                                         ->extraInputAttributes($preventEnter)
                                         ->visible(fn (Get $get): bool => self::fieldType($get) === DynamicFormFieldType::ShortText
-                                            && ($get('options.subtype') ?? 'text') === 'number'),
+                                            && self::shortTextFormat($get) === 'number'),
 
                                     TextInput::make('validation_rules.max_value')
                                         ->label('Nilai Angka Maksimum')
@@ -331,30 +392,13 @@ class DynamicFormWizardSchema
                                             }
                                         })
                                         ->visible(fn (Get $get): bool => self::fieldType($get) === DynamicFormFieldType::ShortText
-                                            && ($get('options.subtype') ?? 'text') === 'number'),
-
-                                    TextInput::make('validation_rules.pattern')
-                                        ->label('Pola Regex Opsional')
-                                        ->placeholder('Contoh: ^[A-Z0-9-]+$')
-                                        ->extraInputAttributes($preventEnter)
-                                        ->rule(fn (): \Closure => function (string $attribute, mixed $value, \Closure $fail): void {
-                                            if (! is_string($value) || trim($value) === '') {
-                                                return;
-                                            }
-                                            $pattern = trim($value);
-                                            $regex = str_starts_with($pattern, '/') ? $pattern : '/'.str_replace('/', '\/', $pattern).'/u';
-                                            if (@preg_match($regex, '') === false) {
-                                                $fail('Pola regex tidak valid dan gagal dikompilasi.');
-                                            }
-                                        })
-                                        ->visible(fn (Get $get): bool => self::fieldType($get) === DynamicFormFieldType::ShortText
-                                            && ($get('options.subtype') ?? 'text') === 'text'),
+                                            && self::shortTextFormat($get) === 'number'),
 
                                     // Konfigurasi Pilihan (Radio, Checkbox, Dropdown)
                                     Repeater::make('options.choices')
                                         ->label('Daftar Opsi Pilihan')
                                         ->addActionLabel('Tambah Opsi Pilihan')
-                                        ->columns(2)
+                                        ->columns(1)
                                         ->defaultItems(2)
                                         ->minItems(1)
                                         ->reorderable()
@@ -362,8 +406,11 @@ class DynamicFormWizardSchema
                                         ->extraAttributes(['style' => 'overflow-anchor: none;'])
                                         ->visible(fn (Get $get): bool => self::fieldType($get)?->supportsChoices() ?? false)
                                         ->schema([
+                                            Hidden::make('key')
+                                                ->default(fn (): string => 'opt_auto_'.Str::lower(Str::random(5))),
                                             TextInput::make('label')
                                                 ->label('Label Pilihan')
+                                                ->placeholder('Tuliskan teks pilihan jawaban')
                                                 ->required()
                                                 ->maxLength(255)
                                                 ->live(onBlur: true)
@@ -379,13 +426,6 @@ class DynamicFormWizardSchema
                                                         }
                                                     }
                                                 }),
-                                            TextInput::make('key')
-                                                ->label('Kunci Pilihan')
-                                                ->required()
-                                                ->default(fn (): string => 'opt_auto_'.Str::lower(Str::random(5)))
-                                                ->regex('/^[a-z0-9_]+$/')
-                                                ->maxLength(80)
-                                                ->extraInputAttributes($preventEnter),
                                         ]),
 
                                     Toggle::make('options.allow_other')
@@ -490,15 +530,18 @@ class DynamicFormWizardSchema
                                     Repeater::make('options.rows')
                                         ->label('Daftar Baris Matrix (Butir Pertanyaan)')
                                         ->addActionLabel('Tambah Baris Matrix')
-                                        ->columns(2)
+                                        ->columns(1)
                                         ->defaultItems(2)
                                         ->minItems(1)
                                         ->columnSpanFull()
                                         ->extraAttributes(['style' => 'overflow-anchor: none;'])
                                         ->visible(fn (Get $get): bool => self::fieldType($get) === DynamicFormFieldType::MatrixGrid)
                                         ->schema([
+                                            Hidden::make('key')
+                                                ->default(fn (): string => 'row_auto_'.Str::lower(Str::random(5))),
                                             TextInput::make('label')
                                                 ->label('Label Baris')
+                                                ->placeholder('Contoh: Keramahan Petugas')
                                                 ->required()
                                                 ->maxLength(255)
                                                 ->live(onBlur: true)
@@ -514,27 +557,23 @@ class DynamicFormWizardSchema
                                                         }
                                                     }
                                                 }),
-                                            TextInput::make('key')
-                                                ->label('Kunci Baris')
-                                                ->required()
-                                                ->default(fn (): string => 'row_auto_'.Str::lower(Str::random(5)))
-                                                ->regex('/^[a-z0-9_]+$/')
-                                                ->maxLength(80)
-                                                ->extraInputAttributes($preventEnter),
                                         ]),
 
                                     Repeater::make('options.columns')
                                         ->label('Daftar Kolom Matrix (Skala / Pilihan)')
                                         ->addActionLabel('Tambah Kolom Matrix')
-                                        ->columns(3)
+                                        ->columns(['default' => 1, 'sm' => 2])
                                         ->defaultItems(3)
                                         ->minItems(1)
                                         ->columnSpanFull()
                                         ->extraAttributes(['style' => 'overflow-anchor: none;'])
                                         ->visible(fn (Get $get): bool => self::fieldType($get) === DynamicFormFieldType::MatrixGrid)
                                         ->schema([
+                                            Hidden::make('key')
+                                                ->default(fn (): string => 'col_auto_'.Str::lower(Str::random(5))),
                                             TextInput::make('label')
                                                 ->label('Label Kolom')
+                                                ->placeholder('Contoh: Sangat Puas')
                                                 ->required()
                                                 ->maxLength(255)
                                                 ->live(onBlur: true)
@@ -550,13 +589,6 @@ class DynamicFormWizardSchema
                                                         }
                                                     }
                                                 }),
-                                            TextInput::make('key')
-                                                ->label('Kunci Kolom')
-                                                ->required()
-                                                ->default(fn (): string => 'col_auto_'.Str::lower(Str::random(5)))
-                                                ->regex('/^[a-z0-9_]+$/')
-                                                ->maxLength(80)
-                                                ->extraInputAttributes($preventEnter),
                                             TextInput::make('score')
                                                 ->label('Skor Numerik (Opsional)')
                                                 ->numeric()
@@ -618,6 +650,7 @@ class DynamicFormWizardSchema
                                     Select::make('options.allowed_extensions')
                                         ->label('Ekstensi Berkas yang Diizinkan')
                                         ->multiple()
+                                        ->columnSpanFull()
                                         ->options([
                                             'pdf' => 'PDF (.pdf)',
                                             'jpg' => 'JPG (.jpg)',
@@ -664,12 +697,46 @@ class DynamicFormWizardSchema
                                         ->columnSpanFull()
                                         ->extraInputAttributes($preventEnter)
                                         ->visible(fn (Get $get): bool => self::fieldType($get) === DynamicFormFieldType::InfoBlock),
+
+                                    // Pengaturan Bantuan & Status Wajib di bagian bawah kartu
+                                    TextInput::make('placeholder')
+                                        ->label('Placeholder Input (Opsional)')
+                                        ->placeholder('Contoh teks samar di dalam kotak input')
+                                        ->maxLength(255)
+                                        ->extraInputAttributes($preventEnter)
+                                        ->visible(fn (Get $get): bool => in_array(self::fieldType($get), [
+                                            DynamicFormFieldType::ShortText,
+                                            DynamicFormFieldType::LongText,
+                                            DynamicFormFieldType::Dropdown,
+                                            DynamicFormFieldType::Date,
+                                            DynamicFormFieldType::Time,
+                                        ], true)),
+
+                                    TextInput::make('help_text')
+                                        ->label('Teks Bantuan (Opsional)')
+                                        ->placeholder('Petunjuk singkat di bawah pertanyaan')
+                                        ->maxLength(500)
+                                        ->extraInputAttributes($preventEnter)
+                                        ->columnSpan(fn (Get $get): array => in_array(self::fieldType($get), [
+                                            DynamicFormFieldType::ShortText,
+                                            DynamicFormFieldType::LongText,
+                                            DynamicFormFieldType::Dropdown,
+                                            DynamicFormFieldType::Date,
+                                            DynamicFormFieldType::Time,
+                                        ], true) ? ['default' => 1, 'md' => 1] : ['default' => 1, 'md' => 2])
+                                        ->visible(fn (Get $get): bool => self::fieldType($get) !== DynamicFormFieldType::InfoBlock),
+
+                                    Toggle::make('is_required')
+                                        ->label('Wajib Diisi')
+                                        ->default(false)
+                                        ->columnSpanFull()
+                                        ->visible(fn (Get $get): bool => self::fieldType($get) !== DynamicFormFieldType::InfoBlock),
                                 ])
                                     ->key('field_config', isInheritable: false)
                                     ->columnSpanFull()
-                                    ->columns(2),
+                                    ->columns(['default' => 1, 'md' => 2]),
                             ])
-                            ->columns(2),
+                            ->columns(['default' => 1, 'md' => 3]),
                     ]),
             ]);
     }
@@ -1132,6 +1199,19 @@ class DynamicFormWizardSchema
         $options[DynamicFormLogicEvaluator::SUBMIT_SENTINEL] = 'Kirim Formulir (Selesai)';
 
         return $options;
+    }
+
+    private static function shortTextFormat(Get $get): string
+    {
+        $rawFormat = $get('options.text_format');
+        if (is_string($rawFormat) && $rawFormat !== '') {
+            return $rawFormat;
+        }
+
+        return DynamicFormTextFormatPreset::resolveShortTextFormat(
+            is_string($get('options.subtype')) ? $get('options.subtype') : null,
+            is_string($get('validation_rules.format_preset')) ? $get('validation_rules.format_preset') : null,
+        );
     }
 
     /**
