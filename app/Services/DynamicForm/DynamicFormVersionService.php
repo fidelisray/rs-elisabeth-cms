@@ -164,9 +164,7 @@ class DynamicFormVersionService
             $normalized[] = [
                 'section_key' => $sectionKey,
                 'title' => $title,
-                'description' => $this->htmlSanitizer->sanitize(
-                    isset($rawSection['description']) ? (string) $rawSection['description'] : null
-                ),
+                'description' => $this->htmlSanitizer->sanitize($rawSection['description'] ?? null),
                 'sort_order' => $sectionIdx + 1,
                 'next_section_rule' => [
                     'action' => $nextAction,

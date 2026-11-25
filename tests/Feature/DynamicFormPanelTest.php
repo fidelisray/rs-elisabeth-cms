@@ -2505,6 +2505,123 @@ class DynamicFormPanelTest extends TestCase
         $edit->assertSet("data.sections.{$editSecKey}.fields.{$editFldKey}.options.text_format", 'digits_only');
     }
 
+    public function test_wizard_step_transitions_and_edit_preview_handle_tiptap_rich_editor_array_state_without_error(): void
+    {
+        $this->actingAs($this->marketing);
+
+        $tiptapFormDesc = [
+            'type' => 'doc',
+            'content' => [[
+                'type' => 'paragraph',
+                'content' => [
+                    ['type' => 'text', 'text' => 'Deskripsi formulir '],
+                    ['type' => 'text', 'marks' => [['type' => 'bold']], 'text' => 'format TipTap'],
+                    ['type' => 'text', 'text' => '.'],
+                ],
+            ]],
+        ];
+
+        $tiptapSectionDesc = [
+            'type' => 'doc',
+            'content' => [[
+                'type' => 'bulletList',
+                'content' => [[
+                    'type' => 'listItem',
+                    'content' => [[
+                        'type' => 'paragraph',
+                        'content' => [['type' => 'text', 'text' => 'Bawa kartu identitas pasien']],
+                    ]],
+                ]],
+            ]],
+        ];
+
+        $emptyTipTapDoc = [
+            'type' => 'doc',
+            'content' => [[
+                'type' => 'paragraph',
+                'content' => [],
+            ]],
+        ];
+
+        // 1. Simulasikan alur lengkap 4 langkah Wizard di browser dengan state mentah array TipTap
+        $create = Livewire::test(CreateDynamicForm::class);
+        $sections = $create->get('data.sections');
+        $secKey = array_key_first($sections);
+        $fldKey = array_key_first($sections[$secKey]['fields']);
+
+        $create
+            ->set('data.title', 'Survei Uji TipTap Wizard')
+            ->set('data.slug', 'survei-uji-tiptap-wizard')
+            ->set('data.description', $tiptapFormDesc)
+            ->goToWizardStep(2)
+            ->assertHasNoFormErrors()
+            ->assertWizardCurrentStep(2)
+            ->set("data.sections.{$secKey}.title", 'Bagian Pertama')
+            ->set("data.sections.{$secKey}.description", $tiptapSectionDesc)
+            ->set("data.sections.{$secKey}.fields.{$fldKey}.label", 'Nama Responden')
+            ->set('data.sections.sec_empty_doc', [
+                'section_key' => 'bagian_kedua',
+                'title' => 'Bagian Kedua',
+                'description' => $emptyTipTapDoc,
+                'fields' => [
+                    'fld_empty_doc' => [
+                        'field_key' => 'catatan_tambahan',
+                        'label' => 'Catatan Tambahan',
+                        'type' => 'short_text',
+                        'is_required' => false,
+                        'options' => ['text_format' => 'text', 'subtype' => 'text'],
+                        'validation_rules' => [],
+                    ],
+                ],
+            ])
+            ->goToWizardStep(3)
+            ->assertHasNoFormErrors()
+            ->assertWizardCurrentStep(3)
+            ->goToWizardStep(4)
+            ->assertHasNoFormErrors()
+            ->assertWizardCurrentStep(4)
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $form = DynamicForm::where('slug', 'survei-uji-tiptap-wizard')->firstOrFail();
+        $this->assertStringContainsString('<strong>format TipTap</strong>', (string) $form->description);
+
+        $savedSections = app(DynamicFormVersionService::class)->loadEditableSectionsData($form);
+        $this->assertStringContainsString('Bawa kartu identitas pasien', (string) $savedSections[0]['description']);
+        $this->assertNull($savedSections[1]['description']);
+
+        // 2. Simulasikan tombol "Pratinjau Interaktif" di halaman Edit saat Deskripsi Formulir & Bagian berisi array TipTap belum disimpan
+        $liveUnsavedFormDesc = [
+            'type' => 'doc',
+            'content' => [[
+                'type' => 'paragraph',
+                'content' => [
+                    ['type' => 'text', 'marks' => [['type' => 'bold']], 'text' => 'Pratinjau Live Deskripsi Formulir'],
+                ],
+            ]],
+        ];
+        $liveUnsavedSectionDesc = [
+            'type' => 'doc',
+            'content' => [[
+                'type' => 'paragraph',
+                'content' => [
+                    ['type' => 'text', 'marks' => [['type' => 'italic']], 'text' => 'Pratinjau Live Deskripsi Bagian'],
+                ],
+            ]],
+        ];
+
+        $edit = Livewire::test(EditDynamicForm::class, ['record' => $form->getRouteKey()]);
+        $editSections = $edit->get('data.sections');
+        $editSecKey = array_key_first($editSections);
+
+        $edit
+            ->set('data.description', $liveUnsavedFormDesc)
+            ->set("data.sections.{$editSecKey}.description", $liveUnsavedSectionDesc)
+            ->mountAction('preview')
+            ->assertMountedActionModalSeeHtml('<strong>Pratinjau Live Deskripsi Formulir</strong>')
+            ->assertMountedActionModalSeeHtml('<em>Pratinjau Live Deskripsi Bagian</em>');
+    }
+
     private function switchUser(User $user): void
     {
         session()->flush();

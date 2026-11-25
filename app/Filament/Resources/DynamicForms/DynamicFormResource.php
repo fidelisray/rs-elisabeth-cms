@@ -88,7 +88,7 @@ class DynamicFormResource extends Resource
                     TextEntry::make('description')
                         ->label('Deskripsi')
                         ->placeholder('Tidak ada deskripsi.')
-                        ->formatStateUsing(fn (?string $state): ?string => app(DynamicFormHtmlSanitizer::class)->sanitize($state))
+                        ->formatStateUsing(fn (mixed $state): ?string => app(DynamicFormHtmlSanitizer::class)->sanitize($state))
                         ->html()
                         ->prose()
                         ->columnSpanFull(),

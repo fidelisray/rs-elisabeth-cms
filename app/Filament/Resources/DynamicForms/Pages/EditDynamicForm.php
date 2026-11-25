@@ -79,6 +79,7 @@ class EditDynamicForm extends EditRecord
                 ->modalContent(function (): HtmlString {
                     $state = $this->form->getRawState();
                     $versionService = app(DynamicFormVersionService::class);
+                    $sanitizer = app(DynamicFormHtmlSanitizer::class);
                     $merged = $versionService->mergeLogicConfigIntoSections(
                         (array) ($state['sections'] ?? []),
                         (array) ($state['logic_config'] ?? [])
@@ -86,7 +87,10 @@ class EditDynamicForm extends EditRecord
 
                     return new HtmlString(Livewire::mount(DynamicFormLivePreview::class, [
                         'formId' => $this->getRecord()->id,
-                        'customSchema' => ['sections' => $merged],
+                        'customSchema' => [
+                            'description' => $sanitizer->sanitize($state['description'] ?? null),
+                            'sections' => $merged,
+                        ],
                     ]));
                 }),
 
@@ -201,7 +205,7 @@ class EditDynamicForm extends EditRecord
             $record->update([
                 'title' => $data['title'],
                 'slug' => $data['slug'],
-                'description' => $sanitizer->sanitize(isset($data['description']) ? (string) $data['description'] : null),
+                'description' => $sanitizer->sanitize($data['description'] ?? null),
                 'mode' => $data['mode'],
                 'locale' => $data['locale'] ?? 'id',
                 'starts_at' => $data['starts_at'] ?? null,
