@@ -1,40 +1,42 @@
 <div class="rse-preview-root">
     <style>
         .rse-preview-root {
-            --rse-p-surface: #ffffff;
-            --rse-p-muted: #f8fafc;
-            --rse-p-border: #64748b;
-            --rse-p-divider: #cbd5e1;
-            --rse-p-text: #0f172a;
-            --rse-p-text-secondary: #475569;
-            --rse-p-accent: #b45309;
-            --rse-p-accent-hover: #92400e;
-            --rse-p-accent-text: #ffffff;
-            --rse-p-badge-bg: #fef3c7;
-            --rse-p-badge-text: #92400e;
+            --rse-p-surface: var(--rse-slate-surface, #ffffff);
+            --rse-p-muted: var(--rse-slate-muted, #f8fafc);
+            --rse-p-border: var(--rse-slate-border-strong, #64748b);
+            --rse-p-divider: var(--rse-slate-border, #cbd5e1);
+            --rse-p-text: var(--rse-slate-text, #0f172a);
+            --rse-p-text-secondary: var(--rse-slate-text-secondary, #475569);
+            --rse-p-accent: var(--rse-brand-accent, #095988);
+            --rse-p-accent-hover: var(--rse-brand-accent-hover, #07476e);
+            --rse-p-accent-text: var(--rse-brand-accent-text, #ffffff);
+            --rse-p-link: var(--rse-brand-link, #095988);
+            --rse-p-badge-bg: var(--rse-brand-badge-bg, #dceff9);
+            --rse-p-badge-text: var(--rse-brand-badge-text, #07476e);
             --rse-p-err-bg: #ffe4e6;
             --rse-p-err-text: #9f1239;
             --rse-p-ok-bg: #d1fae5;
-            --rse-p-ok-text: #065f46;
+            --rse-p-ok-text: #094d38;
             color: var(--rse-p-text);
             font-variant-numeric: tabular-nums;
         }
 
         .dark .rse-preview-root {
-            --rse-p-surface: #18181b;
-            --rse-p-muted: #0f172a;
-            --rse-p-border: #71717a;
-            --rse-p-divider: #3f3f46;
-            --rse-p-text: #f8fafc;
-            --rse-p-text-secondary: #cbd5e1;
-            --rse-p-accent: #fbbf24;
-            --rse-p-accent-hover: #f59e0b;
-            --rse-p-accent-text: #0f172a;
-            --rse-p-badge-bg: #451a03;
-            --rse-p-badge-text: #fde68a;
+            --rse-p-surface: var(--rse-slate-surface, #0f172a);
+            --rse-p-muted: var(--rse-slate-muted, #1e293b);
+            --rse-p-border: var(--rse-slate-border-strong, #64748b);
+            --rse-p-divider: var(--rse-slate-border, #334155);
+            --rse-p-text: var(--rse-slate-text, #f8fafc);
+            --rse-p-text-secondary: var(--rse-slate-text-secondary, #cbd5e1);
+            --rse-p-accent: var(--rse-brand-accent, #1997e6);
+            --rse-p-accent-hover: var(--rse-brand-accent-hover, #89c9ea);
+            --rse-p-accent-text: var(--rse-brand-accent-text, #0b0f19);
+            --rse-p-link: var(--rse-brand-link, #38bdf8);
+            --rse-p-badge-bg: var(--rse-brand-badge-bg, #052d47);
+            --rse-p-badge-text: var(--rse-brand-badge-text, #bae0f4);
             --rse-p-err-bg: #4c0519;
             --rse-p-err-text: #fecdd3;
-            --rse-p-ok-bg: #064e3b;
+            --rse-p-ok-bg: #052e21;
             --rse-p-ok-text: #a7f3d0;
         }
 
@@ -199,7 +201,7 @@
         .rse-p-rich-text ul { list-style-type: disc; }
         .rse-p-rich-text ol { list-style-type: decimal; }
         .rse-p-rich-text blockquote { margin: 0.5rem 0; padding: 0.375rem 0.75rem; border-left: 3px solid var(--rse-p-accent); background-color: var(--rse-p-muted); }
-        .rse-p-rich-text a { color: var(--rse-p-accent); text-decoration: underline; }
+        .rse-p-rich-text a { color: var(--rse-p-link); text-decoration: underline; }
     </style>
 
     <div class="rse-preview-banner">

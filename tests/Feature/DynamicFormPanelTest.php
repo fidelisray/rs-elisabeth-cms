@@ -2421,7 +2421,7 @@ class DynamicFormPanelTest extends TestCase
     {
         $this->actingAs($this->marketing);
 
-        // 1. Halaman HTTP Create menyuntikkan stylesheet pembedaan warna Bagian (Amber) vs Pertanyaan (Biru Sky)
+        // 1. Halaman HTTP Create menyuntikkan stylesheet pembedaan warna Bagian (Medical Navy) vs Pertanyaan (Fresh Emerald)
         $createPage = $this->get(DynamicFormResource::getUrl('create'))->assertOk();
         $createPage->assertSee('data-rse-dynamic-form-builder-styles', false);
         $createPage->assertSee('rse-df-sections-repeater', false);

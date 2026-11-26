@@ -9,7 +9,9 @@ use App\Filament\Widgets\FeedbackSectionWidget;
 use App\Filament\Widgets\QuestionnaireSectionWidget;
 use App\Http\Controllers\Admin\DownloadDynamicFormUploadController;
 use App\Http\Middleware\EnforcePasswordChange;
+use App\Support\Theme\BrandColors;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Filament\Enums\ThemeMode;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -18,10 +20,9 @@ use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
 use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
+use Illuminate\Contracts\View\View;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -60,6 +61,10 @@ class AdminPanelProvider extends PanelProvider
             )
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
+                static fn (): string => view('filament.theme.brand-tokens')->render(),
+            )
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
                 static function (): string {
                     if (! request()->routeIs('filament.admin.resources.dynamic-forms.create', 'filament.admin.resources.dynamic-forms.edit')) {
                         return '';
@@ -68,9 +73,11 @@ class AdminPanelProvider extends PanelProvider
                     return view('filament.resources.dynamic-forms.styles.wizard-builder-styles')->render();
                 },
             )
-            ->colors([
-                'primary' => Color::Amber,
-            ])
+            ->brandName('RS Elisabeth CMS')
+            ->brandLogo(static fn (): View => view('filament.components.brand-logo'))
+            ->brandLogoHeight('2.25rem')
+            ->defaultThemeMode(ThemeMode::Light)
+            ->colors(BrandColors::filamentColors())
             // Icon web (favicon) pada tab browser untuk seluruh halaman panel admin.
             ->favicon(asset('images/web-icon.webp'))
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
@@ -81,7 +88,6 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
                 FeedbackSectionWidget::class,
                 QuestionnaireSectionWidget::class,
                 DynamicFeedbackOverviewWidget::class,

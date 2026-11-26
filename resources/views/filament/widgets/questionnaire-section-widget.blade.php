@@ -6,23 +6,23 @@
 
     <style>
         .rse-qs-root {
-            --rse-surface: #ffffff;
-            --rse-surface-muted: #f8fafc;
-            --rse-border: #cbd5e1;
-            --rse-border-subtle: #e2e8f0;
-            --rse-text: #0f172a;
-            --rse-text-secondary: #475569;
-            --rse-focus: #b45309;
+            --rse-surface: var(--rse-slate-surface, #ffffff);
+            --rse-surface-muted: var(--rse-slate-muted, #f8fafc);
+            --rse-border: var(--rse-slate-border, #cbd5e1);
+            --rse-border-subtle: var(--rse-slate-divider, #e2e8f0);
+            --rse-text: var(--rse-slate-text, #0f172a);
+            --rse-text-secondary: var(--rse-slate-text-secondary, #475569);
+            --rse-focus: var(--rse-brand-focus, #095988);
 
             --rse-amber-text: #b45309;
             --rse-amber-bg: #fef3c7;
             --rse-amber-badge-text: #92400e;
             --rse-amber-border: #f59e0b;
 
-            --rse-emerald-text: #047857;
+            --rse-emerald-text: #0f7a59;
             --rse-emerald-bg: #d1fae5;
-            --rse-emerald-badge-text: #065f46;
-            --rse-emerald-border: #059669;
+            --rse-emerald-badge-text: #094d38;
+            --rse-emerald-border: #159e74;
 
             --rse-rose-text: #be123c;
             --rse-rose-bg: #ffe4e6;
@@ -34,13 +34,13 @@
         }
 
         .dark .rse-qs-root {
-            --rse-surface: #18181b;
-            --rse-surface-muted: #0f172a;
-            --rse-border: #3f3f46;
-            --rse-border-subtle: #27272a;
-            --rse-text: #f8fafc;
-            --rse-text-secondary: #cbd5e1;
-            --rse-focus: #fbbf24;
+            --rse-surface: var(--rse-slate-surface, #0f172a);
+            --rse-surface-muted: var(--rse-slate-muted, #1e293b);
+            --rse-border: var(--rse-slate-border, #334155);
+            --rse-border-subtle: var(--rse-slate-divider, #233044);
+            --rse-text: var(--rse-slate-text, #f8fafc);
+            --rse-text-secondary: var(--rse-slate-text-secondary, #cbd5e1);
+            --rse-focus: var(--rse-brand-focus, #1997e6);
 
             --rse-amber-text: #fbbf24;
             --rse-amber-bg: #451a03;
@@ -48,9 +48,9 @@
             --rse-amber-border: #d97706;
 
             --rse-emerald-text: #34d399;
-            --rse-emerald-bg: #064e3b;
+            --rse-emerald-bg: #052e21;
             --rse-emerald-badge-text: #a7f3d0;
-            --rse-emerald-border: #059669;
+            --rse-emerald-border: #159e74;
 
             --rse-rose-text: #fda4af;
             --rse-rose-bg: #4c0519;
@@ -89,25 +89,16 @@
             min-height: 44px;
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
-            background-color: #b45309;
-            color: #ffffff;
+            background-color: var(--rse-brand-accent, #095988);
+            color: var(--rse-brand-accent-text, #ffffff);
             font-size: 0.875rem;
             font-weight: 600;
             text-decoration: none;
             transition: background-color 150ms ease;
         }
 
-        .dark .rse-qs-cta-link {
-            background-color: #fbbf24;
-            color: #0f172a;
-        }
-
         .rse-qs-cta-link:hover {
-            background-color: #92400e;
-        }
-
-        .dark .rse-qs-cta-link:hover {
-            background-color: #f59e0b;
+            background-color: var(--rse-brand-accent-hover, #07476e);
         }
 
         .rse-qs-cta-link:focus-visible,
@@ -154,15 +145,9 @@
         }
 
         .rse-qs-tab-btn[aria-selected="true"] {
-            background-color: #b45309;
-            border-color: #b45309;
-            color: #ffffff;
-        }
-
-        .dark .rse-qs-tab-btn[aria-selected="true"] {
-            background-color: #fbbf24;
-            border-color: #fbbf24;
-            color: #0f172a;
+            background-color: var(--rse-brand-accent, #095988);
+            border-color: var(--rse-brand-accent, #095988);
+            color: var(--rse-brand-accent-text, #ffffff);
         }
 
         .rse-qs-tab-meta {
@@ -179,14 +164,8 @@
         }
 
         .rse-qs-tab-btn[aria-selected="true"] .rse-qs-tab-meta {
-            background-color: #92400e;
-            color: #ffffff;
-            border-color: transparent;
-        }
-
-        .dark .rse-qs-tab-btn[aria-selected="true"] .rse-qs-tab-meta {
-            background-color: #f59e0b;
-            color: #0f172a;
+            background-color: var(--rse-brand-accent-hover, #07476e);
+            color: var(--rse-brand-accent-text, #ffffff);
             border-color: transparent;
         }
 
@@ -474,7 +453,7 @@
                             <p class="rse-qs-kpi-label">Tingkat kepuasan</p>
                             <p class="rse-qs-kpi-value" style="color: var(--rse-emerald-text);">{{ $satisfaction }}%</p>
                             <div class="rse-qs-bar-track" aria-hidden="true">
-                                <div style="width: {{ min(100, max(0, $satisfaction)) }}%; height: 100%; background-color: #059669;"></div>
+                                <div style="width: {{ min(100, max(0, $satisfaction)) }}%; height: 100%; background-color: var(--rse-brand-secondary, #159e74);"></div>
                             </div>
                             <p class="rse-qs-kpi-note">Proporsi jawaban positif pada dua skala tertinggi</p>
                         </div>
@@ -497,7 +476,7 @@
                                                 <span style="color: var(--rse-text-secondary); font-weight: 600;">{{ $agePct }}%</span>
                                             </div>
                                             <div class="rse-qs-bar-track" style="margin-top: 0.25rem; height: 0.4375rem;">
-                                                <div style="width: {{ $agePct }}%; height: 100%; background-color: #d97706;"></div>
+                                                <div style="width: {{ $agePct }}%; height: 100%; background-color: var(--rse-brand-accent, #095988);"></div>
                                             </div>
                                         </li>
                                     @endforeach
@@ -545,7 +524,7 @@
                                                     </span>
                                                 </div>
                                                 <div class="rse-qs-bar-track" style="margin-top: 0.25rem; height: 0.375rem;">
-                                                    <div style="width: {{ $aspect['percent'] }}%; height: 100%; background-color: #059669;"></div>
+                                                    <div style="width: {{ $aspect['percent'] }}%; height: 100%; background-color: var(--rse-brand-secondary, #159e74);"></div>
                                                 </div>
                                             </div>
                                         @endforeach

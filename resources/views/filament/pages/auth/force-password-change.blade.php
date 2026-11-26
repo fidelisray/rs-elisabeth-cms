@@ -38,13 +38,13 @@
         }
 
         .dark .rse-pw-root {
-            --rse-pw-surface: #18181b;
-            --rse-pw-surface-muted: #0f172a;
-            --rse-pw-border: #3f3f46;
-            --rse-pw-border-subtle: #27272a;
-            --rse-pw-text: #f8fafc;
-            --rse-pw-text-secondary: #cbd5e1;
-            --rse-pw-track: #27272a;
+            --rse-pw-surface: var(--rse-slate-surface, #0f172a);
+            --rse-pw-surface-muted: var(--rse-slate-muted, #1e293b);
+            --rse-pw-border: var(--rse-slate-border, #334155);
+            --rse-pw-border-subtle: var(--rse-slate-divider, #233044);
+            --rse-pw-text: var(--rse-slate-text, #f8fafc);
+            --rse-pw-text-secondary: var(--rse-slate-text-secondary, #cbd5e1);
+            --rse-pw-track: var(--rse-slate-track, #1e293b);
 
             --rse-pw-rose-fill: #f43f5e;
             --rse-pw-rose-bg: #4c0519;

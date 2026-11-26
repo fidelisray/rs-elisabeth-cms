@@ -1,67 +1,67 @@
 <style data-rse-dynamic-form-builder-styles>
-    /* Pembedaan hierarki visual Bagian (Amber) vs Pertanyaan (Biru Sky) menggunakan direct-child selector agar tidak bocor ke repeater bersarang. */
+    /* Pembedaan hierarki visual Bagian (Medical Navy) vs Pertanyaan (Fresh Emerald) menggunakan direct-child selector agar tidak bocor ke repeater bersarang. */
     .rse-df-sections-repeater > .fi-fo-repeater-items > .fi-fo-repeater-item {
-        border: 1.5px solid #d97706 !important;
-        background-color: #fffbeb !important;
+        border: 1.5px solid var(--rse-brand-600, #095988) !important;
+        background-color: var(--rse-brand-50, #f0f8fc) !important;
         border-radius: 0.75rem;
         overflow: hidden;
     }
 
     .rse-df-sections-repeater > .fi-fo-repeater-items > .fi-fo-repeater-item > .fi-fo-repeater-item-header {
-        background-color: #fef3c7 !important;
-        border-bottom: 1px solid #f59e0b;
+        background-color: var(--rse-brand-100, #dceff9) !important;
+        border-bottom: 1px solid var(--rse-brand-300, #89c9ea);
         min-height: 44px;
     }
 
     .rse-df-sections-repeater > .fi-fo-repeater-items > .fi-fo-repeater-item > .fi-fo-repeater-item-header .fi-fo-repeater-item-header-label {
-        color: #92400e !important;
+        color: var(--rse-brand-700, #07476e) !important;
         font-weight: 700;
     }
 
     .rse-df-fields-repeater > .fi-fo-repeater-items > .fi-fo-repeater-item {
-        border: 1.5px solid #0284c7 !important;
-        background-color: #ffffff !important;
+        border: 1.5px solid var(--rse-secondary-500, #159e74) !important;
+        background-color: var(--rse-slate-surface, #ffffff) !important;
         border-radius: 0.625rem;
         overflow: hidden;
     }
 
     .rse-df-fields-repeater > .fi-fo-repeater-items > .fi-fo-repeater-item > .fi-fo-repeater-item-header {
-        background-color: #e0f2fe !important;
-        border-bottom: 1px solid #7dd3fc;
+        background-color: var(--rse-secondary-100, #d1fae5) !important;
+        border-bottom: 1px solid var(--rse-secondary-300, #6ee7b7);
         min-height: 44px;
     }
 
     .rse-df-fields-repeater > .fi-fo-repeater-items > .fi-fo-repeater-item > .fi-fo-repeater-item-header .fi-fo-repeater-item-header-label {
-        color: #075985 !important;
+        color: var(--rse-secondary-800, #094d38) !important;
         font-weight: 600;
     }
 
     .dark .rse-df-sections-repeater > .fi-fo-repeater-items > .fi-fo-repeater-item {
-        border-color: rgba(245, 158, 11, 0.55) !important;
-        background-color: rgba(120, 53, 15, 0.14) !important;
+        border-color: rgba(25, 151, 230, 0.55) !important;
+        background-color: rgba(9, 89, 136, 0.16) !important;
     }
 
     .dark .rse-df-sections-repeater > .fi-fo-repeater-items > .fi-fo-repeater-item > .fi-fo-repeater-item-header {
-        background-color: #45280d !important;
-        border-bottom-color: rgba(245, 158, 11, 0.4);
+        background-color: var(--rse-brand-900, #052d47) !important;
+        border-bottom-color: rgba(25, 151, 230, 0.4);
     }
 
     .dark .rse-df-sections-repeater > .fi-fo-repeater-items > .fi-fo-repeater-item > .fi-fo-repeater-item-header .fi-fo-repeater-item-header-label {
-        color: #fde68a !important;
+        color: var(--rse-brand-200, #bae0f4) !important;
     }
 
     .dark .rse-df-fields-repeater > .fi-fo-repeater-items > .fi-fo-repeater-item {
-        border-color: rgba(56, 189, 248, 0.45) !important;
-        background-color: rgba(24, 24, 27, 0.94) !important;
+        border-color: rgba(52, 211, 153, 0.45) !important;
+        background-color: rgba(15, 23, 42, 0.94) !important;
     }
 
     .dark .rse-df-fields-repeater > .fi-fo-repeater-items > .fi-fo-repeater-item > .fi-fo-repeater-item-header {
-        background-color: #0c2d48 !important;
-        border-bottom-color: rgba(56, 189, 248, 0.35);
+        background-color: var(--rse-secondary-950, #052e21) !important;
+        border-bottom-color: rgba(52, 211, 153, 0.35);
     }
 
     .dark .rse-df-fields-repeater > .fi-fo-repeater-items > .fi-fo-repeater-item > .fi-fo-repeater-item-header .fi-fo-repeater-item-header-label {
-        color: #bae6fd !important;
+        color: var(--rse-secondary-200, #a7f3d0) !important;
     }
 
     .rse-df-sections-repeater > .fi-fo-repeater-add .fi-btn,
