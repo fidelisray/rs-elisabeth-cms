@@ -10,17 +10,18 @@
     <div class="rse-dfa-root">
         <style>
             .rse-dfa-root {
-                --rse-a-surface: #ffffff;
-                --rse-a-muted: #f8fafc;
-                --rse-a-border: #64748b;
-                --rse-a-divider: #cbd5e1;
-                --rse-a-text: #0f172a;
-                --rse-a-text-secondary: #475569;
-                --rse-a-accent: #b45309;
-                --rse-a-accent-text: #ffffff;
-                --rse-a-track: #e2e8f0;
-                --rse-a-badge-bg: #fef3c7;
-                --rse-a-badge-text: #92400e;
+                --rse-a-surface: var(--rse-slate-surface, #ffffff);
+                --rse-a-muted: var(--rse-slate-muted, #f8fafc);
+                --rse-a-border: var(--rse-slate-border-strong, #64748b);
+                --rse-a-divider: var(--rse-slate-border, #cbd5e1);
+                --rse-a-text: var(--rse-slate-text, #0f172a);
+                --rse-a-text-secondary: var(--rse-slate-text-secondary, #475569);
+                --rse-a-accent: var(--rse-brand-accent, #095988);
+                --rse-a-accent-text: var(--rse-brand-accent-text, #ffffff);
+                --rse-a-link: var(--rse-brand-link, #095988);
+                --rse-a-track: var(--rse-slate-track, #e2e8f0);
+                --rse-a-badge-bg: var(--rse-brand-badge-bg, #dceff9);
+                --rse-a-badge-text: var(--rse-brand-badge-text, #07476e);
                 --rse-a-err-bg: #ffe4e6;
                 --rse-a-err-text: #9f1239;
                 color: var(--rse-a-text);
@@ -28,17 +29,18 @@
             }
 
             .dark .rse-dfa-root {
-                --rse-a-surface: #18181b;
-                --rse-a-muted: #0f172a;
-                --rse-a-border: #71717a;
-                --rse-a-divider: #3f3f46;
-                --rse-a-text: #f8fafc;
-                --rse-a-text-secondary: #cbd5e1;
-                --rse-a-accent: #fbbf24;
-                --rse-a-accent-text: #0f172a;
-                --rse-a-track: #27272a;
-                --rse-a-badge-bg: #451a03;
-                --rse-a-badge-text: #fde68a;
+                --rse-a-surface: var(--rse-slate-surface, #0f172a);
+                --rse-a-muted: var(--rse-slate-muted, #1e293b);
+                --rse-a-border: var(--rse-slate-border-strong, #64748b);
+                --rse-a-divider: var(--rse-slate-border, #334155);
+                --rse-a-text: var(--rse-slate-text, #f8fafc);
+                --rse-a-text-secondary: var(--rse-slate-text-secondary, #cbd5e1);
+                --rse-a-accent: var(--rse-brand-accent, #1997e6);
+                --rse-a-accent-text: var(--rse-brand-accent-text, #0b0f19);
+                --rse-a-link: var(--rse-brand-link, #38bdf8);
+                --rse-a-track: var(--rse-slate-track, #1e293b);
+                --rse-a-badge-bg: var(--rse-brand-badge-bg, #052d47);
+                --rse-a-badge-text: var(--rse-brand-badge-text, #bae0f4);
                 --rse-a-err-bg: #4c0519;
                 --rse-a-err-text: #fecdd3;
             }
@@ -172,7 +174,7 @@
             }
 
             .rse-dfa-link {
-                color: var(--rse-a-accent);
+                color: var(--rse-a-link);
                 font-weight: 600;
                 text-decoration: underline;
                 text-underline-offset: 2px;

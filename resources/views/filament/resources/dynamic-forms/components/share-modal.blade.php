@@ -86,17 +86,17 @@
 >
     <style>
         .rse-share-root {
-            --rse-s-surface: #ffffff;
-            --rse-s-muted: #f8fafc;
-            --rse-s-border: #64748b;
-            --rse-s-divider: #cbd5e1;
-            --rse-s-text: #0f172a;
-            --rse-s-text-secondary: #475569;
-            --rse-s-accent: #b45309;
-            --rse-s-accent-hover: #92400e;
-            --rse-s-accent-text: #ffffff;
+            --rse-s-surface: var(--rse-slate-surface, #ffffff);
+            --rse-s-muted: var(--rse-slate-muted, #f8fafc);
+            --rse-s-border: var(--rse-slate-border-strong, #64748b);
+            --rse-s-divider: var(--rse-slate-border, #cbd5e1);
+            --rse-s-text: var(--rse-slate-text, #0f172a);
+            --rse-s-text-secondary: var(--rse-slate-text-secondary, #475569);
+            --rse-s-accent: var(--rse-brand-accent, #095988);
+            --rse-s-accent-hover: var(--rse-brand-accent-hover, #07476e);
+            --rse-s-accent-text: var(--rse-brand-accent-text, #ffffff);
             --rse-s-pub-bg: #d1fae5;
-            --rse-s-pub-text: #065f46;
+            --rse-s-pub-text: #094d38;
             --rse-s-unlisted-bg: #fef3c7;
             --rse-s-unlisted-text: #92400e;
             --rse-s-warn-bg: #ffe4e6;
@@ -106,16 +106,16 @@
         }
 
         .dark .rse-share-root {
-            --rse-s-surface: #18181b;
-            --rse-s-muted: #0f172a;
-            --rse-s-border: #71717a;
-            --rse-s-divider: #3f3f46;
-            --rse-s-text: #f8fafc;
-            --rse-s-text-secondary: #cbd5e1;
-            --rse-s-accent: #fbbf24;
-            --rse-s-accent-hover: #f59e0b;
-            --rse-s-accent-text: #0f172a;
-            --rse-s-pub-bg: #064e3b;
+            --rse-s-surface: var(--rse-slate-surface, #0f172a);
+            --rse-s-muted: var(--rse-slate-muted, #1e293b);
+            --rse-s-border: var(--rse-slate-border-strong, #64748b);
+            --rse-s-divider: var(--rse-slate-border, #334155);
+            --rse-s-text: var(--rse-slate-text, #f8fafc);
+            --rse-s-text-secondary: var(--rse-slate-text-secondary, #cbd5e1);
+            --rse-s-accent: var(--rse-brand-accent, #1997e6);
+            --rse-s-accent-hover: var(--rse-brand-accent-hover, #89c9ea);
+            --rse-s-accent-text: var(--rse-brand-accent-text, #0b0f19);
+            --rse-s-pub-bg: #052e21;
             --rse-s-pub-text: #a7f3d0;
             --rse-s-unlisted-bg: #451a03;
             --rse-s-unlisted-text: #fde68a;

@@ -236,7 +236,7 @@ class DynamicFormWizardSchema
                         Repeater::make('fields')
                             ->label('Daftar Pertanyaan & Blok Informasi')
                             ->addActionLabel('Tambah Pertanyaan')
-                            ->addAction(fn (Action $action): Action => $action->color('info')->icon(Heroicon::OutlinedPlusCircle))
+                            ->addAction(fn (Action $action): Action => $action->color('success')->icon(Heroicon::OutlinedPlusCircle))
                             ->cloneAction(fn (Action $action): Action => $action->action(function (array $arguments, Repeater $component): void {
                                 $items = (array) ($component->getRawState() ?? []);
                                 $sourceKey = $arguments['item'] ?? null;

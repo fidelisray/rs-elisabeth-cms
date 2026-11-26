@@ -2,31 +2,35 @@
     <div class="rse-dfw-root">
         <style>
             .rse-dfw-root {
-                --rse-w-surface: #ffffff;
-                --rse-w-muted: #f8fafc;
-                --rse-w-border: #64748b;
-                --rse-w-divider: #cbd5e1;
-                --rse-w-text: #0f172a;
-                --rse-w-text-secondary: #475569;
-                --rse-w-accent: #b45309;
-                --rse-w-accent-text: #ffffff;
-                --rse-w-badge-bg: #fef3c7;
-                --rse-w-badge-text: #92400e;
+                --rse-w-surface: var(--rse-slate-surface, #ffffff);
+                --rse-w-muted: var(--rse-slate-muted, #f8fafc);
+                --rse-w-border: var(--rse-slate-border-strong, #64748b);
+                --rse-w-divider: var(--rse-slate-border, #cbd5e1);
+                --rse-w-text: var(--rse-slate-text, #0f172a);
+                --rse-w-text-secondary: var(--rse-slate-text-secondary, #475569);
+                --rse-w-accent: var(--rse-brand-accent, #095988);
+                --rse-w-accent-hover: var(--rse-brand-accent-hover, #07476e);
+                --rse-w-accent-text: var(--rse-brand-accent-text, #ffffff);
+                --rse-w-link: var(--rse-brand-link, #095988);
+                --rse-w-badge-bg: var(--rse-brand-badge-bg, #dceff9);
+                --rse-w-badge-text: var(--rse-brand-badge-text, #07476e);
                 color: var(--rse-w-text);
                 font-variant-numeric: tabular-nums;
             }
 
             .dark .rse-dfw-root {
-                --rse-w-surface: #18181b;
-                --rse-w-muted: #0f172a;
-                --rse-w-border: #71717a;
-                --rse-w-divider: #3f3f46;
-                --rse-w-text: #f8fafc;
-                --rse-w-text-secondary: #cbd5e1;
-                --rse-w-accent: #fbbf24;
-                --rse-w-accent-text: #0f172a;
-                --rse-w-badge-bg: #451a03;
-                --rse-w-badge-text: #fde68a;
+                --rse-w-surface: var(--rse-slate-surface, #0f172a);
+                --rse-w-muted: var(--rse-slate-muted, #1e293b);
+                --rse-w-border: var(--rse-slate-border-strong, #64748b);
+                --rse-w-divider: var(--rse-slate-border, #334155);
+                --rse-w-text: var(--rse-slate-text, #f8fafc);
+                --rse-w-text-secondary: var(--rse-slate-text-secondary, #cbd5e1);
+                --rse-w-accent: var(--rse-brand-accent, #1997e6);
+                --rse-w-accent-hover: var(--rse-brand-accent-hover, #89c9ea);
+                --rse-w-accent-text: var(--rse-brand-accent-text, #0b0f19);
+                --rse-w-link: var(--rse-brand-link, #38bdf8);
+                --rse-w-badge-bg: var(--rse-brand-badge-bg, #052d47);
+                --rse-w-badge-text: var(--rse-brand-badge-text, #bae0f4);
             }
 
             .rse-dfw-grid {
@@ -60,13 +64,18 @@
                 font-size: 0.875rem;
                 font-weight: 600;
                 text-decoration: none;
+                transition: background-color 150ms ease;
+            }
+
+            .rse-dfw-cta:hover {
+                background-color: var(--rse-w-accent-hover);
             }
 
             .rse-dfw-link {
                 display: inline-flex;
                 align-items: center;
                 min-height: 44px;
-                color: var(--rse-w-accent);
+                color: var(--rse-w-link);
                 font-weight: 600;
                 font-size: 0.875rem;
                 text-decoration: underline;

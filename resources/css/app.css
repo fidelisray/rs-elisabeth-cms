@@ -1,1 +1,63 @@
 @import "tailwindcss";
+
+@theme {
+    /* RS Elisabeth Medical Navy (Primary) */
+    --color-brand-50: #f0f8fc;
+    --color-brand-100: #dceff9;
+    --color-brand-200: #bae0f4;
+    --color-brand-300: #89c9ea;
+    --color-brand-400: #1997e6;
+    --color-brand-500: #0d74b0;
+    --color-brand-600: #095988;
+    --color-brand-700: #07476e;
+    --color-brand-800: #063a5a;
+    --color-brand-900: #052d47;
+    --color-brand-950: #031d2f;
+
+    /* RS Elisabeth Fresh Emerald (Secondary) */
+    --color-brand-secondary-50: #ecfdf5;
+    --color-brand-secondary-100: #d1fae5;
+    --color-brand-secondary-200: #a7f3d0;
+    --color-brand-secondary-300: #6ee7b7;
+    --color-brand-secondary-400: #34d399;
+    --color-brand-secondary-500: #159e74;
+    --color-brand-secondary-600: #0f7a59;
+    --color-brand-secondary-700: #0c6147;
+    --color-brand-secondary-800: #094d38;
+    --color-brand-secondary-900: #063d2d;
+    --color-brand-secondary-950: #052e21;
+}
+
+:root {
+    --background: 210 20% 98%;       /* #F8FAFC */
+    --foreground: 222 47% 11%;       /* #0F172A */
+    --card: 0 0% 100%;               /* #FFFFFF */
+    --card-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;            /* #F1F5F9 */
+    --muted-foreground: 215 16% 47%; /* #64748B */
+    --border: 214 32% 91%;           /* #E2E8F0 */
+    --input: 214 32% 91%;
+
+    /* Brand Primary: RS Elisabeth Medical Navy */
+    --primary: 204 88% 30%;          /* #095988 */
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary: Fresh Emerald */
+    --secondary: 162 76% 36%;        /* #159E74 */
+    --secondary-foreground: 0 0% 100%;
+}
+
+.dark {
+    --background: 222 47% 7%;        /* #0B0F19 */
+    --foreground: 210 40% 98%;       /* #F8FAFC */
+    --card: 222 47% 11%;             /* #0F172A */
+    --card-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;            /* #1E293B */
+    --muted-foreground: 215 20% 65%; /* #94A3B8 */
+    --border: 217 33% 20%;           /* #233044 */
+    --input: 217 33% 20%;
+
+    /* Lighter Medical Blue */
+    --primary: 204 80% 50%;          /* #1997E6 */
+    --primary-foreground: 222 47% 7%;
+}

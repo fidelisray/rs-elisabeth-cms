@@ -60,13 +60,13 @@
 
     <style>
         .rse-fb-root {
-            --rse-surface: #ffffff;
-            --rse-surface-muted: #f8fafc;
-            --rse-border: #cbd5e1;
-            --rse-border-subtle: #e2e8f0;
-            --rse-text: #0f172a;
-            --rse-text-secondary: #475569;
-            --rse-focus: #b45309;
+            --rse-surface: var(--rse-slate-surface, #ffffff);
+            --rse-surface-muted: var(--rse-slate-muted, #f8fafc);
+            --rse-border: var(--rse-slate-border, #cbd5e1);
+            --rse-border-subtle: var(--rse-slate-divider, #e2e8f0);
+            --rse-text: var(--rse-slate-text, #0f172a);
+            --rse-text-secondary: var(--rse-slate-text-secondary, #475569);
+            --rse-focus: var(--rse-brand-focus, #095988);
 
             --rse-amber-text: #b45309;
             --rse-amber-bg: #fef3c7;
@@ -78,23 +78,23 @@
             --rse-sky-badge-text: #075985;
             --rse-sky-border: #0284c7;
 
-            --rse-emerald-text: #047857;
+            --rse-emerald-text: #0f7a59;
             --rse-emerald-bg: #d1fae5;
-            --rse-emerald-badge-text: #065f46;
-            --rse-emerald-border: #059669;
+            --rse-emerald-badge-text: #094d38;
+            --rse-emerald-border: #159e74;
 
             color: var(--rse-text);
             font-variant-numeric: tabular-nums;
         }
 
         .dark .rse-fb-root {
-            --rse-surface: #18181b;
-            --rse-surface-muted: #0f172a;
-            --rse-border: #3f3f46;
-            --rse-border-subtle: #27272a;
-            --rse-text: #f8fafc;
-            --rse-text-secondary: #cbd5e1;
-            --rse-focus: #fbbf24;
+            --rse-surface: var(--rse-slate-surface, #0f172a);
+            --rse-surface-muted: var(--rse-slate-muted, #1e293b);
+            --rse-border: var(--rse-slate-border, #334155);
+            --rse-border-subtle: var(--rse-slate-divider, #233044);
+            --rse-text: var(--rse-slate-text, #f8fafc);
+            --rse-text-secondary: var(--rse-slate-text-secondary, #cbd5e1);
+            --rse-focus: var(--rse-brand-focus, #1997e6);
 
             --rse-amber-text: #fbbf24;
             --rse-amber-bg: #451a03;
@@ -107,9 +107,9 @@
             --rse-sky-border: #0284c7;
 
             --rse-emerald-text: #34d399;
-            --rse-emerald-bg: #064e3b;
+            --rse-emerald-bg: #052e21;
             --rse-emerald-badge-text: #a7f3d0;
-            --rse-emerald-border: #059669;
+            --rse-emerald-border: #159e74;
         }
 
         .rse-fb-topbar {
@@ -144,8 +144,8 @@
             min-height: 44px;
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
-            background-color: #b45309;
-            color: #ffffff;
+            background-color: var(--rse-brand-accent, #095988);
+            color: var(--rse-brand-accent-text, #ffffff);
             font-size: 0.875rem;
             font-weight: 600;
             text-decoration: none;
@@ -153,17 +153,8 @@
             transition: background-color 150ms ease;
         }
 
-        .dark .rse-fb-cta-link {
-            background-color: #fbbf24;
-            color: #0f172a;
-        }
-
         .rse-fb-cta-link:hover {
-            background-color: #92400e;
-        }
-
-        .dark .rse-fb-cta-link:hover {
-            background-color: #f59e0b;
+            background-color: var(--rse-brand-accent-hover, #07476e);
         }
 
         .rse-fb-cta-link:focus-visible,
@@ -231,15 +222,9 @@
         }
 
         .rse-fb-filter-pill[aria-pressed="true"] {
-            background-color: #b45309;
-            border-color: #b45309;
-            color: #ffffff;
-        }
-
-        .dark .rse-fb-filter-pill[aria-pressed="true"] {
-            background-color: #fbbf24;
-            border-color: #fbbf24;
-            color: #0f172a;
+            background-color: var(--rse-brand-accent, #095988);
+            border-color: var(--rse-brand-accent, #095988);
+            color: var(--rse-brand-accent-text, #ffffff);
         }
 
         .rse-fb-filter-count {
@@ -257,15 +242,9 @@
         }
 
         .rse-fb-filter-pill[aria-pressed="true"] .rse-fb-filter-count {
-            background-color: #92400e;
+            background-color: var(--rse-brand-accent-hover, #07476e);
             border-color: transparent;
-            color: #ffffff;
-        }
-
-        .dark .rse-fb-filter-pill[aria-pressed="true"] .rse-fb-filter-count {
-            background-color: #f59e0b;
-            border-color: transparent;
-            color: #0f172a;
+            color: var(--rse-brand-accent-text, #ffffff);
         }
 
         .rse-fb-kpi-grid {
@@ -449,7 +428,7 @@
             min-height: 44px;
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             font-weight: 700;
-            color: var(--rse-amber-text);
+            color: var(--rse-brand-link, #095988);
             text-decoration: underline;
             text-underline-offset: 3px;
         }
