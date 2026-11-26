@@ -679,4 +679,105 @@ class DynamicFormLogicEvaluatorTest extends TestCase
         $this->assertStringContainsString('harus berupa satu nilai tunggal untuk operator [equals]', $joined);
         $this->assertStringContainsString('harus berupa angka untuk operator [gt]', $joined);
     }
+
+    public function test_validate_schema_logic_rejects_multiple_jump_source_fields_in_same_section(): void
+    {
+        // 1. Konflik: 2 pertanyaan berbeda di Bagian 1 sama-sama punya lompatan (termasuk __submit__) -> ditolak
+        $conflictingSections = [
+            [
+                'section_key' => 'sec_1',
+                'title' => 'Identitas & Layanan',
+                'fields' => [
+                    [
+                        'field_key' => 'unit_layanan',
+                        'label' => 'Unit Layanan',
+                        'type' => 'radio',
+                        'options' => [
+                            'choices' => [
+                                ['key' => 'igd', 'label' => 'IGD', 'go_to_section_key' => 'sec_2'],
+                                ['key' => 'rajal', 'label' => 'Rawat Jalan', 'go_to_section_key' => 'sec_3'],
+                            ],
+                        ],
+                    ],
+                    [
+                        'field_key' => 'bersedia_lanjut',
+                        'label' => 'Bersedia Melanjutkan?',
+                        'type' => 'dropdown',
+                        'options' => [
+                            'choices' => [
+                                ['key' => 'tidak', 'label' => 'Tidak', 'go_to_section_key' => '__submit__'],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'section_key' => 'sec_2',
+                'title' => 'Evaluasi IGD',
+                'fields' => [
+                    ['field_key' => 'catatan_igd', 'label' => 'Catatan IGD', 'type' => 'short_text'],
+                ],
+            ],
+            [
+                'section_key' => 'sec_3',
+                'title' => 'Evaluasi Rawat Jalan',
+                'fields' => [
+                    ['field_key' => 'catatan_rajal', 'label' => 'Catatan Rawat Jalan', 'type' => 'short_text'],
+                ],
+            ],
+        ];
+
+        $conflictErrors = $this->evaluator->validateSchemaLogic($conflictingSections);
+        $this->assertNotEmpty($conflictErrors);
+        $this->assertStringContainsString(
+            'memiliki lebih dari satu pertanyaan pemicu Lompatan Bagian (Unit Layanan, Bersedia Melanjutkan?)',
+            implode(' | ', $conflictErrors)
+        );
+
+        // 2. Valid: 1 pertanyaan pemicu di Bagian 1 (beberapa opsi lompatan) + 1 pertanyaan pemicu di Bagian 2 -> diterima
+        $validSections = [
+            [
+                'section_key' => 'sec_1',
+                'title' => 'Identitas & Layanan',
+                'fields' => [
+                    [
+                        'field_key' => 'unit_layanan',
+                        'label' => 'Unit Layanan',
+                        'type' => 'radio',
+                        'options' => [
+                            'choices' => [
+                                ['key' => 'igd', 'label' => 'IGD', 'go_to_section_key' => 'sec_2'],
+                                ['key' => 'rajal', 'label' => 'Rawat Jalan', 'go_to_section_key' => 'sec_3'],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'section_key' => 'sec_2',
+                'title' => 'Evaluasi IGD',
+                'fields' => [
+                    [
+                        'field_key' => 'perlu_penutup',
+                        'label' => 'Ingin Tambah Saran?',
+                        'type' => 'radio',
+                        'options' => [
+                            'choices' => [
+                                ['key' => 'tidak', 'label' => 'Tidak', 'go_to_section_key' => '__submit__'],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'section_key' => 'sec_3',
+                'title' => 'Evaluasi Rawat Jalan',
+                'fields' => [
+                    ['field_key' => 'catatan_rajal', 'label' => 'Catatan Rawat Jalan', 'type' => 'short_text'],
+                ],
+            ],
+        ];
+
+        $this->assertSame([], $this->evaluator->validateSchemaLogic($validSections));
+    }
 }
