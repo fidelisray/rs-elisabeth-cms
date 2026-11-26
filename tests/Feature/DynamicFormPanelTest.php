@@ -1165,7 +1165,7 @@ class DynamicFormPanelTest extends TestCase
         $cjRefreshed = collect($jumpFormComponent->instance()->form->getComponentByStatePath('logic_config.choice_jumps', withHidden: true)->getChildSchemas(withHidden: true))->first();
         $this->assertNotNull($cjRefreshed);
         $cjOpts = $cjRefreshed->getComponentByStatePath('choice_key', withHidden: true)->getOptions();
-        $this->assertSame(['sama' => 'Sama (sama)', 'sama_2' => 'Sama (sama_2)'], $cjOpts);
+        $this->assertSame(['sama' => 'Sama (Opsi #1)', 'sama_2' => 'Sama (Opsi #2)'], $cjOpts);
 
         Livewire::test(CreateDynamicForm::class)
             ->fillForm([
@@ -1738,9 +1738,9 @@ class DynamicFormPanelTest extends TestCase
         $this->assertInstanceOf(Select::class, $vr1Value);
         $this->assertFalse($vr1Value->isMultiple());
         $this->assertSame([
-            'tidak_menyimpan_patuh' => 'Tidak Menyimpan (Patuh) (tidak_menyimpan_patuh)',
-            'menyimpan_tidak_patuh' => 'Menyimpan (Tidak Patuh) (menyimpan_tidak_patuh)',
-            '__other__' => 'Alasan Lain (__other__)',
+            'tidak_menyimpan_patuh' => 'Tidak Menyimpan (Patuh)',
+            'menyimpan_tidak_patuh' => 'Menyimpan (Tidak Patuh)',
+            '__other__' => 'Alasan Lain (Lainnya)',
         ], $vr1Value->getOptions());
 
         // Aturan 2: multi-select checkbox, linear_scale, rating, date, dan file_upload
@@ -2620,6 +2620,203 @@ class DynamicFormPanelTest extends TestCase
             ->mountAction('preview')
             ->assertMountedActionModalSeeHtml('<strong>Pratinjau Live Deskripsi Formulir</strong>')
             ->assertMountedActionModalSeeHtml('<em>Pratinjau Live Deskripsi Bagian</em>');
+    }
+
+    public function test_step3_conditional_logic_ux_filters_forward_targets_hides_internal_keys_prevents_multi_jump_per_section_and_renders_flow_map(): void
+    {
+        $this->actingAs($this->marketing);
+
+        // 1. Halaman Create merender Kartu Panduan 3-Kolom dan Panel Peta Alur Bagian
+        $createPage = $this->get(DynamicFormResource::getUrl('create'))->assertOk();
+        $createPage->assertSee('data-rse-logic-guide', false);
+        $createPage->assertSee('data-rse-logic-flow-map', false);
+        $createPage->assertSee('Level Pertanyaan');
+        $createPage->assertSee('Level Halaman');
+
+        // 2. Uji penyaringan dropdown maju saja (Menu 2 & Menu 3), label bersih tanpa kunci internal, serta Peta Alur Bagian
+        $component = Livewire::test(CreateDynamicForm::class)
+            ->set('data.title', 'Survei Alur Layanan RS')
+            ->set('data.slug', 'survei-alur-layanan-rs')
+            ->set('data.mode', DynamicFormMode::Questionnaire->value)
+            ->set('data.locale', 'id')
+            ->set('data.sections', [
+                's1' => [
+                    'section_key' => 'sec_auto_satu',
+                    'title' => 'Identitas & Unit',
+                    'fields' => [
+                        'f1' => [
+                            'field_key' => 'fld_auto_unit',
+                            'label' => 'Unit Layanan',
+                            'type' => 'radio',
+                            'options' => [
+                                'choices' => [
+                                    ['key' => 'igd', 'label' => 'IGD'],
+                                    ['key' => 'rajal', 'label' => 'Rawat Jalan'],
+                                ],
+                            ],
+                        ],
+                        'f2' => [
+                            'field_key' => 'fld_auto_lanjut',
+                            'label' => 'Bersedia Melanjutkan?',
+                            'type' => 'dropdown',
+                            'options' => [
+                                'choices' => [
+                                    ['key' => 'ya', 'label' => 'Ya'],
+                                    ['key' => 'tidak', 'label' => 'Tidak'],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                's2' => [
+                    'section_key' => 'sec_auto_dua',
+                    'title' => 'Evaluasi IGD',
+                    'fields' => [
+                        'f3' => [
+                            'field_key' => 'fld_auto_nilai_igd',
+                            'label' => 'Penilaian IGD',
+                            'type' => 'radio',
+                            'options' => [
+                                'choices' => [
+                                    ['key' => 'puas', 'label' => 'Puas'],
+                                    ['key' => 'kurang', 'label' => 'Kurang'],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+                's3' => [
+                    'section_key' => 'sec_auto_tiga',
+                    'title' => 'Penutup & Saran',
+                    'fields' => [
+                        'f4' => [
+                            'field_key' => 'fld_auto_saran',
+                            'label' => 'Saran Pasien',
+                            'type' => 'long_text',
+                        ],
+                    ],
+                ],
+            ])
+            ->set('data.logic_config', [
+                'visibility_rules' => [],
+                'choice_jumps' => [
+                    'cj1' => [
+                        'source_field_key' => 'fld_auto_nilai_igd',
+                        'choice_key' => 'puas',
+                        'go_to_section_key' => 'sec_auto_tiga',
+                    ],
+                ],
+                'section_jumps' => [
+                    'sj1' => [
+                        'section_key' => 'sec_auto_dua',
+                        'action' => 'jump',
+                        'target_section_key' => 'sec_auto_tiga',
+                    ],
+                ],
+            ]);
+
+        $schema = $component->instance()->form;
+        $cjItem = collect($schema->getComponentByStatePath('logic_config.choice_jumps', withHidden: true)->getChildSchemas(withHidden: true))->first();
+        $sjItem = collect($schema->getComponentByStatePath('logic_config.section_jumps', withHidden: true)->getChildSchemas(withHidden: true))->first();
+
+        $cjSourceOptions = $cjItem->getComponentByStatePath('source_field_key', withHidden: true)->getOptions();
+        $cjTargetOptions = $cjItem->getComponentByStatePath('go_to_section_key', withHidden: true)->getOptions();
+        $sjSectionOptions = $sjItem->getComponentByStatePath('section_key', withHidden: true)->getOptions();
+        $sjTargetOptions = $sjItem->getComponentByStatePath('target_section_key', withHidden: true)->getOptions();
+
+        // Label dropdown bersih tanpa kunci internal (fld_auto_* / sec_auto_*)
+        $this->assertSame('[Bagian 1: Identitas & Unit] Unit Layanan', $cjSourceOptions['fld_auto_unit']);
+        $this->assertSame('[Bagian 2: Evaluasi IGD] Penilaian IGD', $cjSourceOptions['fld_auto_nilai_igd']);
+        $this->assertSame('Bagian 1 · Identitas & Unit', $sjSectionOptions['sec_auto_satu']);
+        foreach ([$cjSourceOptions, $cjTargetOptions, $sjSectionOptions, $sjTargetOptions] as $optionMap) {
+            foreach ($optionMap as $label) {
+                $this->assertStringNotContainsString('fld_auto_', $label);
+                $this->assertStringNotContainsString('sec_auto_', $label);
+            }
+        }
+
+        // Menu 2: pertanyaan di Bagian 2 hanya boleh lompat ke Bagian 3 atau __submit__ (bukan Bagian 1 / Bagian 2)
+        $this->assertSame(['sec_auto_tiga', '__submit__'], array_keys($cjTargetOptions));
+
+        // Menu 3: akhir Bagian 2 hanya boleh lompat ke Bagian 3 atau __submit__ (bukan Bagian 1 / Bagian 2)
+        $this->assertSame(['sec_auto_tiga', '__submit__'], array_keys($sjTargetOptions));
+
+        // Peta Alur Bagian menampilkan ringkasan cabang dan tujuan default secara langsung
+        $component
+            ->assertSee('data-rse-logic-flow-map', false)
+            ->assertSee('Bagian 2 · Evaluasi IGD')
+            ->assertSee('Lompat ke Bagian 3 · Penutup & Saran');
+
+        // 3. Validasi Step 3 menolak 2 pertanyaan sumber lompatan berbeda dalam Bagian yang sama
+        $conflict = Livewire::test(CreateDynamicForm::class)
+            ->fillForm([
+                'title' => 'Form Konflik Multi Jump',
+                'slug' => 'form-konflik-multi-jump',
+                'mode' => DynamicFormMode::Questionnaire->value,
+                'locale' => 'id',
+                'sections' => [
+                    [
+                        'section_key' => 'sec_1',
+                        'title' => 'Bagian Pembuka',
+                        'fields' => [
+                            [
+                                'field_key' => 'q_unit',
+                                'label' => 'Unit Layanan',
+                                'type' => 'radio',
+                                'options' => [
+                                    'choices' => [
+                                        ['key' => 'igd', 'label' => 'IGD'],
+                                    ],
+                                ],
+                            ],
+                            [
+                                'field_key' => 'q_lanjut',
+                                'label' => 'Lanjut Isi?',
+                                'type' => 'dropdown',
+                                'options' => [
+                                    'choices' => [
+                                        ['key' => 'tidak', 'label' => 'Tidak'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    [
+                        'section_key' => 'sec_2',
+                        'title' => 'Bagian Kedua',
+                        'fields' => [
+                            [
+                                'field_key' => 'q_saran',
+                                'label' => 'Saran',
+                                'type' => 'short_text',
+                            ],
+                        ],
+                    ],
+                ],
+                'logic_config' => [
+                    'visibility_rules' => [],
+                    'choice_jumps' => [
+                        [
+                            'source_field_key' => 'q_unit',
+                            'choice_key' => 'igd',
+                            'go_to_section_key' => 'sec_2',
+                        ],
+                        [
+                            'source_field_key' => 'q_lanjut',
+                            'choice_key' => 'tidak',
+                            'go_to_section_key' => '__submit__',
+                        ],
+                    ],
+                    'section_jumps' => [],
+                ],
+            ]);
+
+        $conflict
+            ->assertSee('Konflik Menu 2: terdapat lebih dari 1 pertanyaan pemicu lompatan di Bagian ini')
+            ->call('create')
+            ->assertHasFormErrors(['logic_config.visibility_rules']);
+
+        $this->assertDatabaseMissing('dynamic_forms', ['slug' => 'form-konflik-multi-jump']);
     }
 
     private function switchUser(User $user): void

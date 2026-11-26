@@ -57,6 +57,11 @@
             "@php artisan config:clear --ansi",
             "@php artisan test"
         ],
+        "warm-cache": [
+            "@php artisan icons:cache",
+            "@php artisan filament:cache-components",
+            "@php artisan view:cache"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi",

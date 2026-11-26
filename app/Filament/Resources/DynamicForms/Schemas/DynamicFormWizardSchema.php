@@ -25,6 +25,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\Wizard\Step;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Js;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -797,14 +798,37 @@ class DynamicFormWizardSchema
             })
             ->schema([
                 Group::make([
+                    Placeholder::make('logic_guide')
+                        ->hiddenLabel()
+                        ->content(static function (Get $get, Component $component): HtmlString {
+                            $sections = self::sectionsState($get, $component);
+
+                            return new HtmlString(view('filament.resources.dynamic-forms.components.logic-guide', [
+                                'sectionCount' => count($sections),
+                            ])->render());
+                        }),
+
                     Section::make('1. Aturan Tampil/Sembunyi Pertanyaan (Visibility)')
-                        ->description('Tampilkan pertanyaan tertentu hanya jika jawaban pertanyaan sebelumnya memenuhi kondisi.')
+                        ->description('Tampilkan pertanyaan tertentu secara langsung (real-time) hanya jika jawaban pertanyaan sebelumnya memenuhi kondisi. Cocok untuk pertanyaan lanjutan di halaman yang sama atau berikutnya.')
                         ->schema([
                             Repeater::make('logic_config.visibility_rules')
                                 ->label('Daftar Aturan Visibilitas')
                                 ->defaultItems(0)
                                 ->collapsible()
                                 ->addActionLabel('Tambah Aturan Visibilitas')
+                                ->itemLabel(static function (array $state, Get $get, Component $component): string {
+                                    $targetKey = trim((string) ($state['target_field_key'] ?? ''));
+                                    if ($targetKey === '') {
+                                        return 'Aturan Visibilitas Baru';
+                                    }
+
+                                    $sections = self::sectionsState($get, $component);
+                                    $targetLabel = self::fieldDisplayLabel($sections, $targetKey);
+                                    $matchLabel = ($state['match'] ?? 'all') === 'any' ? 'salah satu' : 'semua';
+                                    $ruleCount = count((array) ($state['rules'] ?? []));
+
+                                    return "Tampilkan \"{$targetLabel}\" jika {$matchLabel} syarat terpenuhi ({$ruleCount} syarat)";
+                                })
                                 ->schema([
                                     Select::make('target_field_key')
                                         ->label('Pertanyaan Target')
@@ -812,6 +836,7 @@ class DynamicFormWizardSchema
                                             self::sectionsState($get, $component),
                                             includeInfoBlocks: true
                                         ))
+                                        ->placeholder('Pilih pertanyaan atau blok informasi yang diatur')
                                         ->required()
                                         ->searchable()
                                         ->live()
@@ -851,6 +876,7 @@ class DynamicFormWizardSchema
                                             'any' => 'Salah satu kondisi terpenuhi (OR)',
                                         ])
                                         ->default('all')
+                                        ->live()
                                         ->required(),
 
                                     Repeater::make('rules')
@@ -984,22 +1010,59 @@ class DynamicFormWizardSchema
                         ]),
 
                     Section::make('2. Lompatan Bagian Berdasarkan Jawaban (Radio / Dropdown)')
-                        ->description('Arahkan responden ke bagian tertentu atau langsung kirim formulir berdasarkan opsi yang dipilih.')
+                        ->description('Arahkan responden melompati halaman/Bagian tertentu atau langsung kirim formulir saat menekan Lanjutkan berdasarkan opsi Radio/Dropdown. Maksimal 1 pertanyaan pemicu lompatan per Bagian.')
                         ->schema([
                             Repeater::make('logic_config.choice_jumps')
                                 ->label('Daftar Lompatan Pilihan')
                                 ->defaultItems(0)
+                                ->collapsible()
                                 ->columns(3)
                                 ->addActionLabel('Tambah Lompatan Pilihan')
+                                ->itemLabel(static function (array $state, Get $get, Component $component): string {
+                                    $sourceKey = trim((string) ($state['source_field_key'] ?? ''));
+                                    if ($sourceKey === '') {
+                                        return 'Lompatan Pilihan Baru';
+                                    }
+
+                                    $sections = self::sectionsState($get, $component);
+                                    $sourceLabel = self::fieldDisplayLabel($sections, $sourceKey);
+                                    $choiceKey = trim((string) ($state['choice_key'] ?? ''));
+                                    $choiceLabel = $choiceKey !== ''
+                                        ? (self::choiceOptionsForField($sections, $sourceKey)[$choiceKey] ?? $choiceKey)
+                                        : '...';
+                                    $targetKey = trim((string) ($state['go_to_section_key'] ?? ''));
+                                    $targetLabel = $targetKey !== ''
+                                        ? self::sectionTargetDisplayLabel($sections, $targetKey)
+                                        : '...';
+
+                                    return "Jika \"{$sourceLabel}\" = \"{$choiceLabel}\" → {$targetLabel}";
+                                })
                                 ->schema([
                                     Select::make('source_field_key')
                                         ->label('Pertanyaan Sumber (Radio/Dropdown)')
                                         ->options(fn (Get $get, Component $component): array => self::jumpableFieldOptions(
                                             self::sectionsState($get, $component)
                                         ))
+                                        ->placeholder('Pilih pertanyaan Radio atau Dropdown')
+                                        ->noOptionsMessage('Belum ada pertanyaan bertipe Radio atau Dropdown pada formulir ini.')
+                                        ->searchable()
                                         ->required()
                                         ->live()
-                                        ->afterStateUpdated(fn (Set $set) => $set('choice_key', null)),
+                                        ->afterStateUpdated(function (Set $set, Get $get, Component $component, ?string $state): void {
+                                            $set('choice_key', null);
+
+                                            $sections = self::sectionsState($get, $component);
+                                            $sourceSectionKey = self::sectionKeyForField($sections, (string) ($state ?? ''));
+                                            $allowedTargets = array_map(
+                                                'strval',
+                                                array_keys(self::forwardSectionTargetOptions($sections, $sourceSectionKey))
+                                            );
+                                            $currentTarget = trim((string) ($get('go_to_section_key') ?? ''));
+
+                                            if ($currentTarget !== '' && ! in_array($currentTarget, $allowedTargets, true)) {
+                                                $set('go_to_section_key', null);
+                                            }
+                                        }),
 
                                     Select::make('choice_key')
                                         ->label('Saat Memilih Opsi')
@@ -1007,32 +1070,92 @@ class DynamicFormWizardSchema
                                             self::sectionsState($get, $component),
                                             (string) ($get('source_field_key') ?? '')
                                         ))
+                                        ->placeholder(fn (Get $get): string => filled($get('source_field_key'))
+                                            ? 'Pilih opsi jawaban'
+                                            : 'Pilih pertanyaan sumber terlebih dahulu')
+                                        ->noOptionsMessage('Pertanyaan ini belum memiliki opsi pilihan.')
+                                        ->searchable()
+                                        ->live()
                                         ->required(),
 
                                     Select::make('go_to_section_key')
                                         ->label('Lompat ke Bagian')
-                                        ->options(fn (Get $get, Component $component): array => self::sectionTargetOptions(
-                                            self::sectionsState($get, $component)
+                                        ->options(function (Get $get, Component $component): array {
+                                            $sections = self::sectionsState($get, $component);
+                                            $sourceSectionKey = self::sectionKeyForField(
+                                                $sections,
+                                                (string) ($get('source_field_key') ?? '')
+                                            );
+
+                                            return self::forwardSectionTargetOptions($sections, $sourceSectionKey);
+                                        })
+                                        ->in(fn (Get $get, Component $component): array => array_keys(
+                                            self::sectionTargetOptions(self::sectionsState($get, $component))
                                         ))
+                                        ->placeholder('Pilih Bagian tujuan atau Kirim Formulir')
+                                        ->helperText('Hanya menampilkan Bagian setelah posisi pertanyaan ini atau Kirim Formulir.')
+                                        ->searchable()
+                                        ->live()
                                         ->required(),
                                 ]),
                         ]),
 
                     Section::make('3. Aturan Lanjut di Akhir Bagian')
-                        ->description('Atur tujuan default setelah responden menyelesaikan sebuah bagian (jika tidak ada lompatan opsi).')
+                        ->description('Atur tujuan default setelah responden menyelesaikan sebuah Bagian apabila tidak ada lompatan dari Menu 2 yang terpicu. Sangat penting sebagai penutup cabang agar responden tidak masuk ke Bagian cabang lain.')
                         ->schema([
                             Repeater::make('logic_config.section_jumps')
                                 ->label('Aturan Transisi Bagian')
                                 ->defaultItems(0)
+                                ->collapsible()
                                 ->columns(3)
                                 ->addActionLabel('Tambah Aturan Akhir Bagian')
+                                ->itemLabel(static function (array $state, Get $get, Component $component): string {
+                                    $sectionKey = trim((string) ($state['section_key'] ?? ''));
+                                    if ($sectionKey === '') {
+                                        return 'Aturan Akhir Bagian Baru';
+                                    }
+
+                                    $sections = self::sectionsState($get, $component);
+                                    $sectionLabel = self::sectionDisplayLabel($sections, $sectionKey);
+                                    $action = (string) ($state['action'] ?? 'next');
+
+                                    $destination = match ($action) {
+                                        'submit' => 'Langsung kirim formulir',
+                                        'jump' => 'Lompat ke '.self::sectionTargetDisplayLabel(
+                                            $sections,
+                                            (string) ($state['target_section_key'] ?? '')
+                                        ),
+                                        default => 'Lanjut ke bagian berikutnya',
+                                    };
+
+                                    return "Setelah \"{$sectionLabel}\" → {$destination}";
+                                })
                                 ->schema([
                                     Select::make('section_key')
                                         ->label('Setelah Bagian Ini')
                                         ->options(fn (Get $get, Component $component): array => self::sectionOptions(
                                             self::sectionsState($get, $component)
                                         ))
-                                        ->required(),
+                                        ->placeholder('Pilih Bagian')
+                                        ->searchable()
+                                        ->live()
+                                        ->required()
+                                        ->afterStateUpdated(function (Set $set, Get $get, Component $component, ?string $state): void {
+                                            if ((string) ($get('action') ?? 'next') !== 'jump') {
+                                                return;
+                                            }
+
+                                            $sections = self::sectionsState($get, $component);
+                                            $allowedTargets = array_map(
+                                                'strval',
+                                                array_keys(self::forwardSectionTargetOptions($sections, (string) ($state ?? '')))
+                                            );
+                                            $currentTarget = trim((string) ($get('target_section_key') ?? ''));
+
+                                            if ($currentTarget !== '' && ! in_array($currentTarget, $allowedTargets, true)) {
+                                                $set('target_section_key', null);
+                                            }
+                                        }),
 
                                     Select::make('action')
                                         ->label('Tindakan Berikutnya')
@@ -1043,16 +1166,45 @@ class DynamicFormWizardSchema
                                         ])
                                         ->default('next')
                                         ->required()
-                                        ->live(),
+                                        ->live()
+                                        ->afterStateUpdated(function (Set $set, ?string $state): void {
+                                            if ($state !== 'jump') {
+                                                $set('target_section_key', null);
+                                            }
+                                        }),
 
                                     Select::make('target_section_key')
                                         ->label('Bagian Tujuan')
-                                        ->options(fn (Get $get, Component $component): array => self::sectionTargetOptions(
-                                            self::sectionsState($get, $component)
+                                        ->options(fn (Get $get, Component $component): array => self::forwardSectionTargetOptions(
+                                            self::sectionsState($get, $component),
+                                            (string) ($get('section_key') ?? '')
                                         ))
+                                        ->in(fn (Get $get, Component $component): array => array_keys(
+                                            self::sectionTargetOptions(self::sectionsState($get, $component))
+                                        ))
+                                        ->placeholder('Pilih Bagian tujuan atau Kirim Formulir')
+                                        ->helperText('Hanya menampilkan Bagian setelah Bagian yang dipilih atau Kirim Formulir.')
+                                        ->searchable()
+                                        ->live()
                                         ->visible(fn (Get $get): bool => $get('action') === 'jump')
                                         ->required(fn (Get $get): bool => $get('action') === 'jump'),
                                 ]),
+                        ]),
+
+                    Section::make('Peta Alur Bagian (Ringkasan Langsung)')
+                        ->description('Ringkasan otomatis perjalanan responden dari setiap Bagian berdasarkan konfigurasi Menu 1, 2, dan 3 saat ini.')
+                        ->collapsible()
+                        ->schema([
+                            Placeholder::make('logic_flow_map')
+                                ->hiddenLabel()
+                                ->content(static function (Get $get, Component $component): HtmlString {
+                                    $sections = self::sectionsState($get, $component);
+                                    $logicConfig = self::logicConfigState($get, $component);
+
+                                    return new HtmlString(view('filament.resources.dynamic-forms.components.logic-flow-map', [
+                                        'flowSections' => self::buildLogicFlowSummary($sections, $logicConfig),
+                                    ])->render());
+                                }),
                         ]),
                 ])->key('step_conditional_logic_body', isInheritable: false),
             ]);
@@ -1174,6 +1326,8 @@ class DynamicFormWizardSchema
     private static function sectionOptions(array $sections): array
     {
         $out = [];
+        $sectionNum = 0;
+
         foreach ($sections as $section) {
             if (! is_array($section)) {
                 continue;
@@ -1182,8 +1336,9 @@ class DynamicFormWizardSchema
             if ($key === '') {
                 continue;
             }
-            $title = (string) ($section['title'] ?? $key);
-            $out[$key] = "{$title} ({$key})";
+            $sectionNum++;
+            $title = trim((string) ($section['title'] ?? ''));
+            $out[$key] = $title !== '' ? "Bagian {$sectionNum} · {$title}" : "Bagian {$sectionNum}";
         }
 
         return $out;
@@ -1199,6 +1354,307 @@ class DynamicFormWizardSchema
         $options[DynamicFormLogicEvaluator::SUBMIT_SENTINEL] = 'Kirim Formulir (Selesai)';
 
         return $options;
+    }
+
+    /**
+     * Saring opsi target lompatan agar hanya menampilkan Bagian setelah $fromSectionKey
+     * ditambah opsi Kirim Formulir (mencegah lompatan ke Bagian yang sama atau mundur).
+     *
+     * @param  array<int, array<string, mixed>>  $sections
+     * @return array<string, string>
+     */
+    private static function forwardSectionTargetOptions(array $sections, ?string $fromSectionKey): array
+    {
+        $allSections = self::sectionOptions($sections);
+        $fromKey = trim((string) ($fromSectionKey ?? ''));
+
+        if ($fromKey === '' || ! array_key_exists($fromKey, $allSections)) {
+            return self::sectionTargetOptions($sections);
+        }
+
+        $out = [];
+        $passedSource = false;
+
+        foreach ($allSections as $key => $label) {
+            if ($key === $fromKey) {
+                $passedSource = true;
+
+                continue;
+            }
+            if ($passedSource) {
+                $out[$key] = $label;
+            }
+        }
+
+        $out[DynamicFormLogicEvaluator::SUBMIT_SENTINEL] = 'Kirim Formulir (Selesai)';
+
+        return $out;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $sections
+     */
+    private static function sectionKeyForField(array $sections, string $fieldKey): ?string
+    {
+        $targetKey = trim($fieldKey);
+        if ($targetKey === '') {
+            return null;
+        }
+
+        foreach ($sections as $section) {
+            if (! is_array($section)) {
+                continue;
+            }
+            $sectionKey = (string) ($section['section_key'] ?? '');
+            foreach ((array) ($section['fields'] ?? []) as $field) {
+                if (is_array($field) && (string) ($field['field_key'] ?? '') === $targetKey) {
+                    return $sectionKey !== '' ? $sectionKey : null;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $sections
+     */
+    private static function sectionDisplayLabel(array $sections, string $sectionKey): string
+    {
+        $options = self::sectionOptions($sections);
+
+        return $options[$sectionKey] ?? ($sectionKey !== '' ? $sectionKey : 'Bagian');
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $sections
+     */
+    private static function sectionTargetDisplayLabel(array $sections, string $targetKey): string
+    {
+        if ($targetKey === DynamicFormLogicEvaluator::SUBMIT_SENTINEL) {
+            return 'Kirim Formulir (Selesai)';
+        }
+
+        return $targetKey !== '' ? self::sectionDisplayLabel($sections, $targetKey) : '...';
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $sections
+     */
+    private static function fieldDisplayLabel(array $sections, string $fieldKey): string
+    {
+        $field = self::findFieldByKey($sections, $fieldKey);
+        if ($field === null) {
+            return $fieldKey;
+        }
+
+        $label = trim((string) ($field['label'] ?? ''));
+
+        return $label !== '' ? $label : $fieldKey;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function logicConfigState(Get $get, Component $component): array
+    {
+        $rootPath = $component->getRootContainer()->getStatePath();
+        $logicPath = filled($rootPath) ? "{$rootPath}.logic_config" : 'logic_config';
+
+        return (array) ($get($logicPath, isAbsolute: true) ?? []);
+    }
+
+    /**
+     * Susun ringkasan Peta Alur Bagian untuk panel live read-only di bagian bawah Step 3.
+     *
+     * @param  array<int, array<string, mixed>>  $sections
+     * @param  array<string, mixed>  $logicConfig
+     * @return list<array{
+     *     section_key: string,
+     *     label: string,
+     *     field_count: int,
+     *     visibility_count: int,
+     *     choice_branches: list<array{field_label: string, choice_label: string, target_label: string}>,
+     *     default_next_label: string,
+     *     warnings: list<string>
+     * }>
+     */
+    private static function buildLogicFlowSummary(array $sections, array $logicConfig): array
+    {
+        $orderedSections = array_values(array_filter(
+            $sections,
+            static fn ($s): bool => is_array($s) && trim((string) ($s['section_key'] ?? '')) !== ''
+        ));
+
+        if ($orderedSections === []) {
+            return [];
+        }
+
+        $sectionLabels = self::sectionOptions($orderedSections);
+        $sectionIndexMap = [];
+        $fieldToSection = [];
+        $fieldLabelsByKey = [];
+        $choiceLabelsByField = [];
+        $inputFieldCountBySection = [];
+
+        foreach ($orderedSections as $idx => $section) {
+            $sKey = (string) ($section['section_key'] ?? '');
+            $sectionIndexMap[$sKey] = $idx;
+            $inputCount = 0;
+
+            foreach ((array) ($section['fields'] ?? []) as $field) {
+                if (! is_array($field)) {
+                    continue;
+                }
+                $type = (string) ($field['type'] ?? '');
+                if ($type !== DynamicFormFieldType::InfoBlock->value) {
+                    $inputCount++;
+                }
+                $fKey = (string) ($field['field_key'] ?? '');
+                if ($fKey === '') {
+                    continue;
+                }
+                $fieldToSection[$fKey] = $sKey;
+                $label = trim((string) ($field['label'] ?? ''));
+                $fieldLabelsByKey[$fKey] = $label !== '' ? $label : $fKey;
+
+                if (in_array($type, [DynamicFormFieldType::Radio->value, DynamicFormFieldType::Dropdown->value], true)) {
+                    $choiceLabelsByField[$fKey] = self::buildChoiceLabelMap((array) ($field['options']['choices'] ?? []));
+                }
+            }
+
+            $inputFieldCountBySection[$sKey] = $inputCount;
+        }
+
+        $resolveTargetLabel = static function (string $targetKey) use ($sectionLabels): string {
+            if ($targetKey === DynamicFormLogicEvaluator::SUBMIT_SENTINEL) {
+                return 'Kirim Formulir (Selesai)';
+            }
+
+            return $targetKey !== '' ? ($sectionLabels[$targetKey] ?? $targetKey) : '...';
+        };
+
+        $visibilityCountBySection = [];
+        foreach ((array) ($logicConfig['visibility_rules'] ?? []) as $rule) {
+            if (! is_array($rule)) {
+                continue;
+            }
+            $targetKey = trim((string) ($rule['target_field_key'] ?? ''));
+            $ownerSection = $fieldToSection[$targetKey] ?? null;
+            if ($ownerSection !== null) {
+                $visibilityCountBySection[$ownerSection] = ($visibilityCountBySection[$ownerSection] ?? 0) + 1;
+            }
+        }
+
+        $choiceBranchesBySection = [];
+        $jumpSourcesBySection = [];
+        $warningsBySection = [];
+
+        foreach ((array) ($logicConfig['choice_jumps'] ?? []) as $jump) {
+            if (! is_array($jump)) {
+                continue;
+            }
+            $sourceKey = trim((string) ($jump['source_field_key'] ?? ''));
+            $choiceKey = trim((string) ($jump['choice_key'] ?? ''));
+            $targetKey = trim((string) ($jump['go_to_section_key'] ?? ''));
+            $ownerSection = $fieldToSection[$sourceKey] ?? null;
+
+            if ($sourceKey === '' || $ownerSection === null) {
+                continue;
+            }
+
+            $fieldLabel = $fieldLabelsByKey[$sourceKey] ?? $sourceKey;
+            $choiceLabel = $choiceKey !== ''
+                ? ($choiceLabelsByField[$sourceKey][$choiceKey] ?? $choiceKey)
+                : '(opsi belum dipilih)';
+            $targetLabel = $targetKey !== ''
+                ? $resolveTargetLabel($targetKey)
+                : '(tujuan belum dipilih)';
+
+            $choiceBranchesBySection[$ownerSection][] = [
+                'field_label' => $fieldLabel,
+                'choice_label' => $choiceLabel,
+                'target_label' => $targetLabel,
+            ];
+
+            if ($targetKey !== '') {
+                $jumpSourcesBySection[$ownerSection][$sourceKey] = $fieldLabel;
+
+                if (
+                    $targetKey !== DynamicFormLogicEvaluator::SUBMIT_SENTINEL
+                    && isset($sectionIndexMap[$targetKey])
+                    && $sectionIndexMap[$targetKey] <= $sectionIndexMap[$ownerSection]
+                ) {
+                    $warningsBySection[$ownerSection][] = "Lompatan dari \"{$fieldLabel}\" ke \"{$targetLabel}\" tidak valid (tidak boleh mundur atau mengarah ke Bagian yang sama).";
+                }
+            }
+        }
+
+        foreach ($jumpSourcesBySection as $sKey => $sources) {
+            if (count($sources) > 1) {
+                $warningsBySection[$sKey][] = 'Konflik Menu 2: terdapat lebih dari 1 pertanyaan pemicu lompatan di Bagian ini ('.implode(', ', array_values($sources)).'). Sisakan maksimal 1 pertanyaan pemicu lompatan per Bagian.';
+            }
+        }
+
+        $sectionJumpByKey = [];
+        foreach ((array) ($logicConfig['section_jumps'] ?? []) as $sJump) {
+            if (! is_array($sJump)) {
+                continue;
+            }
+            $sKey = trim((string) ($sJump['section_key'] ?? ''));
+            if ($sKey === '') {
+                continue;
+            }
+            if (isset($sectionJumpByKey[$sKey])) {
+                $warningsBySection[$sKey][] = 'Terdapat lebih dari satu aturan akhir Bagian untuk Bagian ini di Menu 3.';
+            }
+            $sectionJumpByKey[$sKey] = $sJump;
+        }
+
+        $result = [];
+        $totalSections = count($orderedSections);
+
+        foreach ($orderedSections as $idx => $section) {
+            $sKey = (string) ($section['section_key'] ?? '');
+            $sJump = $sectionJumpByKey[$sKey] ?? null;
+            $action = is_array($sJump) ? (string) ($sJump['action'] ?? 'next') : 'next';
+            $targetKey = is_array($sJump) ? trim((string) ($sJump['target_section_key'] ?? '')) : '';
+
+            $warnings = $warningsBySection[$sKey] ?? [];
+
+            if ($action === 'submit' || $targetKey === DynamicFormLogicEvaluator::SUBMIT_SENTINEL) {
+                $defaultNext = 'Kirim Formulir (Selesai)';
+            } elseif ($action === 'jump') {
+                $defaultNext = $targetKey !== ''
+                    ? 'Lompat ke '.$resolveTargetLabel($targetKey)
+                    : 'Lompat (Bagian tujuan belum dipilih)';
+
+                if (
+                    $targetKey !== ''
+                    && isset($sectionIndexMap[$targetKey])
+                    && $sectionIndexMap[$targetKey] <= $idx
+                ) {
+                    $warnings[] = 'Aturan akhir Bagian (Menu 3) mengarah ke Bagian yang sama atau sebelumnya.';
+                }
+            } elseif ($idx + 1 < $totalSections) {
+                $nextSectionKey = (string) ($orderedSections[$idx + 1]['section_key'] ?? '');
+                $defaultNext = 'Lanjut ke '.($sectionLabels[$nextSectionKey] ?? 'Bagian berikutnya');
+            } else {
+                $defaultNext = 'Kirim Formulir (Bagian terakhir)';
+            }
+
+            $result[] = [
+                'section_key' => $sKey,
+                'label' => $sectionLabels[$sKey] ?? $sKey,
+                'field_count' => $inputFieldCountBySection[$sKey] ?? 0,
+                'visibility_count' => $visibilityCountBySection[$sKey] ?? 0,
+                'choice_branches' => $choiceBranchesBySection[$sKey] ?? [],
+                'default_next_label' => $defaultNext,
+                'warnings' => array_values(array_unique($warnings)),
+            ];
+        }
+
+        return $result;
     }
 
     private static function shortTextFormat(Get $get): string
@@ -1348,22 +1804,33 @@ class DynamicFormWizardSchema
     private static function fieldSelectOptions(array $sections, bool $includeInfoBlocks = false): array
     {
         $out = [];
+        $sectionNum = 0;
+
         foreach ($sections as $section) {
             if (! is_array($section)) {
                 continue;
             }
-            $sectionTitle = (string) ($section['title'] ?? 'Bagian');
-            foreach ((array) ($section['fields'] ?? []) as $field) {
-                if (! is_array($field)) {
-                    continue;
-                }
+            $sectionNum++;
+            $sectionTitle = trim((string) ($section['title'] ?? ''));
+            $sectionPrefix = $sectionTitle !== '' ? "Bagian {$sectionNum}: {$sectionTitle}" : "Bagian {$sectionNum}";
+            $fields = array_values(array_filter((array) ($section['fields'] ?? []), 'is_array'));
+            $labelCounts = self::countFieldLabels($fields, $includeInfoBlocks);
+            $seenLabels = [];
+
+            foreach ($fields as $field) {
                 $key = (string) ($field['field_key'] ?? '');
                 $isInfoBlock = ($field['type'] ?? '') === DynamicFormFieldType::InfoBlock->value;
                 if ($key === '' || (! $includeInfoBlocks && $isInfoBlock)) {
                     continue;
                 }
-                $label = (string) ($field['label'] ?? $key);
-                $out[$key] = "[{$sectionTitle}] {$label} ({$key})";
+                $label = trim((string) ($field['label'] ?? ''));
+                $baseLabel = $label !== '' ? $label : 'Pertanyaan tanpa judul';
+                $display = $baseLabel;
+                if (($labelCounts[$baseLabel] ?? 0) > 1) {
+                    $seenLabels[$baseLabel] = ($seenLabels[$baseLabel] ?? 0) + 1;
+                    $display = "{$baseLabel} (#{$seenLabels[$baseLabel]})";
+                }
+                $out[$key] = "[{$sectionPrefix}] {$display}";
             }
         }
 
@@ -1377,22 +1844,36 @@ class DynamicFormWizardSchema
     private static function jumpableFieldOptions(array $sections): array
     {
         $out = [];
+        $sectionNum = 0;
+
         foreach ($sections as $section) {
             if (! is_array($section)) {
                 continue;
             }
-            foreach ((array) ($section['fields'] ?? []) as $field) {
-                if (! is_array($field)) {
-                    continue;
-                }
-                $type = (string) ($field['type'] ?? '');
-                if (! in_array($type, [DynamicFormFieldType::Radio->value, DynamicFormFieldType::Dropdown->value], true)) {
-                    continue;
-                }
+            $sectionNum++;
+            $sectionTitle = trim((string) ($section['title'] ?? ''));
+            $sectionPrefix = $sectionTitle !== '' ? "Bagian {$sectionNum}: {$sectionTitle}" : "Bagian {$sectionNum}";
+            $fields = array_values(array_filter(
+                (array) ($section['fields'] ?? []),
+                static fn ($field): bool => is_array($field)
+                    && in_array((string) ($field['type'] ?? ''), [DynamicFormFieldType::Radio->value, DynamicFormFieldType::Dropdown->value], true)
+            ));
+            $labelCounts = self::countFieldLabels($fields, includeInfoBlocks: false);
+            $seenLabels = [];
+
+            foreach ($fields as $field) {
                 $key = (string) ($field['field_key'] ?? '');
-                if ($key !== '') {
-                    $out[$key] = (string) ($field['label'] ?? $key)." ({$key})";
+                if ($key === '') {
+                    continue;
                 }
+                $label = trim((string) ($field['label'] ?? ''));
+                $baseLabel = $label !== '' ? $label : 'Pertanyaan tanpa judul';
+                $display = $baseLabel;
+                if (($labelCounts[$baseLabel] ?? 0) > 1) {
+                    $seenLabels[$baseLabel] = ($seenLabels[$baseLabel] ?? 0) + 1;
+                    $display = "{$baseLabel} (#{$seenLabels[$baseLabel]})";
+                }
+                $out[$key] = "[{$sectionPrefix}] {$display}";
             }
         }
 
@@ -1417,19 +1898,8 @@ class DynamicFormWizardSchema
                 if (! is_array($field) || (string) ($field['field_key'] ?? '') !== $fieldKey) {
                     continue;
                 }
-                $choices = [];
-                foreach ((array) ($field['options']['choices'] ?? []) as $choice) {
-                    if (! is_array($choice)) {
-                        continue;
-                    }
-                    $k = (string) ($choice['key'] ?? '');
-                    if ($k !== '') {
-                        $label = filled($choice['label'] ?? null) ? (string) $choice['label'] : $k;
-                        $choices[$k] = "{$label} ({$k})";
-                    }
-                }
 
-                return $choices;
+                return self::buildChoiceLabelMap((array) ($field['options']['choices'] ?? []));
             }
         }
 
@@ -1449,15 +1919,20 @@ class DynamicFormWizardSchema
         $targetFound = $targetKey !== '' && self::findFieldByKey($sections, $targetKey) !== null;
 
         $out = [];
+        $sectionNum = 0;
+
         foreach ($sections as $section) {
             if (! is_array($section)) {
                 continue;
             }
-            $sectionTitle = (string) ($section['title'] ?? 'Bagian');
-            foreach ((array) ($section['fields'] ?? []) as $field) {
-                if (! is_array($field)) {
-                    continue;
-                }
+            $sectionNum++;
+            $sectionTitle = trim((string) ($section['title'] ?? ''));
+            $sectionPrefix = $sectionTitle !== '' ? "Bagian {$sectionNum}: {$sectionTitle}" : "Bagian {$sectionNum}";
+            $fields = array_values(array_filter((array) ($section['fields'] ?? []), 'is_array'));
+            $labelCounts = self::countFieldLabels($fields, includeInfoBlocks: false);
+            $seenLabels = [];
+
+            foreach ($fields as $field) {
                 $key = (string) ($field['field_key'] ?? '');
                 if ($targetFound && $key === $targetKey) {
                     return $out;
@@ -1466,8 +1941,76 @@ class DynamicFormWizardSchema
                 if ($key === '' || $isInfoBlock) {
                     continue;
                 }
-                $label = (string) ($field['label'] ?? $key);
-                $out[$key] = "[{$sectionTitle}] {$label} ({$key})";
+                $label = trim((string) ($field['label'] ?? ''));
+                $baseLabel = $label !== '' ? $label : 'Pertanyaan tanpa judul';
+                $display = $baseLabel;
+                if (($labelCounts[$baseLabel] ?? 0) > 1) {
+                    $seenLabels[$baseLabel] = ($seenLabels[$baseLabel] ?? 0) + 1;
+                    $display = "{$baseLabel} (#{$seenLabels[$baseLabel]})";
+                }
+                $out[$key] = "[{$sectionPrefix}] {$display}";
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $fields
+     * @return array<string, int>
+     */
+    private static function countFieldLabels(array $fields, bool $includeInfoBlocks): array
+    {
+        $counts = [];
+        foreach ($fields as $field) {
+            $key = (string) ($field['field_key'] ?? '');
+            $isInfoBlock = ($field['type'] ?? '') === DynamicFormFieldType::InfoBlock->value;
+            if ($key === '' || (! $includeInfoBlocks && $isInfoBlock)) {
+                continue;
+            }
+            $label = trim((string) ($field['label'] ?? ''));
+            $baseLabel = $label !== '' ? $label : 'Pertanyaan tanpa judul';
+            $counts[$baseLabel] = ($counts[$baseLabel] ?? 0) + 1;
+        }
+
+        return $counts;
+    }
+
+    /**
+     * Format label opsi pilihan bersih tanpa kunci internal; tambahkan penanda (Opsi #N)
+     * hanya apabila ada lebih dari satu opsi berlabel identik dalam pertanyaan yang sama.
+     *
+     * @param  array<int|string, mixed>  $rawChoices
+     * @return array<string, string>
+     */
+    private static function buildChoiceLabelMap(array $rawChoices): array
+    {
+        $validChoices = [];
+        $labelCounts = [];
+
+        foreach ($rawChoices as $choice) {
+            if (! is_array($choice)) {
+                continue;
+            }
+            $key = trim((string) ($choice['key'] ?? ''));
+            if ($key === '') {
+                continue;
+            }
+            $label = filled($choice['label'] ?? null) ? trim((string) $choice['label']) : $key;
+            $validChoices[] = ['key' => $key, 'label' => $label];
+            $labelCounts[$label] = ($labelCounts[$label] ?? 0) + 1;
+        }
+
+        $out = [];
+        $seenLabels = [];
+
+        foreach ($validChoices as $choice) {
+            $label = $choice['label'];
+            if (($labelCounts[$label] ?? 0) > 1) {
+                $seenLabels[$label] = ($seenLabels[$label] ?? 0) + 1;
+                $out[$choice['key']] = "{$label} (Opsi #{$seenLabels[$label]})";
+            } else {
+                $out[$choice['key']] = $label;
             }
         }
 
@@ -1524,24 +2067,16 @@ class DynamicFormWizardSchema
         $options = (array) ($field['options'] ?? []);
 
         if ($type !== null && $type->supportsChoices()) {
-            $out = [];
-            foreach ((array) ($options['choices'] ?? []) as $choice) {
-                if (! is_array($choice)) {
-                    continue;
-                }
-                $key = trim((string) ($choice['key'] ?? ''));
-                if ($key !== '') {
-                    $label = filled($choice['label'] ?? null) ? (string) $choice['label'] : $key;
-                    $out[$key] = "{$label} ({$key})";
-                }
-            }
+            $out = self::buildChoiceLabelMap((array) ($options['choices'] ?? []));
 
             $allowOther = in_array($type, [DynamicFormFieldType::Radio, DynamicFormFieldType::Checkbox], true)
                 && (bool) ($options['allow_other'] ?? false);
 
             if ($allowOther) {
                 $otherLabel = filled($options['other_label'] ?? null) ? trim((string) $options['other_label']) : 'Lainnya';
-                $out[DynamicFormLogicEvaluator::OTHER_CHOICE_KEY] = "{$otherLabel} (".DynamicFormLogicEvaluator::OTHER_CHOICE_KEY.')';
+                $out[DynamicFormLogicEvaluator::OTHER_CHOICE_KEY] = strcasecmp($otherLabel, 'Lainnya') === 0
+                    ? $otherLabel
+                    : "{$otherLabel} (Lainnya)";
             }
 
             return $out;

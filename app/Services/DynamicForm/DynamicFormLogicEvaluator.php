@@ -595,6 +595,8 @@ class DynamicFormLogicEvaluator
                 $graph[$sectionKey][] = (string) $sections[$sectionIdx + 1]['section_key'];
             }
 
+            $jumpSourceFieldsInSection = [];
+
             foreach ((array) ($section['fields'] ?? []) as $field) {
                 $fieldKey = (string) ($field['field_key'] ?? '');
                 $fieldLabel = (string) ($field['label'] ?? $fieldKey);
@@ -691,9 +693,17 @@ class DynamicFormLogicEvaluator
 
                 $type = (string) ($field['type'] ?? '');
                 if (in_array($type, [DynamicFormFieldType::Radio->value, DynamicFormFieldType::Dropdown->value], true)) {
+                    $fieldHasJump = false;
+
                     foreach ((array) ($field['options']['choices'] ?? []) as $choice) {
-                        $target = (string) ($choice['go_to_section_key'] ?? '');
-                        if ($target === '' || $target === self::SUBMIT_SENTINEL) {
+                        $target = trim((string) ($choice['go_to_section_key'] ?? ''));
+                        if ($target === '') {
+                            continue;
+                        }
+
+                        $fieldHasJump = true;
+
+                        if ($target === self::SUBMIT_SENTINEL) {
                             continue;
                         }
 
@@ -709,7 +719,17 @@ class DynamicFormLogicEvaluator
 
                         $graph[$sectionKey][] = $target;
                     }
+
+                    if ($fieldHasJump) {
+                        $jumpSourceFieldsInSection[$fieldKey] = $fieldLabel;
+                    }
                 }
+            }
+
+            if (count($jumpSourceFieldsInSection) > 1) {
+                $sectionLabel = filled($section['title'] ?? null) ? (string) $section['title'] : $sectionKey;
+                $fieldList = implode(', ', array_values($jumpSourceFieldsInSection));
+                $errors[] = "Bagian [{$sectionLabel}] memiliki lebih dari satu pertanyaan pemicu Lompatan Bagian ({$fieldList}). Gunakan maksimal 1 pertanyaan pemicu lompatan per Bagian agar alur tidak ambigu (gunakan Aturan Tampil/Sembunyi Pertanyaan di Menu 1 jika membutuhkan kombinasi beberapa syarat).";
             }
         }
 
