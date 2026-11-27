@@ -127,4 +127,3 @@ jobs:
           DB_USERNAME: postgres
           DB_PASSWORD: secret
         run: php artisan test
-

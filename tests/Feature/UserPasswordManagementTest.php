@@ -6,11 +6,11 @@ use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Models\User;
-use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Tests\TestCase;
 
 /**

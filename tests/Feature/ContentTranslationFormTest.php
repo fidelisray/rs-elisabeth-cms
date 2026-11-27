@@ -7,12 +7,12 @@ use App\Filament\Resources\News\Pages\ListNews;
 use App\Models\FacilityService;
 use App\Models\News;
 use App\Models\User;
-use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Tests\TestCase;
 
 class ContentTranslationFormTest extends TestCase

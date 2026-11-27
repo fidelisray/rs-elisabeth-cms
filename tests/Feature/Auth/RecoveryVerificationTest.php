@@ -9,7 +9,6 @@ use App\Models\Role;
 use App\Models\SuperAdminRecoveryCode;
 use App\Models\User;
 use App\Services\RecoveryCodeService;
-use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -19,6 +18,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Tests\TestCase;
 
 class RecoveryVerificationTest extends TestCase

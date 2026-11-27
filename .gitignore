@@ -57,12 +57,3 @@ switch-env.ps1
 /test-results
 /tests/e2e/.auth
 /storage/framework/e2e-*.php
-/.env.playwright
-/database/e2e.sqlite
-/database/e2e.sqlite-journal
-/database/e2e.sqlite-shm
-/database/e2e.sqlite-wal
-/playwright-report
-/test-results
-/tests/e2e/.auth
-/storage/framework/e2e-*.php

@@ -12,9 +12,9 @@ use App\Models\Feedback;
 use App\Models\QuestionnaireResponse;
 use App\Models\Role;
 use App\Models\User;
-use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Tests\TestCase;
 
 class PatientSubmissionPanelTest extends TestCase

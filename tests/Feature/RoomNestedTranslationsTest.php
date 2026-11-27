@@ -8,7 +8,6 @@ use App\Jobs\SendCacheInvalidationWebhookJob;
 use App\Models\RoomFacility;
 use App\Models\User;
 use App\Support\RoomNestedContent;
-use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
@@ -19,6 +18,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Tests\TestCase;
 use Tests\Traits\GeneratesHmacHeaders;
 

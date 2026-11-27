@@ -8,10 +8,10 @@ use App\Models\User;
 use BezhanSalleh\FilamentShield\Resources\Roles\Pages\EditRole;
 use BezhanSalleh\FilamentShield\Resources\Roles\Pages\ListRoles;
 use BezhanSalleh\FilamentShield\Support\Utils;
-use Tests\Concerns\SeedsTestRolesAndUsers;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Tests\TestCase;
 
 /**

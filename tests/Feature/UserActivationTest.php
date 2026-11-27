@@ -6,10 +6,10 @@ use App\Exceptions\UserAccessException;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Models\Role;
 use App\Models\User;
-use Tests\Concerns\SeedsTestRolesAndUsers;
 use Filament\Panel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Tests\TestCase;
 
 class UserActivationTest extends TestCase

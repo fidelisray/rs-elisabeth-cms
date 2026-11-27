@@ -5,11 +5,11 @@ namespace Tests\Feature;
 use App\Filament\Pages\Auth\ForcePasswordChange;
 use App\Models\Role;
 use App\Models\User;
-use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Testing\TestResponse;
 use Livewire\Livewire;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Tests\TestCase;
 
 /**
