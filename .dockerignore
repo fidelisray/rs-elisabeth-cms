@@ -50,6 +50,13 @@ _ide_helper_models.php
 phpunit.xml
 .phpunit.result.cache
 .phpunit.cache
+playwright.config.ts
+tsconfig.playwright.json
+/playwright-report
+/test-results
+.env.playwright
+.env.playwright.example
+/database/e2e.sqlite*
 
 # --- Documentation & Project Notes ---
 *.md
