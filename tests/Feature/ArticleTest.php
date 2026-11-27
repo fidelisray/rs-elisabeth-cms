@@ -5,10 +5,10 @@ namespace Tests\Feature;
 use App\Filament\Resources\Articles\ArticleResource;
 use App\Models\Article;
 use App\Models\User;
-use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Tests\TestCase;
 
 class ArticleTest extends TestCase

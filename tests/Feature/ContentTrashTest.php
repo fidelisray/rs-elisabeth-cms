@@ -15,7 +15,6 @@ use App\Models\News;
 use App\Models\Promotion;
 use App\Models\RoomFacility;
 use App\Models\User;
-use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +22,7 @@ use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Tests\TestCase;
 
 /**

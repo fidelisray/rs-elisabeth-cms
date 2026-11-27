@@ -4,9 +4,9 @@ namespace Tests\Feature;
 
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Models\User;
-use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Tests\TestCase;
 
 /**

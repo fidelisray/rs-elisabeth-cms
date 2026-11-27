@@ -12,7 +12,6 @@ use App\Models\Promotion;
 use App\Models\RoomFacility;
 use App\Models\User;
 use App\Support\ApiCacheInvalidator;
-use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -24,6 +23,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Tests\TestCase;
 use Tests\Traits\GeneratesHmacHeaders;
 

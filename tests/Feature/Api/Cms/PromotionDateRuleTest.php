@@ -5,7 +5,6 @@ namespace Tests\Feature\Api\Cms;
 use App\Filament\Resources\Promotions\Pages\CreatePromotion;
 use App\Models\Promotion;
 use App\Models\User;
-use Tests\Concerns\SeedsTestRolesAndUsers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
@@ -13,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Tests\TestCase;
 use Tests\Traits\GeneratesHmacHeaders;
 

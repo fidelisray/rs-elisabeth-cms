@@ -9,11 +9,11 @@ use App\Models\Doctor;
 use App\Models\User;
 use App\Services\DoctorApiService;
 use App\Services\DoctorSyncService;
-use Tests\Concerns\SeedsTestRolesAndUsers;
 use Filament\Schemas\Schema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
+use Tests\Concerns\SeedsTestRolesAndUsers;
 use Tests\TestCase;
 
 class DoctorPolicyAndFormTest extends TestCase
