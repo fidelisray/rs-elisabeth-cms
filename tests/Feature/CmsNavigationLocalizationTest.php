@@ -38,6 +38,7 @@ use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Js;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
@@ -58,6 +59,9 @@ class CmsNavigationLocalizationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        config(['filesystems.media_disk' => 'media-test']);
+        Storage::fake('media-test');
 
         $this->seedDefaultTestUsersAndRoles();
         $this->artisan('app:super-admin:init', ['--email' => 'admin@rs-elisabeth.com'])->assertExitCode(0);
