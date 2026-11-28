@@ -8,6 +8,7 @@ use App\Filament\Resources\Feedbacks\Pages\ViewFeedback;
 use App\Models\Feedback;
 use BackedEnum;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -94,6 +95,23 @@ class FeedbackResource extends Resource
             Filter::make('unresolved')
                 ->label(__('Belum Selesai (Baru & Diproses)'))
                 ->query(fn (Builder $query): Builder => $query->whereIn('status', ['baru', 'diproses'])),
+            Filter::make('submitted_at')
+                ->label(__('Rentang Tanggal Kirim'))
+                ->schema([
+                    DatePicker::make('from')->label(__('Dari Tanggal')),
+                    DatePicker::make('until')->label(__('Sampai Tanggal')),
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    return $query
+                        ->when(
+                            filled($data['from'] ?? null),
+                            fn (Builder $q): Builder => $q->whereDate('submitted_at', '>=', (string) $data['from']),
+                        )
+                        ->when(
+                            filled($data['until'] ?? null),
+                            fn (Builder $q): Builder => $q->whereDate('submitted_at', '<=', (string) $data['until']),
+                        );
+                }),
         ])->defaultSort('submitted_at', 'desc')
             ->recordActions([ViewAction::make()])
             ->paginationPageOptions([10, 25, 50]);

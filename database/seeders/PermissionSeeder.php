@@ -101,6 +101,9 @@ class PermissionSeeder extends Seeder
         Permission::findOrCreate('Update:DynamicFormSubmission', 'web');
         Permission::findOrCreate('View:SystemMonitor', 'web');
         Permission::findOrCreate('Trigger:WebCacheInvalidation', 'web');
+        Permission::findOrCreate('Export:Feedback', 'web');
+        Permission::findOrCreate('Export:QuestionnaireResponse', 'web');
+        Permission::findOrCreate('Export:DynamicFormSubmission', 'web');
     }
 
     /**

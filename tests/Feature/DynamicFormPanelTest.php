@@ -853,6 +853,14 @@ class DynamicFormPanelTest extends TestCase
             'answers' => ['matriks_mutu' => ['r_tetap' => 'baik', 'r_baru' => 'baik']],
         ]);
 
+        // Tanpa permission Export:DynamicFormSubmission, tombol ekspor harus tersembunyi.
+        Livewire::test(ManageDynamicFormAnalytics::class, ['record' => $form->getRouteKey()])
+            ->assertSee('Total Respons Terfilter')
+            ->assertActionHidden('exportCsv')
+            ->assertActionHidden('exportXlsx');
+
+        $this->marketing->givePermissionTo('Export:DynamicFormSubmission');
+
         Livewire::test(ManageDynamicFormAnalytics::class, ['record' => $form->getRouteKey()])
             ->assertSee('Total Respons Terfilter')
             ->assertSee('r_lama (Baris versi lama)')
@@ -866,6 +874,12 @@ class DynamicFormPanelTest extends TestCase
             ->call('resetFilters')
             ->assertDontSee('Tidak ada respons yang cocok dengan filter aktif.')
             ->assertSee('Keramahan Staf');
+
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'report.exported',
+            'subject_type' => DynamicForm::class,
+            'subject_id' => $form->id,
+        ]);
     }
 
     public function test_wizard_duplicate_key_validation_edit_double_publish_guard_invalid_logic_notification_and_submission_viewer_widget_rbac(): void

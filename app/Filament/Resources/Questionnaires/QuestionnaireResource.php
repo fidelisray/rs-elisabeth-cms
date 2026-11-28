@@ -9,6 +9,7 @@ use App\Models\QuestionnaireResponse;
 use App\Support\QuestionnaireDefinition;
 use BackedEnum;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
@@ -16,8 +17,10 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class QuestionnaireResource extends Resource
 {
@@ -55,6 +58,23 @@ class QuestionnaireResource extends Resource
             TextColumn::make('submitted_at')->label(__('Dikirim'))->dateTime('d M Y H:i')->sortable(),
         ])->filters([
             SelectFilter::make('questionnaire_type')->label(__('Layanan'))->options(QuestionnaireResponse::TYPES),
+            Filter::make('submitted_at')
+                ->label(__('Rentang Tanggal Kirim'))
+                ->schema([
+                    DatePicker::make('from')->label(__('Dari Tanggal')),
+                    DatePicker::make('until')->label(__('Sampai Tanggal')),
+                ])
+                ->query(function (Builder $query, array $data): Builder {
+                    return $query
+                        ->when(
+                            filled($data['from'] ?? null),
+                            fn (Builder $q): Builder => $q->whereDate('submitted_at', '>=', (string) $data['from']),
+                        )
+                        ->when(
+                            filled($data['until'] ?? null),
+                            fn (Builder $q): Builder => $q->whereDate('submitted_at', '<=', (string) $data['until']),
+                        );
+                }),
         ])->defaultSort('submitted_at', 'desc')->recordActions([ViewAction::make()])
             ->paginationPageOptions([10, 25, 50]);
     }

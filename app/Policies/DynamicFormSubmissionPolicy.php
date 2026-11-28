@@ -47,6 +47,12 @@ class DynamicFormSubmissionPolicy
         return $this->isActive($authUser) && $authUser->can('View:DynamicFormSubmission');
     }
 
+    public function export(AuthUser $authUser): bool
+    {
+        return $this->viewAny($authUser)
+            && ((method_exists($authUser, 'isSuperAdmin') && $authUser->isSuperAdmin()) || $authUser->can('Export:DynamicFormSubmission'));
+    }
+
     public function delete(AuthUser $authUser, DynamicFormSubmission $submission): bool
     {
         return false;

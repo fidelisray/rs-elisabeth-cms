@@ -13,6 +13,7 @@ class PanelTranslationParityTest extends TestCase
      * @var list<string>
      */
     private const SCAN_PATHS = [
+        'app/Exceptions/ExportAbortedException.php',
         'app/Filament',
         'app/Enums',
         'app/Rules',
@@ -22,6 +23,7 @@ class PanelTranslationParityTest extends TestCase
         'app/Livewire',
         'app/Services/DashboardKpiService.php',
         'app/Services/DynamicForm/DynamicFormLogicEvaluator.php',
+        'app/Services/Export',
         'app/Services/IntegrationTelemetryService.php',
         'resources/views/filament',
     ];

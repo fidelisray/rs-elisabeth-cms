@@ -2,9 +2,11 @@
 
 namespace App\Filament\Resources\DynamicForms\Pages;
 
+use App\Exceptions\ExportAbortedException;
 use App\Filament\Resources\DynamicForms\DynamicFormResource;
 use App\Models\DynamicForm;
 use App\Models\DynamicFormSubmission;
+use App\Models\User;
 use App\Services\DynamicForm\DynamicFormAnalyticsService;
 use App\Services\DynamicForm\DynamicFormExportService;
 use Filament\Actions\Action;
@@ -12,6 +14,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -65,10 +68,18 @@ class ManageDynamicFormAnalytics extends Page
         $this->authorizeExport();
 
         try {
+            /** @var ?User $actor */
+            $actor = Auth::user();
+
             return app(DynamicFormExportService::class)->streamCsv(
                 $this->getDynamicForm(),
-                $this->activeFilters()
+                $this->activeFilters(),
+                $actor,
             );
+        } catch (ExportAbortedException $e) {
+            Notification::make()->warning()->title($e->title)->body($e->getMessage())->send();
+
+            return null;
         } catch (Throwable $exception) {
             report($exception);
             $this->errorMessage = __('Ekspor CSV gagal karena filter tanggal tidak valid atau data gagal dibaca.');
@@ -83,10 +94,18 @@ class ManageDynamicFormAnalytics extends Page
         $this->authorizeExport();
 
         try {
+            /** @var ?User $actor */
+            $actor = Auth::user();
+
             return app(DynamicFormExportService::class)->streamXlsx(
                 $this->getDynamicForm(),
-                $this->activeFilters()
+                $this->activeFilters(),
+                $actor,
             );
+        } catch (ExportAbortedException $e) {
+            Notification::make()->warning()->title($e->title)->body($e->getMessage())->send();
+
+            return null;
         } catch (Throwable $exception) {
             report($exception);
             $this->errorMessage = __('Ekspor Excel gagal karena filter tanggal tidak valid atau data gagal dibaca.');
@@ -102,14 +121,16 @@ class ManageDynamicFormAnalytics extends Page
             Action::make('exportCsv')
                 ->label(__('Ekspor CSV'))
                 ->icon(Heroicon::OutlinedDocumentArrowDown)
-                ->authorize(fn (): bool => Gate::allows('view', $this->getDynamicForm()))
+                ->visible(fn (): bool => $this->canExport())
+                ->authorize(fn (): bool => $this->canExport())
                 ->action(fn () => $this->exportCsv()),
 
             Action::make('exportXlsx')
                 ->label(__('Ekspor Excel (.xlsx)'))
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->color('primary')
-                ->authorize(fn (): bool => Gate::allows('view', $this->getDynamicForm()))
+                ->visible(fn (): bool => $this->canExport())
+                ->authorize(fn (): bool => $this->canExport())
                 ->action(fn () => $this->exportXlsx()),
 
             Action::make('editForm')
@@ -159,8 +180,15 @@ class ManageDynamicFormAnalytics extends Page
         ];
     }
 
+    private function canExport(): bool
+    {
+        return Gate::allows('view', $this->getDynamicForm())
+            && Gate::allows('export', DynamicFormSubmission::class);
+    }
+
     private function authorizeExport(): void
     {
         Gate::authorize('view', $this->getDynamicForm());
+        Gate::authorize('export', DynamicFormSubmission::class);
     }
 }

@@ -11,4 +11,9 @@ class FeedbackPolicy extends PatientSubmissionPolicy
     {
         return $user->is_active && $user->isSuperAdmin() && $user->can('Update:Feedback');
     }
+
+    public function export(User $user): bool
+    {
+        return $this->viewAny($user) && ($user->isSuperAdmin() || $user->can('Export:Feedback'));
+    }
 }

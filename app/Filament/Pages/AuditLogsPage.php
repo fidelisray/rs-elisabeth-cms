@@ -231,7 +231,7 @@ class AuditLogsPage extends Page implements HasTable
             return 'warning';
         }
 
-        if (str_starts_with($action, 'cache.')) {
+        if (str_starts_with($action, 'cache.') || str_starts_with($action, 'report.')) {
             return 'info';
         }
 

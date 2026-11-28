@@ -41,8 +41,18 @@ test.describe('Patient Submissions Privacy & Strict Super Admin Follow-Up', () =
             expect(dashboardBody).not.toContain(PII_SENTINELS.patient);
             expect(dashboardBody).not.toContain(PII_SENTINELS.phone);
 
-            // 2. Buka daftar Feedback -> klik detail tiket sentinel.
+            // 2. Buka daftar Feedback -> pastikan aksi Ekspor Data tampil & modal ekspor terbuka bersih, lalu klik detail tiket sentinel.
             await page.goto('/admin/feedbacks/feedback', { waitUntil: 'networkidle' });
+            const feedbackExportButton = page.getByRole('button', { name: /Ekspor Data|Export Data/i }).first();
+            await expect(feedbackExportButton).toBeVisible();
+            await feedbackExportButton.click();
+
+            const exportModal = page.locator('.fi-modal-window').last();
+            await expect(exportModal).toBeVisible();
+            await expect(exportModal).toContainText(/Mode Anonim|Anonymized Mode/i);
+            await page.keyboard.press('Escape');
+            await expect(exportModal).toBeHidden();
+
             const row = page.locator('tbody tr').filter({ hasText: PII_SENTINELS.ticket }).first();
             await expect(row).toBeVisible();
 
@@ -67,6 +77,10 @@ test.describe('Patient Submissions Privacy & Strict Super Admin Follow-Up', () =
 
             await expect(page.locator('main')).toContainText(/Diproses|In Progress/i, { timeout: 10_000 });
 
+            // 4. Super Admin juga melihat aksi Ekspor Data pada Kuesioner Kepuasan.
+            await page.goto('/admin/questionnaires', { waitUntil: 'networkidle' });
+            await expect(page.getByRole('button', { name: /Ekspor Data|Export Data/i }).first()).toBeVisible();
+
             errors.assertZeroErrors();
         });
     });
@@ -74,7 +88,7 @@ test.describe('Patient Submissions Privacy & Strict Super Admin Follow-Up', () =
     test.describe('Marketing (Read-Only Feedback Policy)', () => {
         test.use({ storageState: config.storageStatePaths.marketing });
 
-        test('can read Feedback detail but CANNOT see Follow-Up action (Strict Super Admin Control)', async ({ page }) => {
+        test('can read Feedback detail but CANNOT see Follow-Up or Export actions without explicit permissions', async ({ page }) => {
             test.skip(
                 config.isExternalTarget,
                 'Seeded Feedback sentinel only exists in isolated E2E mode.',
@@ -83,6 +97,8 @@ test.describe('Patient Submissions Privacy & Strict Super Admin Follow-Up', () =
             const errors = attachErrorTracker(page);
 
             await page.goto('/admin/feedbacks/feedback', { waitUntil: 'networkidle' });
+            await expect(page.getByRole('button', { name: /Ekspor Data|Export Data/i })).toHaveCount(0);
+
             const row = page.locator('tbody tr').filter({ hasText: PII_SENTINELS.ticket }).first();
             await expect(row).toBeVisible();
 
@@ -92,6 +108,10 @@ test.describe('Patient Submissions Privacy & Strict Super Admin Follow-Up', () =
 
             await expect(page.locator('main')).toContainText(PII_SENTINELS.ticket);
             await expect(page.getByRole('button', { name: /Tindak lanjut|Follow Up/i })).toHaveCount(0);
+
+            // Tanpa Export:QuestionnaireResponse, tombol Ekspor Data juga tersembunyi di Kuesioner Kepuasan.
+            await page.goto('/admin/questionnaires', { waitUntil: 'networkidle' });
+            await expect(page.getByRole('button', { name: /Ekspor Data|Export Data/i })).toHaveCount(0);
 
             errors.assertZeroErrors();
         });

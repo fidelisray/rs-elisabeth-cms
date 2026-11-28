@@ -1,13 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\DynamicForm;
 
 use App\Enums\DynamicFormFieldType;
+use App\Exceptions\ExportAbortedException;
+use App\Models\AuditLog;
 use App\Models\DynamicForm;
 use App\Models\DynamicFormSubmission;
+use App\Models\User;
+use App\Services\Export\SpreadsheetExportWriter;
+use Generator;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use OpenSpout\Common\Entity\Row;
-use OpenSpout\Writer\XLSX\Writer as XlsxWriter;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -15,65 +21,31 @@ class DynamicFormExportService
 {
     public function __construct(
         private readonly DynamicFormAnalyticsService $analyticsService,
+        private readonly SpreadsheetExportWriter $writer,
     ) {}
 
     /**
-     * Ekspor respons terfilter ke CSV dengan UTF-8 BOM.
+     * Ekspor respons terfilter ke CSV dengan UTF-8 BOM + guard performa + audit log non-PII.
      *
      * @param  array{version_id?: int|string|null, date_from?: ?string, date_to?: ?string}  $filters
+     *
+     * @throws ExportAbortedException
      */
-    public function streamCsv(DynamicForm $form, array $filters = []): StreamedResponse
+    public function streamCsv(DynamicForm $form, array $filters = [], ?User $actor = null): StreamedResponse
     {
-        $dataset = $this->buildDataset($form, $filters);
-        $filename = $this->buildFilename($form, 'csv');
-
-        return response()->streamDownload(function () use ($dataset): void {
-            $handle = fopen('php://output', 'wb');
-            if ($handle === false) {
-                return;
-            }
-
-            // UTF-8 BOM agar Excel langsung membaca karakter UTF-8 dengan benar.
-            fwrite($handle, "\xEF\xBB\xBF");
-            fputcsv($handle, $dataset['headers']);
-
-            foreach ($dataset['rows'] as $row) {
-                fputcsv($handle, array_map($this->sanitizeSpreadsheetCell(...), $row));
-            }
-
-            fclose($handle);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-        ]);
+        return $this->export($form, 'csv', $filters, $actor);
     }
 
     /**
-     * Ekspor respons terfilter ke Excel (.xlsx) asli menggunakan OpenSpout.
+     * Ekspor respons terfilter ke Excel (.xlsx) native OpenSpout + guard performa + audit log non-PII.
      *
      * @param  array{version_id?: int|string|null, date_from?: ?string, date_to?: ?string}  $filters
+     *
+     * @throws ExportAbortedException
      */
-    public function streamXlsx(DynamicForm $form, array $filters = []): BinaryFileResponse
+    public function streamXlsx(DynamicForm $form, array $filters = [], ?User $actor = null): BinaryFileResponse
     {
-        $dataset = $this->buildDataset($form, $filters);
-        $filename = $this->buildFilename($form, 'xlsx');
-
-        $tmpFile = tempnam(sys_get_temp_dir(), 'rse_df_xlsx_');
-        $xlsxPath = $tmpFile.'.xlsx';
-        @unlink($tmpFile);
-
-        $writer = new XlsxWriter;
-        $writer->openToFile($xlsxPath);
-        $writer->addRow(Row::fromValues($dataset['headers']));
-
-        foreach ($dataset['rows'] as $row) {
-            $writer->addRow(Row::fromValues(array_map($this->sanitizeSpreadsheetCell(...), $row)));
-        }
-
-        $writer->close();
-
-        return response()->download($xlsxPath, $filename, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ])->deleteFileAfterSend(true);
+        return $this->export($form, 'xlsx', $filters, $actor);
     }
 
     /**
@@ -83,6 +55,97 @@ class DynamicFormExportService
      * @return array{headers: list<string>, rows: list<list<mixed>>}
      */
     public function buildDataset(DynamicForm $form, array $filters = []): array
+    {
+        $prepared = $this->prepareSchemaAndFilters($form, $filters);
+        $versionNumbers = $form->versions()->pluck('version_number', 'id')->all();
+        $timezone = (string) config('app.timezone', 'Asia/Jakarta');
+
+        $submissions = $this->analyticsService
+            ->filteredSubmissionsQuery($form, $prepared['version_id'], $prepared['date_from'], $prepared['date_to'])
+            ->orderByDesc('submitted_at')
+            ->orderByDesc('id')
+            ->get();
+
+        $rows = [];
+        /** @var DynamicFormSubmission $submission */
+        foreach ($submissions as $submission) {
+            $rows[] = $this->mapSubmissionRow($submission, $prepared['columns'], $versionNumbers, $timezone);
+        }
+
+        return [
+            'headers' => $prepared['headers'],
+            'rows' => $rows,
+        ];
+    }
+
+    /**
+     * @param  array{version_id?: int|string|null, date_from?: ?string, date_to?: ?string}  $filters
+     *
+     * @throws ExportAbortedException
+     */
+    private function export(DynamicForm $form, string $format, array $filters, ?User $actor): BinaryFileResponse|StreamedResponse
+    {
+        $normalizedFormat = $format === 'csv' ? 'csv' : 'xlsx';
+        $prepared = $this->prepareSchemaAndFilters($form, $filters);
+
+        $query = $this->analyticsService
+            ->filteredSubmissionsQuery($form, $prepared['version_id'], $prepared['date_from'], $prepared['date_to'])
+            ->orderByDesc('submitted_at')
+            ->orderByDesc('id');
+
+        $count = (clone $query)->count();
+        $effectiveActor = $actor ?? Auth::user();
+        $actorId = $effectiveActor instanceof User ? $effectiveActor->id : null;
+
+        $this->writer->enforceGuards($actorId, $count);
+
+        $versionNumbers = $form->versions()->pluck('version_number', 'id')->all();
+        $timezone = (string) config('app.timezone', 'Asia/Jakarta');
+
+        $rows = function () use ($query, $prepared, $versionNumbers, $timezone): Generator {
+            /** @var DynamicFormSubmission $submission */
+            foreach ($query->cursor() as $submission) {
+                yield $this->mapSubmissionRow($submission, $prepared['columns'], $versionNumbers, $timezone);
+            }
+        };
+
+        AuditLog::record('report.exported', $form, [
+            'module' => 'dynamic_forms',
+            'format' => $normalizedFormat,
+            'row_count' => $count,
+            'filters' => array_filter([
+                'version_id' => $prepared['version_id'],
+                'date_from' => $prepared['date_from'],
+                'date_to' => $prepared['date_to'],
+            ], static fn ($value): bool => $value !== null),
+        ]);
+
+        $filename = $this->buildFilename($form, $normalizedFormat);
+
+        if ($normalizedFormat === 'csv') {
+            return $this->writer->streamCsv($filename, $prepared['headers'], $rows());
+        }
+
+        return $this->writer->downloadXlsx($filename, [
+            [
+                'name' => $form->title ?: 'Respons',
+                'headers' => $prepared['headers'],
+                'rows' => $rows(),
+            ],
+        ]);
+    }
+
+    /**
+     * @param  array{version_id?: int|string|null, date_from?: ?string, date_to?: ?string}  $filters
+     * @return array{
+     *     version_id: ?int,
+     *     date_from: ?string,
+     *     date_to: ?string,
+     *     headers: list<string>,
+     *     columns: list<array{field: array<string, mixed>, type: DynamicFormFieldType, matrix_row_key: ?string}>
+     * }
+     */
+    private function prepareSchemaAndFilters(DynamicForm $form, array $filters): array
     {
         $versionId = isset($filters['version_id']) && is_numeric($filters['version_id'])
             ? (int) $filters['version_id']
@@ -130,40 +193,50 @@ class DynamicFormExportService
             ];
         }
 
-        $submissions = $this->analyticsService
-            ->filteredSubmissionsQuery($form, $versionId, $dateFrom, $dateTo)
-            ->with(['version:id,version_number'])
-            ->orderByDesc('submitted_at')
-            ->get();
+        return [
+            'version_id' => $versionId,
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
+            'headers' => $headers,
+            'columns' => $columns,
+        ];
+    }
 
-        $rows = [];
-        /** @var DynamicFormSubmission $submission */
-        foreach ($submissions as $submission) {
-            $row = [
-                $submission->id,
-                $submission->version ? 'v'.$submission->version->version_number : '',
-                strtoupper((string) $submission->locale),
-                (string) $submission->source,
-                optional($submission->submitted_at)->format('Y-m-d H:i:s') ?? '',
-            ];
+    /**
+     * @param  list<array{field: array<string, mixed>, type: DynamicFormFieldType, matrix_row_key: ?string}>  $columns
+     * @param  array<int, int>  $versionNumbers
+     * @return list<mixed>
+     */
+    private function mapSubmissionRow(
+        DynamicFormSubmission $submission,
+        array $columns,
+        array $versionNumbers,
+        string $timezone,
+    ): array {
+        $versionNumber = $versionNumbers[$submission->dynamic_form_version_id] ?? null;
+        $submittedAt = $submission->submitted_at
+            ? $submission->submitted_at->copy()->timezone($timezone)->format('Y-m-d H:i:s')
+            : '';
 
-            $answers = (array) ($submission->answers ?? []);
-            foreach ($columns as $colDef) {
-                $row[] = $this->formatAnswerCell(
-                    $colDef['field'],
-                    $colDef['type'],
-                    $answers[$colDef['field']['field_key']] ?? null,
-                    $colDef['matrix_row_key']
-                );
-            }
+        $row = [
+            (int) $submission->id,
+            $versionNumber !== null ? 'v'.$versionNumber : '',
+            strtoupper((string) $submission->locale),
+            (string) $submission->source,
+            $submittedAt,
+        ];
 
-            $rows[] = $row;
+        $answers = (array) ($submission->answers ?? []);
+        foreach ($columns as $colDef) {
+            $row[] = $this->formatAnswerCell(
+                $colDef['field'],
+                $colDef['type'],
+                $answers[$colDef['field']['field_key']] ?? null,
+                $colDef['matrix_row_key']
+            );
         }
 
-        return [
-            'headers' => $headers,
-            'rows' => $rows,
-        ];
+        return $row;
     }
 
     /**
@@ -255,24 +328,8 @@ class DynamicFormExportService
     private function buildFilename(DynamicForm $form, string $extension): string
     {
         $slug = Str::slug($form->slug ?: $form->title) ?: 'dynamic-form';
+        $timezone = (string) config('app.timezone', 'Asia/Jakarta');
 
-        return $slug.'-responses-'.now()->format('Ymd-His').'.'.$extension;
-    }
-
-    /**
-     * Mencegah CSV/Spreadsheet formula injection saat file dibuka di Excel.
-     */
-    private function sanitizeSpreadsheetCell(mixed $value): mixed
-    {
-        if (is_int($value) || is_float($value) || $value === null) {
-            return $value;
-        }
-
-        $str = (string) $value;
-        if ($str !== '' && preg_match('/^[=+\-@\t\r]/', $str) === 1) {
-            return "'".$str;
-        }
-
-        return $str;
+        return $slug.'-responses-'.now($timezone)->format('Ymd-His').'.'.$extension;
     }
 }
