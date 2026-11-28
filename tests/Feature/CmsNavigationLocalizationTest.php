@@ -386,13 +386,15 @@ class CmsNavigationLocalizationTest extends TestCase
                     ['label' => 'Layanan & Kamar', 'items' => ['Fasilitas & Layanan', 'Kamar Rawat Inap']],
                     ['label' => 'Dokter & Perpustakaan', 'items' => ['Profil Dokter', 'Perpustakaan Online']],
                     ['label' => 'Masukan Pasien', 'items' => ['Kritik & Saran', 'Kuesioner Kepuasan', 'Formulir Kuesioner Kustom', 'Respons Formulir Kustom']],
-                    ['label' => 'Kontrol Akses', 'items' => ['Manajemen Pengguna', 'Peran']],
+                    ['label' => 'Sistem & Operasional', 'items' => ['Sistem & Integrasi']],
+                    ['label' => 'Kontrol Akses', 'items' => ['Manajemen Pengguna', 'Peran', 'Log Audit']],
                 ],
                 'encodedGroups' => [
                     'Pemasaran &amp; Editorial',
                     'Layanan &amp; Kamar',
                     'Dokter &amp; Perpustakaan',
                     'Masukan Pasien',
+                    'Sistem &amp; Operasional',
                     'Kontrol Akses',
                 ],
                 'activeRoutes' => [
@@ -400,13 +402,18 @@ class CmsNavigationLocalizationTest extends TestCase
                     '/admin/facility-services' => ['Layanan & Kamar', 'Fasilitas & Layanan'],
                     '/admin/doctors' => ['Dokter & Perpustakaan', 'Profil Dokter'],
                     '/admin/feedbacks/feedback' => ['Masukan Pasien', 'Kritik & Saran'],
+                    '/admin/system-monitor' => ['Sistem & Operasional', 'Sistem & Integrasi'],
                     '/admin/users' => ['Kontrol Akses', 'Manajemen Pengguna'],
                     '/admin/shield/roles' => ['Kontrol Akses', 'Peran'],
+                    '/admin/audit-logs' => ['Kontrol Akses', 'Log Audit'],
                 ],
                 'forbiddenSidebar' => [
                     'Dashboard',
                     'Marketing & Editorial',
+                    'System & Operations',
+                    'System & Integrations',
                     'Access Control',
+                    'Audit Logs',
                     'Facility Services',
                     'Room Facilities',
                     'Administration',
@@ -423,13 +430,15 @@ class CmsNavigationLocalizationTest extends TestCase
                     ['label' => 'Services & Rooms', 'items' => ['Facilities & Services', 'Inpatient Rooms']],
                     ['label' => 'Doctors & Library', 'items' => ['Doctor Profiles', 'Online Library']],
                     ['label' => 'Patient Feedback', 'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires', 'Custom Questionnaire Form', 'Custom Questionnaire Responses']],
-                    ['label' => 'Access Control', 'items' => ['User Management', 'Roles']],
+                    ['label' => 'System & Operations', 'items' => ['System & Integrations']],
+                    ['label' => 'Access Control', 'items' => ['User Management', 'Roles', 'Audit Logs']],
                 ],
                 'encodedGroups' => [
                     'Marketing &amp; Editorial',
                     'Services &amp; Rooms',
                     'Doctors &amp; Library',
                     'Patient Feedback',
+                    'System &amp; Operations',
                     'Access Control',
                 ],
                 'activeRoutes' => [
@@ -437,13 +446,18 @@ class CmsNavigationLocalizationTest extends TestCase
                     '/admin/facility-services' => ['Services & Rooms', 'Facilities & Services'],
                     '/admin/doctors' => ['Doctors & Library', 'Doctor Profiles'],
                     '/admin/feedbacks/feedback' => ['Patient Feedback', 'Feedback & Suggestions'],
+                    '/admin/system-monitor' => ['System & Operations', 'System & Integrations'],
                     '/admin/users' => ['Access Control', 'User Management'],
                     '/admin/shield/roles' => ['Access Control', 'Roles'],
+                    '/admin/audit-logs' => ['Access Control', 'Audit Logs'],
                 ],
                 'forbiddenSidebar' => [
                     'Dasbor',
                     'Pemasaran & Editorial',
+                    'Sistem & Operasional',
+                    'Sistem & Integrasi',
                     'Kontrol Akses',
+                    'Log Audit',
                     'Profil Dokter',
                     'Facility Services',
                     'Room Facilities',
@@ -469,7 +483,7 @@ class CmsNavigationLocalizationTest extends TestCase
             $panel = Filament::getPanel('admin');
             $groups = array_values($panel->getNavigation());
 
-            $this->assertCount(6, $groups, "[{$locale}] Navigation group count mismatch");
+            $this->assertCount(7, $groups, "[{$locale}] Navigation group count mismatch");
 
             foreach ($case['groups'] as $index => $expectedGroup) {
                 /** @var NavigationGroup $group */

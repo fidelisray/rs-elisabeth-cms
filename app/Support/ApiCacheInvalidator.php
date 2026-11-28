@@ -38,6 +38,27 @@ class ApiCacheInvalidator
 
     private const PAGINATED_MODULES = ['news', 'articles', 'promotions', 'online_libraries'];
 
+    /**
+     * Daftar seluruh nama modul webhook/cache yang dikenali sistem.
+     *
+     * @return list<string>
+     */
+    public static function modules(): array
+    {
+        return array_keys(self::KEYS);
+    }
+
+    /**
+     * Hapus cache API lokal untuk seluruh modul tanpa mendispatch webhook per modul
+     * (dipakai saat operator menjalankan invalidasi manual mode 'all').
+     */
+    public static function forgetAllModules(): void
+    {
+        foreach (self::modules() as $module) {
+            self::forgetForModule($module);
+        }
+    }
+
     public static function keyForModule(string $module, ?string $locale = null): string
     {
         return self::baseKey($module).'_'.TranslatedContentOrder::locale($locale ?? app()->getLocale());

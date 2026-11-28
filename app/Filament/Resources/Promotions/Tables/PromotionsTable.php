@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Promotions\Tables;
 
 use App\Filament\Support\AccessibleTableColumns;
+use App\Filament\Support\BilingualTableColumns;
 use App\Filament\Support\ContentTrashActions;
 use App\Models\Promotion;
 use App\Support\TranslatedContentOrder;
@@ -11,7 +12,11 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 
 class PromotionsTable
 {
@@ -48,6 +53,8 @@ class PromotionsTable
                     ->dateTime('d M Y, H:i')
                     ->sortable(),
 
+                BilingualTableColumns::contentLanguageBadge(['title', 'slug', 'shorts', 'description']),
+
                 IconColumn::make('is_active')
                     ->label(__('Aktif'))
                     ->boolean(),
@@ -60,7 +67,24 @@ class PromotionsTable
             ])
             ->filters([
                 ContentTrashActions::trashedFilter(),
-                //
+                TernaryFilter::make('is_active')
+                    ->label(__('Status Publikasi'))
+                    ->trueLabel(__('Aktif / Tayang'))
+                    ->falseLabel(__('Draf / Nonaktif'))
+                    ->placeholder(__('Semua')),
+                Filter::make('expiring_soon')
+                    ->label(__('Segera Berakhir (≤ 7 Hari)'))
+                    ->query(function (Builder $query): Builder {
+                        $today = Promotion::today();
+                        $soonDate = Carbon::parse($today, (string) config('app.timezone', 'Asia/Jakarta'))
+                            ->addDays(7)
+                            ->toDateString();
+
+                        return $query
+                            ->activeOn($today)
+                            ->whereNotNull('end_date')
+                            ->whereDate('end_date', '<=', $soonDate);
+                    }),
             ])
             ->recordActions([
                 EditAction::make(),

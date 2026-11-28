@@ -68,4 +68,18 @@ test.describe('Theme Branding, Responsiveness & WCAG AA Accessibility', () => {
 
         errors.assertZeroErrors();
     });
+
+    test('passes WCAG AA accessibility audit on System Monitor and Audit Logs pages', async ({ page }) => {
+        const errors = attachErrorTracker(page);
+
+        await page.goto('/admin/system-monitor', { waitUntil: 'networkidle' });
+        await expect(page.locator('[data-rse-system-monitor]')).toBeVisible();
+        await auditWcagAA(page, 'System & Integrations Monitor (/admin/system-monitor)');
+
+        await page.goto('/admin/audit-logs', { waitUntil: 'networkidle' });
+        await expect(page.locator('[data-rse-audit-logs]')).toBeVisible();
+        await auditWcagAA(page, 'Audit Logs Viewer (/admin/audit-logs)');
+
+        errors.assertZeroErrors();
+    });
 });

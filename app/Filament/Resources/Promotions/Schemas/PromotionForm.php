@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Promotions\Schemas;
 
+use App\Filament\Support\WebpUploadFieldHelper;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
@@ -152,8 +153,10 @@ class PromotionForm
                             ->automaticallyResizeImagesMode('cover')
                             ->maxSize(5120)
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                            ->helperText(__('Unggah poster promosi dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB'))
+                            ->helperText(WebpUploadFieldHelper::helperText('1200x1500'))
                             ->columnSpanFull(),
+
+                        WebpUploadFieldHelper::statusPlaceholder(),
                     ]),
 
                 Section::make(__('Publikasi'))

@@ -147,6 +147,8 @@ foreach ($patientSubjects as $subject) {
 foreach ($widgetSubjects as $subject) {
     $staffItPermissions[] = "View:{$subject}";
 }
+// Staff IT uji memiliki akses baca System & Integrations Monitor (tanpa Trigger:WebCacheInvalidation)
+$staffItPermissions[] = 'View:SystemMonitor';
 
 $staffItRole = Role::findOrCreate('Staff IT', 'web');
 $staffItRole->syncPermissions(Permission::whereIn('name', $staffItPermissions)->get());

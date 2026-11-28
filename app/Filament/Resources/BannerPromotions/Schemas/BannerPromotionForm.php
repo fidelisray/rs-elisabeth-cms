@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\BannerPromotions\Schemas;
 
+use App\Filament\Support\WebpUploadFieldHelper;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\TextInput;
@@ -80,7 +81,7 @@ class BannerPromotionForm
                     ->schema([
                         FileUpload::make('image_path')
                             ->label(__('Gambar'))
-                            ->helperText(__('Unggah gambar banner dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB'))
+                            ->helperText(WebpUploadFieldHelper::helperText('1920x1080'))
                             ->disk(config('filesystems.media_disk'))
                             ->directory('banners')
                             ->image()
@@ -94,6 +95,8 @@ class BannerPromotionForm
                             ->required()
                             ->clearErrorOnChange()
                             ->columnSpanFull(),
+
+                        WebpUploadFieldHelper::statusPlaceholder(),
                     ]),
 
                 Section::make(__('Publikasi'))

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\RoomFacilities\Tables;
 
 use App\Filament\Support\AccessibleTableColumns;
+use App\Filament\Support\BilingualTableColumns;
 use App\Filament\Support\ContentTrashActions;
 use App\Support\ApiCacheInvalidator;
 use App\Support\TranslatedContentOrder;
@@ -48,6 +49,11 @@ class RoomFacilitiesTable
                     ->label(__('Dibuat Pada'))
                     ->dateTime('d M Y, H:i')
                     ->sortable(),
+
+                BilingualTableColumns::contentLanguageBadge(
+                    ['name', 'slug', 'tagline', 'description'],
+                    ['whatsapp_text'],
+                ),
 
                 IconColumn::make('is_active')
                     ->label(__('Aktif'))

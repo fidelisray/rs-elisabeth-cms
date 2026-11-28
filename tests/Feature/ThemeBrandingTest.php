@@ -96,7 +96,10 @@ class ThemeBrandingTest extends TestCase
     public function test_custom_views_use_brand_tokens_instead_of_hardcoded_amber_primary_accents(): void
     {
         $viewsWithoutAmberAccent = [
+            resource_path('views/filament/widgets/dashboard-kpi-overview-widget.blade.php'),
+            resource_path('views/filament/widgets/patient-voice-workspace-widget.blade.php'),
             resource_path('views/filament/widgets/dynamic-feedback-overview-widget.blade.php'),
+            resource_path('views/filament/pages/system-monitor-page.blade.php'),
             resource_path('views/filament/resources/dynamic-forms/pages/analytics.blade.php'),
             resource_path('views/filament/resources/dynamic-forms/components/live-preview.blade.php'),
             resource_path('views/filament/resources/dynamic-forms/components/share-modal.blade.php'),

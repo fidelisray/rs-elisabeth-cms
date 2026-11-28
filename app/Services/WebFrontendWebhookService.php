@@ -32,6 +32,12 @@ class WebFrontendWebhookService
                 'has_secret_key' => ! empty($secretKey),
             ]);
 
+            IntegrationTelemetryService::recordWebhookResult(
+                status: 'unconfigured',
+                module: $module,
+                event: $event,
+            );
+
             return false;
         }
 
@@ -63,6 +69,13 @@ class WebFrontendWebhookService
                     'status' => $response->status(),
                 ]);
 
+                IntegrationTelemetryService::recordWebhookResult(
+                    status: 'success',
+                    module: $module,
+                    event: $event,
+                    httpStatus: $response->status(),
+                );
+
                 return true;
             }
 
@@ -79,6 +92,13 @@ class WebFrontendWebhookService
                 'exception' => get_class($e),
                 'error' => $e->getMessage(),
             ]);
+
+            IntegrationTelemetryService::recordWebhookResult(
+                status: 'failed',
+                module: $module,
+                event: $event,
+                errorSummary: $e->getMessage(),
+            );
 
             throw $e;
         }

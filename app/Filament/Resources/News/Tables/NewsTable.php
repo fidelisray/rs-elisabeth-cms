@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\News\Tables;
 
 use App\Filament\Support\AccessibleTableColumns;
+use App\Filament\Support\BilingualTableColumns;
 use App\Filament\Support\ContentTrashActions;
 use App\Models\News;
 use App\Support\TranslatedContentOrder;
@@ -12,6 +13,7 @@ use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -49,6 +51,8 @@ class NewsTable
                     ->dateTime('d M Y, H:i')
                     ->sortable(),
 
+                BilingualTableColumns::contentLanguageBadge(['title', 'slug', 'shorts', 'content', 'category']),
+
                 IconColumn::make('is_published')
                     ->label(__('Publikasi'))
                     ->boolean(),
@@ -62,6 +66,11 @@ class NewsTable
             ])
             ->filters([
                 ContentTrashActions::trashedFilter(),
+                TernaryFilter::make('is_published')
+                    ->label(__('Status Publikasi'))
+                    ->trueLabel(__('Aktif / Tayang'))
+                    ->falseLabel(__('Draf / Nonaktif'))
+                    ->placeholder(__('Semua')),
                 SelectFilter::make('category')
                     ->label(__('Kategori'))
                     ->options(function ($livewire): array {

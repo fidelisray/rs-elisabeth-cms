@@ -4,9 +4,8 @@ namespace App\Providers\Filament;
 
 use App\Enums\AdminNavigationGroup;
 use App\Filament\Pages\Auth\CustomProfile;
-use App\Filament\Widgets\DynamicFeedbackOverviewWidget;
-use App\Filament\Widgets\FeedbackSectionWidget;
-use App\Filament\Widgets\QuestionnaireSectionWidget;
+use App\Filament\Widgets\DashboardKpiOverviewWidget;
+use App\Filament\Widgets\PatientVoiceWorkspaceWidget;
 use App\Http\Controllers\Admin\DownloadDynamicFormUploadController;
 use App\Http\Controllers\Admin\SwitchPanelLocaleController;
 use App\Http\Middleware\EnforcePasswordChange;
@@ -23,7 +22,6 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\View\PanelsRenderHook;
-use Filament\Widgets\AccountWidget;
 use Illuminate\Contracts\View\View;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -88,10 +86,8 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
-                AccountWidget::class,
-                FeedbackSectionWidget::class,
-                QuestionnaireSectionWidget::class,
-                DynamicFeedbackOverviewWidget::class,
+                DashboardKpiOverviewWidget::class,
+                PatientVoiceWorkspaceWidget::class,
             ])
             ->navigationGroups(
                 collect(AdminNavigationGroup::cases())

@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Gate;
  */
 class QuestionnaireSectionWidget extends Widget
 {
+    protected static bool $isDiscovered = false;
+
     protected string $view = 'filament.widgets.questionnaire-section-widget';
 
     protected static ?int $sort = 11;

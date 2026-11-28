@@ -22,14 +22,20 @@ class DoctorSyncService
     public function syncFromMedInfras(): array
     {
         if (! config('rsapi.enabled', true)) {
-            return ['created' => 0, 'updated' => 0, 'unchanged' => 0, 'total' => 0, 'status' => 'disabled', 'failed_specialties' => [], 'excluded_specialties' => []];
+            $result = ['created' => 0, 'updated' => 0, 'unchanged' => 0, 'total' => 0, 'status' => 'disabled', 'failed_specialties' => [], 'excluded_specialties' => []];
+            IntegrationTelemetryService::recordDoctorSyncResult($result);
+
+            return $result;
         }
         $spesialisasi = $this->apiService->getDaftarSpesialisasi();
 
         if (empty($spesialisasi)) {
             Log::warning('DoctorSyncService: Daftar spesialisasi kosong dari API internal RS.');
 
-            return ['created' => 0, 'updated' => 0, 'unchanged' => 0, 'total' => 0, 'status' => 'failed', 'failed_specialties' => [], 'excluded_specialties' => []];
+            $result = ['created' => 0, 'updated' => 0, 'unchanged' => 0, 'total' => 0, 'status' => 'failed', 'failed_specialties' => [], 'excluded_specialties' => []];
+            IntegrationTelemetryService::recordDoctorSyncResult($result);
+
+            return $result;
         }
 
         // Kumpulkan data dokter unik berdasarkan ParamedicCode
@@ -130,7 +136,7 @@ class DoctorSyncService
             }
         });
 
-        return [
+        $result = [
             'created' => $createdCount,
             'updated' => $updatedCount,
             'unchanged' => $unchangedCount,
@@ -139,5 +145,9 @@ class DoctorSyncService
             'failed_specialties' => array_values(array_unique($failedSpecialties)),
             'excluded_specialties' => $selection['excluded_specialties'],
         ];
+
+        IntegrationTelemetryService::recordDoctorSyncResult($result);
+
+        return $result;
     }
 }

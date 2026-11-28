@@ -23,8 +23,19 @@ test.describe('Patient Submissions Privacy & Strict Super Admin Follow-Up', () =
 
             const errors = attachErrorTracker(page);
 
-            // 1. Dashboard (/admin) TIDAK BOLEH menampilkan nama pelapor, nama pasien, atau nomor telepon.
+            // 1. Dashboard (/admin) merender KPI strip & Tabbed Patient Voice dan TIDAK BOLEH menampilkan PII pasien.
             await page.goto('/admin', { waitUntil: 'networkidle' });
+            await expect(page.locator('[data-rse-dashboard-kpi-strip]')).toBeVisible();
+            await expect(page.locator('[data-rse-patient-voice-workspace]')).toBeVisible();
+
+            // Uji perpindahan 3 tab Patient Voice secara interaktif tanpa error.
+            for (const tabKey of ['feedback', 'questionnaires', 'dynamic_forms']) {
+                const tabButton = page.locator(`[data-rse-pv-tab="${tabKey}"]`);
+                await expect(tabButton).toBeVisible();
+                await tabButton.click();
+                await expect(tabButton).toHaveAttribute('aria-selected', 'true');
+            }
+
             const dashboardBody = await page.locator('main').innerText();
             expect(dashboardBody).not.toContain(PII_SENTINELS.reporter);
             expect(dashboardBody).not.toContain(PII_SENTINELS.patient);

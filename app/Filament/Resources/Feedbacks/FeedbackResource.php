@@ -14,8 +14,10 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class FeedbackResource extends Resource
 {
@@ -89,6 +91,9 @@ class FeedbackResource extends Resource
             SelectFilter::make('status')
                 ->label(__('Status'))
                 ->options(fn (): array => self::statusOptions()),
+            Filter::make('unresolved')
+                ->label(__('Belum Selesai (Baru & Diproses)'))
+                ->query(fn (Builder $query): Builder => $query->whereIn('status', ['baru', 'diproses'])),
         ])->defaultSort('submitted_at', 'desc')
             ->recordActions([ViewAction::make()])
             ->paginationPageOptions([10, 25, 50]);

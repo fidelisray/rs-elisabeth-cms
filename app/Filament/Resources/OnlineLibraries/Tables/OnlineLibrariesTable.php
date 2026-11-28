@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\OnlineLibraries\Tables;
 
 use App\Filament\Support\AccessibleTableColumns;
+use App\Filament\Support\BilingualTableColumns;
 use App\Filament\Support\ContentTrashActions;
 use App\Models\OnlineLibrary;
 use App\Support\TranslatedContentOrder;
@@ -15,6 +16,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
@@ -56,6 +58,11 @@ class OnlineLibrariesTable
                     })
                     ->sortable(),
 
+                BilingualTableColumns::contentLanguageBadge(
+                    ['title', 'slug'],
+                    ['category', 'description'],
+                ),
+
                 IconColumn::make('is_published')
                     ->label(__('Publikasi'))
                     ->boolean(),
@@ -72,6 +79,11 @@ class OnlineLibrariesTable
             ])
             ->filters([
                 ContentTrashActions::trashedFilter(),
+                TernaryFilter::make('is_published')
+                    ->label(__('Status Publikasi'))
+                    ->trueLabel(__('Aktif / Tayang'))
+                    ->falseLabel(__('Draf / Nonaktif'))
+                    ->placeholder(__('Semua')),
                 SelectFilter::make('category')
                     ->label(__('Kategori'))
                     ->options(function ($livewire): array {

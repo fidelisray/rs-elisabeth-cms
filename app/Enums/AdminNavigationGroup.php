@@ -17,6 +17,7 @@ enum AdminNavigationGroup: string implements Collapsible, HasLabel
     case ServicesRooms = 'services_rooms';
     case DoctorsLibrary = 'doctors_library';
     case PatientFeedback = 'patient_feedback';
+    case SystemOperations = 'system_operations';
     case AccessControl = 'access_control';
 
     public function getLabel(): string
@@ -26,6 +27,7 @@ enum AdminNavigationGroup: string implements Collapsible, HasLabel
             self::ServicesRooms => __('Layanan & Kamar'),
             self::DoctorsLibrary => __('Dokter & Perpustakaan'),
             self::PatientFeedback => __('Masukan Pasien'),
+            self::SystemOperations => __('Sistem & Operasional'),
             self::AccessControl => __('Kontrol Akses'),
         };
     }

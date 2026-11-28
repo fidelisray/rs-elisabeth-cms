@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\RoomFacilities\Schemas;
 
+use App\Filament\Support\WebpUploadFieldHelper;
 use App\Rules\ValidRoomNestedContent;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
@@ -156,8 +157,10 @@ class RoomFacilityForm
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                             ->required()
                             ->clearErrorOnChange()
-                            ->helperText(__('Unggah foto dengan format JPEG/JPG/PNG/WebP, ukuran maksimal 5 MB, resolusi ideal 1920x1080'))
+                            ->helperText(WebpUploadFieldHelper::helperText('1920x1080'))
                             ->columnSpanFull(),
+
+                        WebpUploadFieldHelper::statusPlaceholder(),
                     ]),
 
                 // Kelompok fasilitas menggunakan grup tetap:

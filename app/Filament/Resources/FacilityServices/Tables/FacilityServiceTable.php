@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\FacilityServices\Tables;
 
 use App\Filament\Support\AccessibleTableColumns;
+use App\Filament\Support\BilingualTableColumns;
 use App\Filament\Support\ContentTrashActions;
 use App\Support\ApiCacheInvalidator;
 use App\Support\TranslatedContentOrder;
@@ -50,6 +51,11 @@ class FacilityServiceTable
                     ->label(__('Diperbarui'))
                     ->dateTime('d M Y, H:i')
                     ->sortable(),
+
+                BilingualTableColumns::contentLanguageBadge(
+                    ['name', 'slug', 'short_description', 'description'],
+                    ['wa_link_text', 'wa_prefilled_message'],
+                ),
 
                 IconColumn::make('is_active')
                     ->label(__('Aktif'))

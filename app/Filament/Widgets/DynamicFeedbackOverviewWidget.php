@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Gate;
  */
 class DynamicFeedbackOverviewWidget extends Widget
 {
+    protected static bool $isDiscovered = false;
+
     protected string $view = 'filament.widgets.dynamic-feedback-overview-widget';
 
     protected static ?int $sort = 12;

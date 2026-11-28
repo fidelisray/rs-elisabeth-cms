@@ -20,7 +20,9 @@ class PanelTranslationParityTest extends TestCase
         'app/Http/Middleware/SetAdminPanelLocale.php',
         'app/Providers/Filament',
         'app/Livewire',
+        'app/Services/DashboardKpiService.php',
         'app/Services/DynamicForm/DynamicFormLogicEvaluator.php',
+        'app/Services/IntegrationTelemetryService.php',
         'resources/views/filament',
     ];
 

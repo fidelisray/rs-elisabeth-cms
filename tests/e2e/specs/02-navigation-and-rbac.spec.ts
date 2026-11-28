@@ -9,6 +9,7 @@ const EXPECTED_GROUPS_ID = [
     'Layanan & Kamar',
     'Dokter & Perpustakaan',
     'Masukan Pasien',
+    'Sistem & Operasional',
     'Kontrol Akses',
 ];
 
@@ -17,13 +18,14 @@ const EXPECTED_GROUPS_EN = [
     'Services & Rooms',
     'Doctors & Library',
     'Patient Feedback',
+    'System & Operations',
     'Access Control',
 ];
 
 test.describe('Navigation & RBAC — Super Admin', () => {
     test.use({ storageState: config.storageStatePaths.superAdmin });
 
-    test('sees all 5 navigation groups in default ID locale and can open every registered resource without errors', async ({ page }) => {
+    test('sees all 6 navigation groups in default ID locale and can open every registered resource without errors', async ({ page }) => {
         const errors = attachErrorTracker(page);
 
         await page.goto('/admin', { waitUntil: 'networkidle' });
@@ -121,24 +123,39 @@ test.describe('Navigation & RBAC — Marketing', () => {
         const forbiddenResp = await page.goto('/admin/users', { waitUntil: 'domcontentloaded' });
         expect(forbiddenResp?.status()).toBe(403);
 
+        const auditForbidden = await page.goto('/admin/audit-logs', { waitUntil: 'domcontentloaded' });
+        expect(auditForbidden?.status()).toBe(403);
+
+        const monitorForbidden = await page.goto('/admin/system-monitor', { waitUntil: 'domcontentloaded' });
+        expect(monitorForbidden?.status()).toBe(403);
+
         // Pastikan tidak ada HTTP 5xx (403 pada halaman terlarang memang diharapkan).
         expect(errors.serverErrors).toEqual([]);
         expect(errors.pageErrors).toEqual([]);
     });
 });
 
-test.describe('Navigation & RBAC — Staff IT (Read-Only Content)', () => {
+test.describe('Navigation & RBAC — Staff IT (Read-Only Content & System Monitor)', () => {
     test.use({ storageState: config.storageStatePaths.staffIt });
 
-    test('can view articles list read-only without Create button and receives 403 on Users', async ({ page }) => {
+    test('can view articles and System Monitor read-only without Invalidate button and receives 403 on Users & Audit Logs', async ({ page }) => {
         const errors = attachErrorTracker(page);
 
         await page.goto('/admin/articles', { waitUntil: 'networkidle' });
         await expect(page.locator('main')).toBeVisible();
         await expect(page.locator('a[href$="/admin/articles/create"]')).toHaveCount(0);
 
+        // Staff IT berizin View:SystemMonitor dapat membuka System & Integrations secara read-only.
+        const monitorResp = await page.goto('/admin/system-monitor', { waitUntil: 'networkidle' });
+        expect(monitorResp?.status()).toBe(200);
+        await expect(page.locator('[data-rse-system-monitor]')).toBeVisible();
+        await expect(page.getByRole('button', { name: /Invalidasi Cache Web|Invalidate Web Cache/i })).toHaveCount(0);
+
         const forbiddenResp = await page.goto('/admin/users', { waitUntil: 'domcontentloaded' });
         expect(forbiddenResp?.status()).toBe(403);
+
+        const auditForbidden = await page.goto('/admin/audit-logs', { waitUntil: 'domcontentloaded' });
+        expect(auditForbidden?.status()).toBe(403);
 
         expect(errors.serverErrors).toEqual([]);
         expect(errors.pageErrors).toEqual([]);

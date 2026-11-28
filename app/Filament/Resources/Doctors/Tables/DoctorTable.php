@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Doctors\Tables;
 
+use App\Filament\Support\BilingualTableColumns;
 use App\Models\Doctor;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
@@ -35,16 +36,7 @@ class DoctorTable
                     ->searchable()
                     ->sortable(),
 
-                IconColumn::make('is_profile_complete')
-                    ->label(__('Kelengkapan Profil'))
-                    ->boolean()
-                    ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-exclamation-circle')
-                    ->trueColor('success')
-                    ->falseColor('warning')
-                    ->tooltip(fn (Doctor $record): string => $record->is_profile_complete
-                        ? __('Profil 4 data marketing lengkap')
-                        : __('Belum dilengkapi (menggunakan fallback bawaan)')),
+                BilingualTableColumns::doctorBilingualProgress(),
 
                 IconColumn::make('is_active')
                     ->label(__('Tampil di Web'))

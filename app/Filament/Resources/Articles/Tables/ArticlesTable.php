@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Articles\Tables;
 
 use App\Filament\Support\AccessibleTableColumns;
+use App\Filament\Support\BilingualTableColumns;
 use App\Filament\Support\ContentTrashActions;
 use App\Support\TranslatedContentOrder;
 use Filament\Actions\BulkActionGroup;
@@ -10,7 +11,9 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ArticlesTable
 {
@@ -44,6 +47,7 @@ class ArticlesTable
                     ->label(__('Dilihat'))
                     ->numeric()
                     ->sortable(),
+                BilingualTableColumns::contentLanguageBadge(['title', 'slug', 'shorts', 'content', 'tags']),
                 IconColumn::make('is_active')
                     ->boolean()
                     ->label(__('Aktif')),
@@ -55,7 +59,15 @@ class ArticlesTable
             ])
             ->filters([
                 ContentTrashActions::trashedFilter(),
-                //
+                TernaryFilter::make('is_active')
+                    ->label(__('Status Publikasi'))
+                    ->trueLabel(__('Aktif / Tayang'))
+                    ->falseLabel(__('Draf / Nonaktif'))
+                    ->placeholder(__('Semua'))
+                    ->queries(
+                        true: fn (Builder $query): Builder => $query->where('is_active', 'yes'),
+                        false: fn (Builder $query): Builder => $query->where('is_active', '!=', 'yes'),
+                    ),
             ])
             ->recordActions([
                 EditAction::make(),

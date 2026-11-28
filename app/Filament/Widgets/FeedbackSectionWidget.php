@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Gate;
  */
 class FeedbackSectionWidget extends Widget
 {
+    protected static bool $isDiscovered = false;
+
     protected string $view = 'filament.widgets.feedback-section-widget';
 
     protected static ?int $sort = 10;

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\News\Schemas;
 
+use App\Filament\Support\WebpUploadFieldHelper;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
@@ -144,7 +145,9 @@ class NewsForm
                             ->automaticallyResizeImagesMode('cover')
                             ->maxSize(5120)
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                            ->helperText(__('Unggah gambar berita dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB')),
+                            ->helperText(WebpUploadFieldHelper::helperText('1920x1080')),
+
+                        WebpUploadFieldHelper::statusPlaceholder(),
                     ]),
 
                 Section::make(__('Publikasi'))
