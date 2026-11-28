@@ -2,13 +2,15 @@
 
 namespace App\Providers\Filament;
 
+use App\Enums\AdminNavigationGroup;
 use App\Filament\Pages\Auth\CustomProfile;
-use App\Filament\Pages\Auth\RecoveryLogin;
 use App\Filament\Widgets\DynamicFeedbackOverviewWidget;
 use App\Filament\Widgets\FeedbackSectionWidget;
 use App\Filament\Widgets\QuestionnaireSectionWidget;
 use App\Http\Controllers\Admin\DownloadDynamicFormUploadController;
+use App\Http\Controllers\Admin\SwitchPanelLocaleController;
 use App\Http\Middleware\EnforcePasswordChange;
+use App\Http\Middleware\SetAdminPanelLocale;
 use App\Support\Theme\BrandColors;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Enums\ThemeMode;
@@ -43,20 +45,19 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->profile(CustomProfile::class, isSimple: false) // Aktifkan halaman profil (ganti password) dengan CustomProfile
-            ->routes(function (): void {
-                Route::get('/recovery-login', RecoveryLogin::class)->name('auth.recovery-login');
-            })
             ->authenticatedRoutes(function (): void {
+                Route::post('/locale', SwitchPanelLocaleController::class)->name('locale.switch');
                 Route::get('/dynamic-form-uploads/{upload}/download', DownloadDynamicFormUploadController::class)
                     ->name('dynamic-forms.uploads.download');
             })
             ->renderHook(
+                PanelsRenderHook::USER_MENU_BEFORE,
+                static fn (): string => view('filament.components.locale-switcher')->render(),
+            )
+            ->renderHook(
                 PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
-                fn (): HtmlString => new HtmlString(
-                    '<div class="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">'
-                    .'<a href="'.e(route('filament.admin.auth.recovery-login')).'" class="font-medium text-primary-600 hover:underline dark:text-primary-400">'
-                    .'Gunakan kode pemulihan Super Admin'
-                    .'</a></div>'
+                static fn (): HtmlString => new HtmlString(
+                    '<p class="rse-login-help-note">Need help signing in? Contact your IT Administrator.</p>'
                 ),
             )
             ->renderHook(
@@ -92,25 +93,27 @@ class AdminPanelProvider extends PanelProvider
                 QuestionnaireSectionWidget::class,
                 DynamicFeedbackOverviewWidget::class,
             ])
-            ->navigationGroups([
-                NavigationGroup::make('Marketing & Editorial')->collapsible(),
-                NavigationGroup::make('Services & Rooms')->collapsible(),
-                NavigationGroup::make('Doctors & Library')->collapsible(),
-                NavigationGroup::make('Patient Feedback')->collapsible(),
-                NavigationGroup::make('Access Control')->collapsible(),
-            ])
+            ->navigationGroups(
+                collect(AdminNavigationGroup::cases())
+                    ->mapWithKeys(static fn (AdminNavigationGroup $group): array => [
+                        $group->name => NavigationGroup::make()
+                            ->label(static fn (): string => $group->getLabel())
+                            ->collapsible(),
+                    ])
+                    ->all()
+            )
             ->plugins([
                 FilamentShieldPlugin::make()
-                    ->navigationGroup('Access Control')
-                    ->navigationLabel('Roles')
-                    ->modelLabel('Role')
-                    ->pluralModelLabel('Roles')
+                    ->navigationGroup(AdminNavigationGroup::AccessControl)
+                    ->navigationLabel(static fn (): string => __('Peran'))
+                    ->modelLabel(static fn (): string => __('model.role'))
+                    ->pluralModelLabel(static fn (): string => __('Peran'))
                     ->navigationSort(2),
                 SpatieTranslatablePlugin::make()
                     ->defaultLocales(config('app.supported_locales', ['id', 'en']))
-                    ->getLocaleLabelUsing(fn (string $locale): string => match ($locale) {
-                        'id' => 'Bahasa Indonesia (ID)',
-                        'en' => 'English (EN)',
+                    ->getLocaleLabelUsing(static fn (string $locale): string => match ($locale) {
+                        'id' => __('Bahasa Indonesia (ID)'),
+                        'en' => __('Bahasa Inggris (EN)'),
                         default => strtoupper($locale),
                     }),
             ])
@@ -119,11 +122,15 @@ class AdminPanelProvider extends PanelProvider
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
                 AuthenticateSession::class,
+                SetAdminPanelLocale::class,
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+            ])
+            ->persistentMiddleware([
+                SetAdminPanelLocale::class,
             ])
             ->authMiddleware([
                 Authenticate::class,

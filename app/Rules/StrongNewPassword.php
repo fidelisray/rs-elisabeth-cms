@@ -30,19 +30,19 @@ class StrongNewPassword implements ValidationRule
         $value = (string) $value;
 
         if (mb_strlen($value) < self::MIN_LENGTH) {
-            $fail('Password baru minimal '.self::MIN_LENGTH.' karakter.');
+            $fail(__('Password baru minimal :min karakter.', ['min' => self::MIN_LENGTH]));
 
             return;
         }
 
         if (in_array(strtolower($value), array_map('strtolower', self::FORBIDDEN), true)) {
-            $fail('Password ini adalah password default dan tidak boleh dipakai. Pilih password lain.');
+            $fail(__('Password ini adalah password default dan tidak boleh dipakai. Pilih password lain.'));
 
             return;
         }
 
         if ($this->currentPasswordHash !== null && Hash::check($value, $this->currentPasswordHash)) {
-            $fail('Password baru tidak boleh sama dengan password saat ini.');
+            $fail(__('Password baru tidak boleh sama dengan password saat ini.'));
         }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Doctors;
 
+use App\Enums\AdminNavigationGroup;
 use App\Filament\Resources\Doctors\Pages\EditDoctor;
 use App\Filament\Resources\Doctors\Pages\ListDoctors;
 use App\Filament\Resources\Doctors\Schemas\DoctorForm;
@@ -25,15 +26,24 @@ class DoctorResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
-    protected static ?string $navigationLabel = 'Doctor Profiles';
-
-    protected static ?string $modelLabel = 'Doctor Profile';
-
-    protected static ?string $pluralModelLabel = 'Doctor Profiles';
-
-    protected static string|\UnitEnum|null $navigationGroup = 'Doctors & Library';
+    protected static string|\UnitEnum|null $navigationGroup = AdminNavigationGroup::DoctorsLibrary;
 
     protected static ?int $navigationSort = 1;
+
+    public static function getNavigationLabel(): string
+    {
+        return __('Profil Dokter');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('model.doctor');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Profil Dokter');
+    }
 
     /**
      * Menonaktifkan aksi create manual karena seluruh data dokter

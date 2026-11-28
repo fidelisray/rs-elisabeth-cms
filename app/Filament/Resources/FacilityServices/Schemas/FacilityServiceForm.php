@@ -23,13 +23,13 @@ class FacilityServiceForm
     {
         return $schema
             ->components([
-                Section::make('Konten Fasilitas - Bahasa Indonesia (ID)')
-                    ->description('Lengkapi informasi fasilitas dan layanan dalam Bahasa Indonesia.')
+                Section::make(__('Konten Fasilitas - Bahasa Indonesia (ID)'))
+                    ->description(__('Lengkapi informasi fasilitas dan layanan dalam Bahasa Indonesia.'))
                     ->columnSpanFull()
                     ->columns(2)
                     ->schema([
                         TextInput::make('name.id')
-                            ->label('Nama Fasilitas (Indonesia)')
+                            ->label(__('Nama Fasilitas (Indonesia)'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
@@ -41,48 +41,48 @@ class FacilityServiceForm
                             }),
 
                         TextInput::make('slug.id')
-                            ->label('Identifier / Slug (Indonesia)')
-                            ->placeholder('Klik pada form, teks akan terisi otomatis')
+                            ->label(__('Identifier / Slug (Indonesia)'))
+                            ->placeholder(__('Klik pada form dan teks akan terisi otomatis'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
                             ->unique(column: 'slug->id', ignoreRecord: true)
-                            ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
-                            ->helperText('Dapat diedit jika diperlukan'),
+                            ->validationMessages(['unique' => __('Identifier (Slug) sudah digunakan. Pilih identifier lain.')])
+                            ->helperText(__('Dapat diedit jika diperlukan')),
 
                         Textarea::make('short_description.id')
                             ->maxLength(255)
-                            ->label('Deskripsi Singkat Fasilitas (Indonesia)')
+                            ->label(__('Deskripsi Singkat Fasilitas (Indonesia)'))
                             ->required()
                             ->clearErrorOnInput()
                             ->columnSpanFull()
-                            ->helperText('Penjelasan fasilitas secara singkat dan padat'),
+                            ->helperText(__('Penjelasan fasilitas secara singkat dan padat')),
 
                         RichEditor::make('description.id')
-                            ->label('Deskripsi Lengkap Fasilitas (Indonesia)')
+                            ->label(__('Deskripsi Lengkap Fasilitas (Indonesia)'))
                             ->required()
                             ->clearErrorOnInput()
                             ->columnSpanFull()
-                            ->helperText('Deskripsi lengkap yang menjelaskan fasilitas secara detil'),
+                            ->helperText(__('Deskripsi lengkap yang menjelaskan fasilitas secara detil')),
 
                         TextInput::make('wa_link_text.id')
-                            ->label('Label Tombol WhatsApp (Indonesia - Opsional)')
-                            ->placeholder('misal: Konsultasi Gizi')
+                            ->label(__('Label Tombol WhatsApp (Indonesia - Opsional)'))
+                            ->placeholder(__('misal: Konsultasi Gizi'))
                             ->maxLength(255),
 
                         TextInput::make('wa_prefilled_message.id')
-                            ->label('Pesan Otomatis WhatsApp (Indonesia - Opsional)')
-                            ->placeholder('misal: Halo, saya ingin mendaftar Konsultasi Gizi')
+                            ->label(__('Pesan Otomatis WhatsApp (Indonesia - Opsional)'))
+                            ->placeholder(__('misal: Halo, saya ingin mendaftar Konsultasi Gizi'))
                             ->maxLength(255),
                     ]),
 
-                Section::make('Konten Fasilitas - Bahasa Inggris (EN)')
-                    ->description('Lengkapi informasi fasilitas dan layanan dalam Bahasa Inggris.')
+                Section::make(__('Konten Fasilitas - Bahasa Inggris (EN)'))
+                    ->description(__('Lengkapi informasi fasilitas dan layanan dalam Bahasa Inggris.'))
                     ->columnSpanFull()
                     ->columns(2)
                     ->schema([
                         TextInput::make('name.en')
-                            ->label('Nama Fasilitas (English)')
+                            ->label(__('Nama Fasilitas (English)'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
@@ -94,63 +94,63 @@ class FacilityServiceForm
                             }),
 
                         TextInput::make('slug.en')
-                            ->label('Identifier / Slug (English)')
-                            ->placeholder('Klik pada form, teks akan terisi otomatis')
+                            ->label(__('Identifier / Slug (English)'))
+                            ->placeholder(__('Klik pada form dan teks akan terisi otomatis'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
                             ->unique(column: 'slug->en', ignoreRecord: true)
-                            ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
-                            ->helperText('Dapat diedit jika diperlukan'),
+                            ->validationMessages(['unique' => __('Identifier (Slug) sudah digunakan. Pilih identifier lain.')])
+                            ->helperText(__('Dapat diedit jika diperlukan')),
 
                         Textarea::make('short_description.en')
                             ->maxLength(255)
-                            ->label('Deskripsi Singkat Fasilitas (English)')
+                            ->label(__('Deskripsi Singkat Fasilitas (English)'))
                             ->required()
                             ->clearErrorOnInput()
                             ->columnSpanFull()
-                            ->helperText('Concise summary of the facility or service'),
+                            ->helperText(__('Penjelasan fasilitas secara singkat dan padat')),
 
                         RichEditor::make('description.en')
-                            ->label('Deskripsi Lengkap Fasilitas (English)')
+                            ->label(__('Deskripsi Lengkap Fasilitas (English)'))
                             ->required()
                             ->clearErrorOnInput()
                             ->columnSpanFull()
-                            ->helperText('Detailed description of the facility or service'),
+                            ->helperText(__('Deskripsi lengkap yang menjelaskan fasilitas secara detil')),
 
                         TextInput::make('wa_link_text.en')
-                            ->label('Label Tombol WhatsApp (English - Opsional)')
-                            ->placeholder('e.g. Nutrition Consultation')
+                            ->label(__('Label Tombol WhatsApp (English - Opsional)'))
+                            ->placeholder(__('Contoh: Nutrition Consultation'))
                             ->maxLength(255),
 
                         TextInput::make('wa_prefilled_message.en')
-                            ->label('Pesan Otomatis WhatsApp (English - Opsional)')
-                            ->placeholder('e.g. Hello, I would like to book a Nutrition Consultation')
+                            ->label(__('Pesan Otomatis WhatsApp (English - Opsional)'))
+                            ->placeholder(__('Contoh: Hello, I would like to book a Nutrition Consultation'))
                             ->maxLength(255),
                     ]),
 
-                Section::make('Atribut Umum & Call to Action (CTA)')
+                Section::make(__('Atribut Umum & Call to Action (CTA)'))
                     ->columnSpanFull()
                     ->columns(2)
                     ->schema([
                         Select::make('category')
-                            ->label('Kategori Layanan')
-                            ->options([
-                                'Layanan Medis' => 'Layanan Medis',
-                                'Layanan Penunjang' => 'Layanan Penunjang',
-                                'Layanan 24 Jam' => 'Layanan 24 Jam',
-                                'Layanan Spesialis' => 'Layanan Spesialis',
-                                'Layanan Intensif' => 'Layanan Intensif',
-                                'Diagnostik' => 'Diagnostik',
-                                'Unggulan' => 'Unggulan',
+                            ->label(__('Kategori Layanan'))
+                            ->options(fn (): array => [
+                                'Layanan Medis' => __('Layanan Medis'),
+                                'Layanan Penunjang' => __('Layanan Penunjang'),
+                                'Layanan 24 Jam' => __('Layanan 24 Jam'),
+                                'Layanan Spesialis' => __('Layanan Spesialis'),
+                                'Layanan Intensif' => __('Layanan Intensif'),
+                                'Diagnostik' => __('Diagnostik'),
+                                'Unggulan' => __('Unggulan'),
                             ])
                             ->required()
                             ->clearErrorOnChange(),
 
                         TextInput::make('wa_number')
-                            ->label('Nomor WhatsApp')
+                            ->label(__('Nomor WhatsApp'))
                             ->prefix('https://wa.me/')
-                            ->placeholder('misal: 6285600600870')
+                            ->placeholder(__('misal: 6285600600870'))
                             ->maxLength(15)
                             ->live(onBlur: true)
                             ->afterStateUpdated(function (Set $set, ?string $state) {
@@ -165,21 +165,21 @@ class FacilityServiceForm
 
                         TagsInput::make('highlights')
                             ->columnSpanFull()
-                            ->label('Point Unggulan')
-                            ->helperText('Masukkan poin-poin unggulan (tekan Enter/Koma untuk menambah). Akan muncul sebagai badge centang.'),
+                            ->label(__('Poin Unggulan'))
+                            ->helperText(__('Masukkan poin-poin unggulan (tekan Enter/Koma untuk menambah). Akan muncul sebagai badge centang.')),
 
                         Toggle::make('has_appointment_cta')
-                            ->label('Tampilkan Tombol "Buat Janji"?')
+                            ->label(__('Tampilkan Tombol "Buat Janji"?'))
                             ->default(false)
-                            ->helperText('Akan mengarah ke portal registrasi online.')
+                            ->helperText(__('Akan mengarah ke portal registrasi online.'))
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Gambar Fasilitas')
+                Section::make(__('Gambar Fasilitas'))
                     ->columnSpanFull()
                     ->schema([
                         FileUpload::make('image_path')
-                            ->label('Gambar')
+                            ->label(__('Gambar'))
                             ->disk(config('filesystems.media_disk'))
                             ->directory('facility_services')
                             ->image()
@@ -192,29 +192,29 @@ class FacilityServiceForm
                             ->automaticallyResizeImagesMode('cover')
                             ->maxSize(5120)
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                            ->helperText('Upload gambar dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB')
+                            ->helperText(__('Unggah gambar dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB'))
                             ->required()
                             ->clearErrorOnChange()
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Publish')
+                Section::make(__('Publikasi'))
                     ->columnSpanFull()
-                    ->description('Atur apakah fasilitas ini akan ditampilkan pada halaman website')
+                    ->description(__('Atur apakah fasilitas ini akan ditampilkan pada halaman website'))
                     ->columns(2)
                     ->schema([
                         Placeholder::make('trash_notice')
-                            ->label('Penghapusan')
-                            ->content('Konten yang dihapus tidak tampil di website. Hanya Super Admin yang dapat memulihkannya.')
+                            ->label(__('Penghapusan'))
+                            ->content(__('Konten yang dihapus tidak tampil di website. Hanya Super Admin yang dapat memulihkannya.'))
                             ->columnSpanFull(),
 
                         Hidden::make('sort_order')
                             ->default(0),
 
                         Toggle::make('is_active')
-                            ->label('Aktif dan Tampilkan di halaman website')
+                            ->label(__('Aktif dan Tampilkan di halaman website'))
                             ->default(false)
-                            ->helperText('Non-aktifkan untuk menyembunyikan fasilitas ini dari halaman website tanpa menghapus datanya')
+                            ->helperText(__('Non-aktifkan untuk menyembunyikan fasilitas ini dari halaman website tanpa menghapus datanya'))
                             ->columnSpanFull(),
                     ]),
             ]);

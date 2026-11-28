@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use Illuminate\Container\Container;
+
 enum DynamicFormFieldType: string
 {
     case ShortText = 'short_text';
@@ -20,19 +22,24 @@ enum DynamicFormFieldType: string
     public function label(): string
     {
         return match ($this) {
-            self::ShortText => 'Teks Singkat',
-            self::LongText => 'Teks Panjang (Paragraf)',
-            self::Radio => 'Pilihan Tunggal (Radio)',
-            self::Checkbox => 'Kotak Centang (Checkbox)',
-            self::Dropdown => 'Daftar Pilihan (Dropdown)',
-            self::LinearScale => 'Skala Linier',
-            self::Rating => 'Penilaian (Rating)',
-            self::MatrixGrid => 'Kisi Pilihan (Matrix / Grid)',
-            self::Date => 'Tanggal',
-            self::Time => 'Jam / Waktu',
-            self::FileUpload => 'Unggah Berkas',
-            self::InfoBlock => 'Blok Informasi (Non-Input)',
+            self::ShortText => self::t('Teks Singkat'),
+            self::LongText => self::t('Teks Panjang (Paragraf)'),
+            self::Radio => self::t('Pilihan Tunggal (Radio)'),
+            self::Checkbox => self::t('Kotak Centang (Checkbox)'),
+            self::Dropdown => self::t('Daftar Pilihan (Dropdown)'),
+            self::LinearScale => self::t('Skala Linier'),
+            self::Rating => self::t('Penilaian (Rating)'),
+            self::MatrixGrid => self::t('Kisi Pilihan (Matrix / Grid)'),
+            self::Date => self::t('Tanggal'),
+            self::Time => self::t('Jam / Waktu'),
+            self::FileUpload => self::t('Unggah Berkas'),
+            self::InfoBlock => self::t('Blok Informasi (Non-Input)'),
         };
+    }
+
+    private static function t(string $key): string
+    {
+        return Container::getInstance()->bound('translator') ? __($key) : $key;
     }
 
     public function isInput(): bool

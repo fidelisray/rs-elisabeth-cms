@@ -22,15 +22,15 @@ class PromotionForm
     {
         return $schema
             ->components([
-                Section::make('Informasi Promosi - Bahasa Indonesia (ID)')
-                    ->description('Lengkapi nama, ringkasan, dan deskripsi promosi dalam Bahasa Indonesia.')
+                Section::make(__('Informasi Promosi - Bahasa Indonesia (ID)'))
+                    ->description(__('Lengkapi nama, ringkasan, dan deskripsi promosi dalam Bahasa Indonesia.'))
                     ->columnSpanFull()
                     ->columns(2)
                     ->schema([
 
                         TextInput::make('title.id')
-                            ->label('Nama Promosi (Indonesia)')
-                            ->placeholder('Promo Terbaru, Promo Perawatan..')
+                            ->label(__('Nama Promosi (Indonesia)'))
+                            ->placeholder(__('Promo Terbaru, Promo Perawatan..'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
@@ -42,39 +42,39 @@ class PromotionForm
                             }),
 
                         TextInput::make('slug.id')
-                            ->label('Identifier / Slug (Indonesia)')
-                            ->placeholder('Klik pada form dan teks akan terisi otomatis')
+                            ->label(__('Identifier / Slug (Indonesia)'))
+                            ->placeholder(__('Klik pada form dan teks akan terisi otomatis'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(100)
                             ->unique(column: 'slug->id', ignoreRecord: true)
-                            ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
-                            ->helperText('Dapat diedit jika diperlukan'),
+                            ->validationMessages(['unique' => __('Identifier (Slug) sudah digunakan. Pilih identifier lain.')])
+                            ->helperText(__('Dapat diedit jika diperlukan')),
 
                         Textarea::make('shorts.id')
-                            ->label('Deskripsi Singkat (Indonesia)')
-                            ->placeholder('Deskripsi singkat mengenai promosi')
+                            ->label(__('Deskripsi Singkat (Indonesia)'))
+                            ->placeholder(__('Deskripsi singkat mengenai promosi'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
                             ->columnSpanFull(),
 
                         RichEditor::make('description.id')
-                            ->label('Deskripsi (Indonesia)')
+                            ->label(__('Deskripsi (Indonesia)'))
                             ->required()
                             ->clearErrorOnInput()
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Informasi Promosi - Bahasa Inggris (EN)')
-                    ->description('Lengkapi nama, ringkasan, dan deskripsi promosi dalam Bahasa Inggris.')
+                Section::make(__('Informasi Promosi - Bahasa Inggris (EN)'))
+                    ->description(__('Lengkapi nama, ringkasan, dan deskripsi promosi dalam Bahasa Inggris.'))
                     ->columnSpanFull()
                     ->columns(2)
                     ->schema([
 
                         TextInput::make('title.en')
-                            ->label('Nama Promosi (English)')
-                            ->placeholder('Latest Promo, Care Package Promo..')
+                            ->label(__('Nama Promosi (English)'))
+                            ->placeholder(__('Contoh: Latest Promo, Care Package Promo..'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
@@ -86,60 +86,60 @@ class PromotionForm
                             }),
 
                         TextInput::make('slug.en')
-                            ->label('Identifier / Slug (English)')
-                            ->placeholder('Klik pada form dan teks akan terisi otomatis')
+                            ->label(__('Identifier / Slug (English)'))
+                            ->placeholder(__('Klik pada form dan teks akan terisi otomatis'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(100)
                             ->unique(column: 'slug->en', ignoreRecord: true)
-                            ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
-                            ->helperText('Dapat diedit jika diperlukan'),
+                            ->validationMessages(['unique' => __('Identifier (Slug) sudah digunakan. Pilih identifier lain.')])
+                            ->helperText(__('Dapat diedit jika diperlukan')),
 
                         Textarea::make('shorts.en')
-                            ->label('Deskripsi Singkat (English)')
-                            ->placeholder('Short summary about the promotion')
+                            ->label(__('Deskripsi Singkat (English)'))
+                            ->placeholder(__('Deskripsi singkat mengenai promosi'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
                             ->columnSpanFull(),
 
                         RichEditor::make('description.en')
-                            ->label('Deskripsi (English)')
+                            ->label(__('Deskripsi (English)'))
                             ->required()
                             ->clearErrorOnInput()
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Periode & Poster Promosi')
+                Section::make(__('Periode & Poster Promosi'))
                     ->columnSpanFull()
                     ->columns(2)
                     ->schema([
                         DatePicker::make('start_date')
-                            ->label('Tanggal Promo Dimulai')
-                            ->helperText('Boleh dikosongkan: promo langsung berlaku sejak diaktifkan.'),
+                            ->label(__('Tanggal Promo Dimulai'))
+                            ->helperText(__('Boleh dikosongkan: promo langsung berlaku sejak diaktifkan.')),
 
                         DatePicker::make('end_date')
-                            ->label('Tanggal Promo Berakhir')
+                            ->label(__('Tanggal Promo Berakhir'))
                             ->afterOrEqual('start_date')
                             ->live()
-                            ->helperText('Boleh dikosongkan. Promo berakhir pada tanggal ini (hari terakhir masih tampil).'),
+                            ->helperText(__('Boleh dikosongkan. Promo berakhir pada tanggal ini (hari terakhir masih tampil).')),
 
                         Placeholder::make('end_date_warning')
                             ->hiddenLabel()
-                            ->content('Tanggal berakhir kosong: promo ini akan tampil terus di website sampai Anda menonaktifkannya secara manual dengan toggle "Aktif".')
+                            ->content(__('Tanggal berakhir kosong: promo ini akan tampil terus di website sampai Anda menonaktifkannya secara manual dengan toggle "Aktif".'))
                             ->visible(fn (Get $get): bool => blank($get('end_date')))
                             ->columnSpanFull(),
 
                         Checkbox::make('confirm_no_end_date')
-                            ->label('Saya memahami promo ini akan tampil terus sampai saya menonaktifkannya secara manual lewat toggle Aktif.')
+                            ->label(__('Saya memahami promo ini akan tampil terus sampai saya menonaktifkannya secara manual lewat toggle Aktif.'))
                             ->visible(fn (Get $get): bool => blank($get('end_date')))
                             ->accepted(fn (Get $get): bool => blank($get('end_date')))
-                            ->validationMessages(['accepted' => 'Centang konfirmasi ini bila tanggal berakhir dikosongkan.'])
+                            ->validationMessages(['accepted' => __('Centang konfirmasi ini bila tanggal berakhir dikosongkan.')])
                             ->dehydrated(false)
                             ->columnSpanFull(),
 
                         FileUpload::make('image_path')
-                            ->label('Poster')
+                            ->label(__('Poster'))
                             ->required()
                             ->clearErrorOnChange()
                             ->disk(config('filesystems.media_disk'))
@@ -152,23 +152,23 @@ class PromotionForm
                             ->automaticallyResizeImagesMode('cover')
                             ->maxSize(5120)
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                            ->helperText('Upload poster promosi dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB')
+                            ->helperText(__('Unggah poster promosi dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB'))
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Publish')
+                Section::make(__('Publikasi'))
                     ->columnSpanFull()
-                    ->description('Atur apakah promotion ini akan ditampilkan pada halaman website')
+                    ->description(__('Atur apakah promosi ini akan ditampilkan pada halaman website'))
                     ->schema([
                         Placeholder::make('trash_notice')
-                            ->label('Penghapusan')
-                            ->content('Konten yang dihapus tidak tampil di website. Hanya Super Admin yang dapat memulihkannya.')
+                            ->label(__('Penghapusan'))
+                            ->content(__('Konten yang dihapus tidak tampil di website. Hanya Super Admin yang dapat memulihkannya.'))
                             ->columnSpanFull(),
 
                         Toggle::make('is_active')
-                            ->label('Aktif dan Tampilkan di halaman website')
+                            ->label(__('Aktif dan Tampilkan di halaman website'))
                             ->default(false)
-                            ->helperText('Non-aktifkan untuk menyembunyikan promotion ini dari halaman website tanpa menghapus datanya')
+                            ->helperText(__('Non-aktifkan untuk menyembunyikan promosi ini dari halaman website tanpa menghapus datanya'))
                             ->columnSpanFull(),
                     ]),
             ]);

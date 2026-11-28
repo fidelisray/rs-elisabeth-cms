@@ -11,9 +11,9 @@ enum DynamicFormStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Draft => 'Draf',
-            self::Published => 'Dipublikasikan',
-            self::Closed => 'Ditutup',
+            self::Draft => __('Draf'),
+            self::Published => __('Dipublikasikan'),
+            self::Closed => __('Ditutup'),
         };
     }
 

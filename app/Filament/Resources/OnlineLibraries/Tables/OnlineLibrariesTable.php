@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\OnlineLibraries\Tables;
 
+use App\Filament\Support\AccessibleTableColumns;
 use App\Filament\Support\ContentTrashActions;
 use App\Models\OnlineLibrary;
 use App\Support\TranslatedContentOrder;
@@ -25,25 +26,24 @@ class OnlineLibrariesTable
         return $table
             ->columns([
                 TextColumn::make('title')
-                    ->label('Judul Dokumen')
-                    ->description(fn (OnlineLibrary $record): ?string => filled($record->getTranslation('title', 'en', false))
-                        ? 'EN: '.$record->getTranslation('title', 'en', false)
-                        : null)
+                    ->label(__('Judul Dokumen'))
+                    ->getStateUsing(fn (OnlineLibrary $record): string => AccessibleTableColumns::indonesianPrimary($record, 'title'))
+                    ->description(fn (OnlineLibrary $record): ?string => AccessibleTableColumns::englishSubtitle($record, 'title'))
                     ->sortable(query: TranslatedContentOrder::column('title'))
                     ->searchable(),
 
                 TextColumn::make('category')
-                    ->label('Kategori')
+                    ->label(__('Kategori'))
                     ->badge()
                     ->searchable(),
 
                 TextColumn::make('file_name')
-                    ->label('Nama File')
+                    ->label(__('Nama File'))
                     ->searchable()
                     ->placeholder('-'),
 
                 TextColumn::make('file_size')
-                    ->label('Ukuran File')
+                    ->label(__('Ukuran File'))
                     ->formatStateUsing(function (?int $state): string {
                         if (! $state) {
                             return '-';
@@ -57,23 +57,23 @@ class OnlineLibrariesTable
                     ->sortable(),
 
                 IconColumn::make('is_published')
-                    ->label('Publish')
+                    ->label(__('Publikasi'))
                     ->boolean(),
 
                 TextColumn::make('created_at')
-                    ->label('Dibuat Pada')
+                    ->label(__('Dibuat Pada'))
                     ->dateTime('d M Y, H:i')
                     ->sortable(),
 
                 TextColumn::make('slug')
-                    ->label('Identifier')
+                    ->label(__('Identifier'))
                     ->sortable(query: TranslatedContentOrder::column('slug'))
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 ContentTrashActions::trashedFilter(),
                 SelectFilter::make('category')
-                    ->label('Kategori')
+                    ->label(__('Kategori'))
                     ->options(function ($livewire): array {
                         $locale = self::locale($livewire);
 
@@ -93,7 +93,7 @@ class OnlineLibrariesTable
             ])
             ->recordActions([
                 Action::make('preview_pdf')
-                    ->label('Buka PDF')
+                    ->label(__('Buka PDF'))
                     ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
                     ->color('info')
                     ->url(function (OnlineLibrary $record): ?string {
@@ -107,13 +107,13 @@ class OnlineLibrariesTable
                     ->visible(fn (OnlineLibrary $record): bool => ! empty($record->file_path)),
 
                 Action::make('download_pdf')
-                    ->label('Unduh')
+                    ->label(__('Unduh'))
                     ->icon(Heroicon::OutlinedArrowDownTray)
                     ->color('success')
                     ->action(function (OnlineLibrary $record) {
                         if (! $record->file_path) {
                             Notification::make()
-                                ->title('File tidak ditemukan')
+                                ->title(__('File tidak ditemukan'))
                                 ->danger()
                                 ->send();
 

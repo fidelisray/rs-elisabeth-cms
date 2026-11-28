@@ -19,17 +19,17 @@ class DynamicFormSubmissionsTable
         return $table
             ->columns([
                 TextColumn::make('id')
-                    ->label('ID')
+                    ->label(__('ID'))
                     ->sortable()
                     ->searchable(),
 
                 TextColumn::make('form.title')
-                    ->label('Formulir')
+                    ->label(__('Formulir'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('form.mode')
-                    ->label('Mode')
+                    ->label(__('Mode'))
                     ->badge()
                     ->formatStateUsing(fn (DynamicFormMode|string|null $state): string => $state instanceof DynamicFormMode
                         ? $state->label()
@@ -39,32 +39,32 @@ class DynamicFormSubmissionsTable
                         : 'info'),
 
                 TextColumn::make('version.version_number')
-                    ->label('Versi')
+                    ->label(__('Versi'))
                     ->formatStateUsing(fn ($state): string => $state ? 'v'.$state : '-')
                     ->badge()
                     ->color('gray'),
 
                 TextColumn::make('locale')
-                    ->label('Bahasa')
+                    ->label(__('Bahasa'))
                     ->formatStateUsing(fn (?string $state): string => strtoupper((string) $state))
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('submitted_at')
-                    ->label('Dikirim Pada')
+                    ->label(__('Dikirim Pada'))
                     ->dateTime('d M Y H:i')
                     ->sortable(),
             ])
             ->defaultSort('submitted_at', 'desc')
             ->filters([
                 SelectFilter::make('dynamic_form_id')
-                    ->label('Formulir')
+                    ->label(__('Formulir'))
                     ->relationship('form', 'title')
                     ->searchable()
                     ->preload(),
 
                 SelectFilter::make('mode')
-                    ->label('Mode Formulir')
-                    ->options(DynamicFormMode::options())
+                    ->label(__('Mode Formulir'))
+                    ->options(fn (): array => DynamicFormMode::options())
                     ->query(function (Builder $query, array $data): Builder {
                         $value = $data['value'] ?? null;
                         if (blank($value)) {
@@ -75,21 +75,21 @@ class DynamicFormSubmissionsTable
                     }),
 
                 SelectFilter::make('dynamic_form_version_id')
-                    ->label('Versi Formulir')
+                    ->label(__('Versi Formulir'))
                     ->options(fn (): array => DynamicFormVersion::query()
                         ->with('form:id,title')
                         ->orderByDesc('id')
                         ->limit(100)
                         ->get()
                         ->mapWithKeys(fn (DynamicFormVersion $v): array => [
-                            $v->id => ($v->form?->title ?? 'Form #'.$v->dynamic_form_id).' (v'.$v->version_number.')',
+                            $v->id => ($v->form?->title ?? __('Formulir #:id', ['id' => $v->dynamic_form_id])).' (v'.$v->version_number.')',
                         ])->all()),
 
                 Filter::make('submitted_at')
-                    ->label('Rentang Tanggal Kirim')
+                    ->label(__('Rentang Tanggal Kirim'))
                     ->schema([
-                        DatePicker::make('from')->label('Dari Tanggal'),
-                        DatePicker::make('until')->label('Sampai Tanggal'),
+                        DatePicker::make('from')->label(__('Dari Tanggal')),
+                        DatePicker::make('until')->label(__('Sampai Tanggal')),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query

@@ -10,8 +10,8 @@
             </svg>
         </span>
         <div>
-            <p class="rse-pw-match-title">Password cocok</p>
-            <p class="rse-pw-match-desc">Konfirmasi password sudah sesuai dengan password baru yang Anda masukkan.</p>
+            <p class="rse-pw-match-title">{{ __('Password cocok') }}</p>
+            <p class="rse-pw-match-desc">{{ __('Konfirmasi password sudah sesuai dengan password baru yang Anda masukkan.') }}</p>
         </div>
     </div>
 
@@ -26,8 +26,8 @@
             </svg>
         </span>
         <div>
-            <p class="rse-pw-match-title">Password belum cocok</p>
-            <p class="rse-pw-match-desc">Ketikan ulang belum sama dengan password baru di atas. Periksa kembali karakter yang dimasukkan.</p>
+            <p class="rse-pw-match-title">{{ __('Password belum cocok') }}</p>
+            <p class="rse-pw-match-desc">{{ __('Ketikan ulang belum sama dengan password baru di atas. Periksa kembali karakter yang dimasukkan.') }}</p>
         </div>
     </div>
 </div>

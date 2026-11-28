@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\RoomFacilities\Tables;
 
+use App\Filament\Support\AccessibleTableColumns;
 use App\Filament\Support\ContentTrashActions;
 use App\Support\ApiCacheInvalidator;
 use App\Support\TranslatedContentOrder;
@@ -9,7 +10,6 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
@@ -20,45 +20,37 @@ class RoomFacilitiesTable
     {
         return $table
             ->columns([
-
-                // Preview foto ruangan (thumbnail kecil)
-                ImageColumn::make('image_path')
-                    ->label('Preview')
-                    ->disk(config('filesystems.media_disk'))
-                    ->width(80)
-                    ->height(45) // 16:9 thumbnail ratio
+                AccessibleTableColumns::thumbnail('image_path', 80, 45, 'name')
                     ->defaultImageUrl(asset('images/logo.png')),
 
-                // Nama ruangan
                 TextColumn::make('name')
-                    ->label('Nama Ruangan')
-                    ->description(fn ($record): ?string => filled($record->getTranslation('name', 'en', false))
-                        ? 'EN: '.$record->getTranslation('name', 'en', false)
-                        : null)
+                    ->label(__('Nama Ruangan'))
+                    ->getStateUsing(fn ($record): string => AccessibleTableColumns::indonesianPrimary($record, 'name'))
+                    ->description(fn ($record): ?string => AccessibleTableColumns::englishSubtitle($record, 'name'))
                     ->searchable()
                     ->sortable(query: TranslatedContentOrder::column('name'))
                     ->weight('bold'),
 
                 TextColumn::make('slug')
-                    ->label('Identifier')
+                    ->label(__('Identifier'))
                     ->sortable(query: TranslatedContentOrder::column('slug'))
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('room_size')
-                    ->label('Luas')
+                    ->label(__('Luas'))
                     ->searchable(),
 
                 TextColumn::make('bed_count')
-                    ->label('Bed')
+                    ->label(__('Tempat Tidur'))
                     ->searchable(),
 
                 TextColumn::make('created_at')
-                    ->label('Dibuat Pada')
+                    ->label(__('Dibuat Pada'))
                     ->dateTime('d M Y, H:i')
                     ->sortable(),
 
                 IconColumn::make('is_active')
-                    ->label('Aktif')
+                    ->label(__('Aktif'))
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle')
@@ -67,7 +59,7 @@ class RoomFacilitiesTable
                     ->alignCenter(),
 
                 TextColumn::make('updated_at')
-                    ->label('Diperbarui')
+                    ->label(__('Diperbarui'))
                     ->dateTime('d M Y, H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -80,10 +72,10 @@ class RoomFacilitiesTable
             ->filters([
                 ContentTrashActions::trashedFilter(),
                 TernaryFilter::make('is_active')
-                    ->label('Status Aktif')
-                    ->trueLabel('Aktif saja')
-                    ->falseLabel('Non-aktif saja')
-                    ->placeholder('Semua'),
+                    ->label(__('Status Aktif'))
+                    ->trueLabel(__('Aktif saja'))
+                    ->falseLabel(__('Non-aktif saja'))
+                    ->placeholder(__('Semua')),
             ])
 
             ->recordActions([

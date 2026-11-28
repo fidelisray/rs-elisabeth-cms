@@ -112,4 +112,58 @@
         color: var(--rse-slate-text-secondary);
         white-space: nowrap;
     }
+
+    /* Segmented Pill Language Switcher (ID | EN) */
+    .rse-locale-switcher {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.125rem;
+        padding: 0.1875rem;
+        border-radius: 9999px;
+        background-color: var(--rse-slate-muted);
+        border: 1px solid var(--rse-slate-border);
+        flex-shrink: 0;
+    }
+
+    .rse-locale-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.125rem;
+        height: 1.625rem;
+        padding: 0 0.5rem;
+        border: 0;
+        border-radius: 9999px;
+        background: transparent;
+        color: var(--rse-slate-text-secondary);
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        line-height: 1;
+        cursor: pointer;
+        transition: background-color 150ms ease, color 150ms ease;
+    }
+
+    .rse-locale-btn:hover:not(.is-active) {
+        background-color: var(--rse-brand-soft-bg);
+        color: var(--rse-slate-text);
+    }
+
+    .rse-locale-btn:focus-visible {
+        outline: 2px solid var(--rse-brand-focus);
+        outline-offset: 2px;
+    }
+
+    .rse-locale-btn.is-active {
+        background-color: var(--rse-brand-accent);
+        color: var(--rse-brand-accent-text);
+    }
+
+    .rse-login-help-note {
+        margin-top: 1.25rem;
+        text-align: center;
+        font-size: 0.8125rem;
+        line-height: 1.4;
+        color: var(--rse-slate-text-secondary);
+    }
 </style>

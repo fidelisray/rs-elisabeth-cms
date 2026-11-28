@@ -71,17 +71,17 @@ class ThemeBrandingTest extends TestCase
         $this->assertTrue(Color::isTextContrastRatioAccessible($secondary[200], $secondary[950]));
     }
 
-    public function test_login_recovery_and_dashboard_render_brand_tokens_and_logo(): void
+    public function test_login_and_dashboard_render_brand_tokens_and_logo(): void
     {
         $loginResponse = $this->get('/admin/login')->assertOk();
         $loginResponse->assertSee('data-rse-brand-tokens', false);
         $loginResponse->assertSee('#095988', false);
         $loginResponse->assertSee('web-icon.webp', false);
         $loginResponse->assertSee('RS Elisabeth');
+        $loginResponse->assertSee('rse-login-help-note', false);
+        $loginResponse->assertDontSee('data-rse-locale-switcher', false);
 
-        $recoveryResponse = $this->get(route('filament.admin.auth.recovery-login'))->assertOk();
-        $recoveryResponse->assertSee('data-rse-brand-tokens', false);
-        $recoveryResponse->assertSee('web-icon.webp', false);
+        $this->get('/admin/recovery-login')->assertNotFound();
 
         $user = User::where('email', 'marketing@rs-elisabeth.com')->firstOrFail();
         $user->update(['must_change_password' => false]);

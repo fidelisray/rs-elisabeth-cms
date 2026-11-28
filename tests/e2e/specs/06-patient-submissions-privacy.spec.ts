@@ -54,7 +54,7 @@ test.describe('Patient Submissions Privacy & Strict Super Admin Follow-Up', () =
             await modal.locator('textarea').first().fill('Ditindaklanjuti pada pengujian Playwright E2E.');
             await modal.locator('button[type="submit"]').first().click();
 
-            await expect(page.locator('main')).toContainText('diproses', { timeout: 10_000 });
+            await expect(page.locator('main')).toContainText(/Diproses|In Progress/i, { timeout: 10_000 });
 
             errors.assertZeroErrors();
         });

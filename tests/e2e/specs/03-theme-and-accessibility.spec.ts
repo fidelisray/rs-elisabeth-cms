@@ -64,12 +64,7 @@ test.describe('Theme Branding, Responsiveness & WCAG AA Accessibility', () => {
         await page.goto('/admin/news', { waitUntil: 'networkidle' });
         await expect(page.locator('main')).toBeVisible();
 
-        // Catatan baseline pra-Fase 1: kolom ImageColumn clickable pada NewsTable belum
-        // memiliki aria-label/alt pada tautan sel (.fi-ta-cell-image-path > .fi-ta-col);
-        // dicatat sebagai temuan nyata untuk diperbaiki pada UX Polish Fase 1.
-        await auditWcagAA(page, 'News Resource List (/admin/news)', {
-            exclude: ['.fi-ta-cell-image-path > .fi-ta-col'],
-        });
+        await auditWcagAA(page, 'News Resource List (/admin/news)');
 
         errors.assertZeroErrors();
     });

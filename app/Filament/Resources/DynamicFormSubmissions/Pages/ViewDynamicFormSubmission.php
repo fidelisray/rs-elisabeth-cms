@@ -70,7 +70,7 @@ class ViewDynamicFormSubmission extends ViewRecord
 
             if ($sectionItems !== []) {
                 $renderedSections[] = [
-                    'title' => (string) ($section['title'] ?? 'Bagian'),
+                    'title' => (string) ($section['title'] ?? __('Bagian')),
                     'items' => $sectionItems,
                 ];
             }
@@ -123,7 +123,7 @@ class ViewDynamicFormSubmission extends ViewRecord
         ];
 
         if (! $base['is_answered']) {
-            return array_merge($base, ['display_text' => 'Tidak dijawab (kosong / tersembunyi).']);
+            return array_merge($base, ['display_text' => __('Tidak dijawab (kosong / tersembunyi).')]);
         }
 
         if ($type === DynamicFormFieldType::Radio) {
@@ -133,7 +133,7 @@ class ViewDynamicFormSubmission extends ViewRecord
             $selected = is_array($rawValue) ? (string) ($rawValue['selected'] ?? '') : (string) $rawValue;
             if ($selected === DynamicFormLogicEvaluator::OTHER_CHOICE_KEY) {
                 $otherText = is_array($rawValue) ? trim((string) ($rawValue['other_text'] ?? '')) : '';
-                $text = $otherText !== '' ? "Lainnya: {$otherText}" : 'Lainnya';
+                $text = $otherText !== '' ? __('Lainnya: :text', ['text' => $otherText]) : __('Lainnya');
             } else {
                 $text = $choiceMap[$selected] ?? $selected;
             }
@@ -159,7 +159,7 @@ class ViewDynamicFormSubmission extends ViewRecord
             $labels = collect($selected)->map(function ($key) use ($choiceMap, $otherText): string {
                 $k = (string) $key;
                 if ($k === DynamicFormLogicEvaluator::OTHER_CHOICE_KEY) {
-                    return $otherText !== '' ? "Lainnya: {$otherText}" : 'Lainnya';
+                    return $otherText !== '' ? __('Lainnya: :text', ['text' => $otherText]) : __('Lainnya');
                 }
 
                 return $choiceMap[$k] ?? $k;
@@ -167,7 +167,7 @@ class ViewDynamicFormSubmission extends ViewRecord
 
             return $labels !== []
                 ? array_merge($base, ['display_list' => $labels])
-                : array_merge($base, ['display_text' => 'Tidak dijawab (kosong / tersembunyi).', 'is_answered' => false]);
+                : array_merge($base, ['display_text' => __('Tidak dijawab (kosong / tersembunyi).'), 'is_answered' => false]);
         }
 
         if ($type === DynamicFormFieldType::MatrixGrid && is_array($rawValue)) {

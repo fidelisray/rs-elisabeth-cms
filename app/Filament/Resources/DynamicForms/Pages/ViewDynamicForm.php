@@ -24,17 +24,17 @@ class ViewDynamicForm extends ViewRecord
                 ->record(fn (): DynamicForm => $this->getRecord()),
 
             Action::make('analytics')
-                ->label('Ringkasan & Analitik')
+                ->label(__('Ringkasan & Analitik'))
                 ->icon(Heroicon::OutlinedChartBar)
                 ->url(fn (): string => DynamicFormResource::getUrl('analytics', ['record' => $this->getRecord()])),
 
             Action::make('preview')
-                ->label('Pratinjau Interaktif')
+                ->label(__('Pratinjau Interaktif'))
                 ->icon(Heroicon::OutlinedEye)
                 ->visible(fn (): bool => ! $this->getRecord()->trashed())
-                ->modalHeading(fn (): string => 'Pratinjau: '.$this->getRecord()->title)
+                ->modalHeading(fn (): string => __('Pratinjau: :title', ['title' => $this->getRecord()->title]))
                 ->modalSubmitAction(false)
-                ->modalCancelActionLabel('Tutup Pratinjau')
+                ->modalCancelActionLabel(__('Tutup Pratinjau'))
                 ->modalContent(fn (): HtmlString => new HtmlString(
                     Livewire::mount(DynamicFormLivePreview::class, ['formId' => $this->getRecord()->id])
                 )),

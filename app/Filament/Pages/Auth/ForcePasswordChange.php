@@ -38,7 +38,7 @@ class ForcePasswordChange extends Page
 
     public function getTitle(): string
     {
-        return Auth::user()?->must_change_password ? 'Ganti Password Wajib' : 'Ganti Password';
+        return Auth::user()?->must_change_password ? __('Ganti Password Wajib') : __('Ganti Password');
     }
 
     public static function shouldRegisterNavigation(): bool
@@ -62,12 +62,12 @@ class ForcePasswordChange extends Page
         $isForced = (bool) $user?->must_change_password;
 
         $sectionHeading = $isForced
-            ? 'Anda harus mengganti password'
-            : 'Perbarui Password Akun';
+            ? __('Anda harus mengganti password')
+            : __('Perbarui Password Akun');
 
         $sectionDescription = $isForced
-            ? 'Demi keamanan, password awal harus diganti sebelum Anda dapat memakai panel. Pilih password baru yang hanya Anda ketahui.'
-            : 'Pilih password baru yang kuat untuk menjaga keamanan akun Anda.';
+            ? __('Demi keamanan, password awal harus diganti sebelum Anda dapat memakai panel. Pilih password baru yang hanya Anda ketahui.')
+            : __('Pilih password baru yang kuat untuk menjaga keamanan akun Anda.');
 
         return $schema
             ->components([
@@ -75,7 +75,7 @@ class ForcePasswordChange extends Page
                     ->description($sectionDescription)
                     ->schema([
                         TextInput::make('password')
-                            ->label('Password Baru')
+                            ->label(__('Password Baru'))
                             ->password()
                             ->revealable()
                             ->required()
@@ -87,7 +87,7 @@ class ForcePasswordChange extends Page
                         View::make('filament.pages.auth.password-strength-indicator'),
 
                         TextInput::make('passwordConfirmation')
-                            ->label('Ulangi Password Baru')
+                            ->label(__('Ulangi Password Baru'))
                             ->password()
                             ->revealable()
                             ->required()
@@ -136,7 +136,7 @@ class ForcePasswordChange extends Page
 
         Notification::make()
             ->success()
-            ->title('Password berhasil diganti')
+            ->title(__('Password berhasil diganti'))
             ->send();
 
         $this->redirect($wasForced ? Filament::getUrl() : route('filament.admin.auth.profile'));
@@ -151,19 +151,19 @@ class ForcePasswordChange extends Page
 
         $actions = [
             Action::make('save')
-                ->label('Simpan Password Baru')
+                ->label(__('Simpan Password Baru'))
                 ->submit('save'),
         ];
 
         if ($isForced) {
             $actions[] = Action::make('logout')
-                ->label('Keluar')
+                ->label(__('Keluar'))
                 ->color('gray')
                 ->url(route('filament.admin.auth.logout'))
                 ->extraAttributes(['onclick' => "event.preventDefault(); document.getElementById('force-logout-form').submit();"]);
         } else {
             $actions[] = Action::make('cancel')
-                ->label('Batal / Kembali ke Profil')
+                ->label(__('Batal / Kembali ke Profil'))
                 ->color('gray')
                 ->url(route('filament.admin.auth.profile'));
         }
@@ -173,6 +173,6 @@ class ForcePasswordChange extends Page
 
     public function getHeading(): string
     {
-        return Auth::user()?->must_change_password ? 'Ganti Password Wajib' : 'Ganti Password';
+        return Auth::user()?->must_change_password ? __('Ganti Password Wajib') : __('Ganti Password');
     }
 }

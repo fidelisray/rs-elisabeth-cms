@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Articles;
 
+use App\Enums\AdminNavigationGroup;
+use App\Filament\Concerns\FormatsBilingualRecordTitle;
 use App\Filament\Resources\Articles\Pages\CreateArticle;
 use App\Filament\Resources\Articles\Pages\EditArticle;
 use App\Filament\Resources\Articles\Pages\ListArticles;
@@ -17,23 +19,33 @@ use LaraZeus\SpatieTranslatable\Resources\Concerns\Translatable;
 
 class ArticleResource extends Resource
 {
+    use FormatsBilingualRecordTitle;
     use Translatable;
 
     protected static ?string $model = Article::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $navigationLabel = 'Articles';
-
-    protected static ?string $pluralModelLabel = 'Articles';
-
-    protected static ?string $modelLabel = 'Article';
-
-    protected static string|\UnitEnum|null $navigationGroup = 'Marketing & Editorial';
+    protected static string|\UnitEnum|null $navigationGroup = AdminNavigationGroup::MarketingEditorial;
 
     protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'title';
+
+    public static function getNavigationLabel(): string
+    {
+        return __('Artikel');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('model.article');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Artikel');
+    }
 
     public static function form(Schema $schema): Schema
     {

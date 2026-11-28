@@ -16,24 +16,24 @@ final class DynamicFormShareAction
     public static function make(string $name = 'shareLink'): Action
     {
         return Action::make($name)
-            ->label('Link & QR Code')
+            ->label(__('Tautan & Kode QR'))
             ->icon(Heroicon::OutlinedQrCode)
             ->color('info')
             ->authorize(fn (DynamicForm $record): bool => Gate::allows('view', $record)
                 && app(DynamicFormShareService::class)->canShare($record))
             ->visible(fn (DynamicForm $record): bool => app(DynamicFormShareService::class)->canShare($record)
                 && Gate::allows('view', $record))
-            ->modalHeading(fn (DynamicForm $record): string => 'Link & QR Code: '.$record->title)
+            ->modalHeading(fn (DynamicForm $record): string => __('Tautan & Kode QR: :title', ['title' => $record->title]))
             ->modalWidth(Width::ThreeExtraLarge)
             ->modalSubmitAction(false)
-            ->modalCancelActionLabel('Tutup')
+            ->modalCancelActionLabel(__('Tutup'))
             ->modalContent(fn (DynamicForm $record): View => view(
                 'filament.resources.dynamic-forms.components.share-modal',
                 app(DynamicFormShareService::class)->buildModalData($record),
             ))
             ->extraModalFooterActions(fn (DynamicForm $record): array => [
                 Action::make('downloadPng')
-                    ->label('Unduh PNG (Siap Cetak)')
+                    ->label(__('Unduh PNG (Siap Cetak)'))
                     ->icon(Heroicon::OutlinedArrowDownTray)
                     ->color('primary')
                     ->authorize(function (DynamicForm $record): bool {
@@ -65,7 +65,7 @@ final class DynamicFormShareAction
                     }),
 
                 Action::make('downloadSvg')
-                    ->label('Unduh SVG (Vektor)')
+                    ->label(__('Unduh SVG (Vektor)'))
                     ->icon(Heroicon::OutlinedArrowDownTray)
                     ->color('gray')
                     ->authorize(function (DynamicForm $record): bool {

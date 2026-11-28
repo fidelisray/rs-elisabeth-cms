@@ -309,11 +309,11 @@
             },
             get label() {
                 if (!this.password) return '';
-                if (this.score <= 1) return 'Sangat Lemah';
-                if (this.score === 2) return 'Sedang';
-                if (this.score === 3) return 'Kuat';
-                if (this.score === 4) return 'Sangat Kuat';
-                return 'Sangat Lemah';
+                if (this.score <= 1) return @js(__('Sangat Lemah'));
+                if (this.score === 2) return @js(__('Sedang'));
+                if (this.score === 3) return @js(__('Kuat'));
+                if (this.score === 4) return @js(__('Sangat Kuat'));
+                return @js(__('Sangat Lemah'));
             },
             debounceTimer: null,
             clearFieldError(field, inputEl = null) {

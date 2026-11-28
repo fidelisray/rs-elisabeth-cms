@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\FacilityServices\Tables;
 
+use App\Filament\Support\AccessibleTableColumns;
 use App\Filament\Support\ContentTrashActions;
 use App\Support\ApiCacheInvalidator;
 use App\Support\TranslatedContentOrder;
@@ -9,7 +10,6 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
@@ -20,48 +20,39 @@ class FacilityServiceTable
     {
         return $table
             ->columns([
-                ImageColumn::make('image_path')
-                    ->label('Preview')
-                    ->disk(config('filesystems.media_disk'))
-                    ->width(120)
-                    ->height(68),
-
-                // TextColumn::make('sort_order')
-                //     ->label('Urutan')
-                //     ->sortable()
-                //     ->alignCenter(),
+                AccessibleTableColumns::thumbnail('image_path', 120, 68, 'name'),
 
                 TextColumn::make('name')
-                    ->label('Nama Fasilitas')
-                    ->description(fn ($record): ?string => filled($record->getTranslation('name', 'en', false))
-                        ? 'EN: '.$record->getTranslation('name', 'en', false)
-                        : null)
+                    ->label(__('Nama Fasilitas'))
+                    ->getStateUsing(fn ($record): string => AccessibleTableColumns::indonesianPrimary($record, 'name'))
+                    ->description(fn ($record): ?string => AccessibleTableColumns::englishSubtitle($record, 'name'))
                     ->searchable()
                     ->sortable(query: TranslatedContentOrder::column('name')),
 
                 TextColumn::make('slug')
-                    ->label('Identifier')
+                    ->label(__('Identifier'))
                     ->sortable(query: TranslatedContentOrder::column('slug'))
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('category')
-                    ->label('Kategori')
+                    ->label(__('Kategori'))
                     ->badge()
+                    ->formatStateUsing(fn (?string $state): string => filled($state) ? __($state) : '')
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('created_at')
-                    ->label('Dibuat')
+                    ->label(__('Dibuat'))
                     ->dateTime('d M Y, H:i')
                     ->sortable(),
 
                 TextColumn::make('updated_at')
-                    ->label('Diperbarui')
+                    ->label(__('Diperbarui'))
                     ->dateTime('d M Y, H:i')
                     ->sortable(),
 
                 IconColumn::make('is_active')
-                    ->label('Aktif')
+                    ->label(__('Aktif'))
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-x-circle')
@@ -78,10 +69,10 @@ class FacilityServiceTable
             ->filters([
                 ContentTrashActions::trashedFilter(),
                 TernaryFilter::make('is_active')
-                    ->label('Status Aktif')
-                    ->trueLabel('Aktif saja')
-                    ->falseLabel('Non-aktif saja')
-                    ->placeholder('Semua'),
+                    ->label(__('Status Aktif'))
+                    ->trueLabel(__('Aktif saja'))
+                    ->falseLabel(__('Non-aktif saja'))
+                    ->placeholder(__('Semua')),
             ])
             ->recordActions([
                 EditAction::make(),

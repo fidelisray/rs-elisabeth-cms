@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\DynamicForms;
 
+use App\Enums\AdminNavigationGroup;
 use App\Enums\DynamicFormMode;
 use App\Enums\DynamicFormStatus;
 use App\Filament\Resources\DynamicForms\Pages\CreateDynamicForm;
@@ -28,17 +29,26 @@ class DynamicFormResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
-    protected static ?string $navigationLabel = 'Custom Questionnaire Form';
-
-    protected static ?string $modelLabel = 'Custom Questionnaire Form';
-
-    protected static ?string $pluralModelLabel = 'Custom Questionnaire Forms';
-
-    protected static string|\UnitEnum|null $navigationGroup = 'Patient Feedback';
+    protected static string|\UnitEnum|null $navigationGroup = AdminNavigationGroup::PatientFeedback;
 
     protected static ?int $navigationSort = 3;
 
     protected static ?string $recordTitleAttribute = 'title';
+
+    public static function getNavigationLabel(): string
+    {
+        return __('nav.dynamic_form');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('model.dynamic_form');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Formulir Kuesioner Kustom');
+    }
 
     public static function table(Table $table): Table
     {
@@ -48,23 +58,23 @@ class DynamicFormResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Informasi Formulir')
+            Section::make(__('Informasi Formulir'))
                 ->columns(2)
                 ->schema([
-                    TextEntry::make('title')->label('Judul Formulir'),
+                    TextEntry::make('title')->label(__('Judul Formulir')),
                     TextEntry::make('slug')
-                        ->label('Path Web')
+                        ->label(__('Path Web'))
                         ->formatStateUsing(fn (string $state): string => '/formulir/'.$state),
                     TextEntry::make('mode')
-                        ->label('Mode')
+                        ->label(__('Mode'))
                         ->formatStateUsing(fn (DynamicFormMode|string $state): string => $state instanceof DynamicFormMode
                             ? $state->label()
                             : (string) $state),
                     TextEntry::make('locale')
-                        ->label('Bahasa')
+                        ->label(__('Bahasa'))
                         ->formatStateUsing(fn (string $state): string => strtoupper($state)),
                     TextEntry::make('status')
-                        ->label('Status')
+                        ->label(__('Status'))
                         ->badge()
                         ->formatStateUsing(fn (DynamicFormStatus|string $state): string => $state instanceof DynamicFormStatus
                             ? $state->label()
@@ -75,19 +85,19 @@ class DynamicFormResource extends Resource
                             default => 'gray',
                         }),
                     TextEntry::make('is_public_listed')
-                        ->label('Katalog Web')
+                        ->label(__('Katalog Web'))
                         ->badge()
-                        ->formatStateUsing(fn (mixed $state): string => (bool) $state ? 'Katalog Publik' : 'Link / QR Saja')
+                        ->formatStateUsing(fn (mixed $state): string => (bool) $state ? __('Katalog Publik') : __('Link / QR Saja'))
                         ->color(fn (mixed $state): string => (bool) $state ? 'success' : 'gray'),
                     TextEntry::make('publishedVersion.version_number')
-                        ->label('Versi Terpublikasi')
-                        ->formatStateUsing(fn ($state): string => $state ? 'v'.$state : 'Belum dipublikasikan'),
-                    TextEntry::make('starts_at')->label('Waktu Mulai')->dateTime('d M Y H:i')->placeholder('Langsung aktif'),
-                    TextEntry::make('ends_at')->label('Waktu Berakhir')->dateTime('d M Y H:i')->placeholder('Tidak dibatasi'),
-                    TextEntry::make('max_responses')->label('Kuota Respons')->placeholder('Tidak dibatasi'),
+                        ->label(__('Versi Terpublikasi'))
+                        ->formatStateUsing(fn ($state): string => $state ? 'v'.$state : __('Belum dipublikasikan')),
+                    TextEntry::make('starts_at')->label(__('Waktu Mulai'))->dateTime('d M Y H:i')->placeholder(__('Langsung aktif')),
+                    TextEntry::make('ends_at')->label(__('Waktu Berakhir'))->dateTime('d M Y H:i')->placeholder(__('Tidak dibatasi')),
+                    TextEntry::make('max_responses')->label(__('Kuota Respons'))->placeholder(__('Tidak dibatasi')),
                     TextEntry::make('description')
-                        ->label('Deskripsi')
-                        ->placeholder('Tidak ada deskripsi.')
+                        ->label(__('Deskripsi'))
+                        ->placeholder(__('Tidak ada deskripsi.'))
                         ->formatStateUsing(fn (mixed $state): ?string => app(DynamicFormHtmlSanitizer::class)->sanitize($state))
                         ->html()
                         ->prose()

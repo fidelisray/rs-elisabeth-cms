@@ -19,13 +19,13 @@ class BannerPromotionForm
         return $schema
             ->components([
 
-                Section::make('Informasi Banner - Bahasa Indonesia (ID)')
-                    ->description('Judul dan identifier banner dalam Bahasa Indonesia.')
+                Section::make(__('Informasi Banner - Bahasa Indonesia (ID)'))
+                    ->description(__('Judul dan identifier banner dalam Bahasa Indonesia.'))
                     ->columnSpanFull()
                     ->columns(2)
                     ->schema([
                         TextInput::make('title.id')
-                            ->label('Judul Banner (Indonesia)')
+                            ->label(__('Judul Banner (Indonesia)'))
                             ->maxLength(255)
                             ->required()
                             ->clearErrorOnInput()
@@ -37,23 +37,23 @@ class BannerPromotionForm
                             }),
 
                         TextInput::make('slug.id')
-                            ->label('Identifier / Slug (Indonesia)')
-                            ->placeholder('Klik pada form dan teks akan terisi otomatis')
+                            ->label(__('Identifier / Slug (Indonesia)'))
+                            ->placeholder(__('Klik pada form dan teks akan terisi otomatis'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
                             ->unique(column: 'slug->id', ignoreRecord: true)
-                            ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
-                            ->helperText('Dapat diedit jika diperlukan'),
+                            ->validationMessages(['unique' => __('Identifier (Slug) sudah digunakan. Pilih identifier lain.')])
+                            ->helperText(__('Dapat diedit jika diperlukan')),
                     ]),
 
-                Section::make('Informasi Banner - Bahasa Inggris (EN)')
-                    ->description('Judul dan identifier banner dalam Bahasa Inggris.')
+                Section::make(__('Informasi Banner - Bahasa Inggris (EN)'))
+                    ->description(__('Judul dan identifier banner dalam Bahasa Inggris.'))
                     ->columnSpanFull()
                     ->columns(2)
                     ->schema([
                         TextInput::make('title.en')
-                            ->label('Judul Banner (English)')
+                            ->label(__('Judul Banner (English)'))
                             ->maxLength(255)
                             ->required()
                             ->clearErrorOnInput()
@@ -65,22 +65,22 @@ class BannerPromotionForm
                             }),
 
                         TextInput::make('slug.en')
-                            ->label('Identifier / Slug (English)')
-                            ->placeholder('Klik pada form dan teks akan terisi otomatis')
+                            ->label(__('Identifier / Slug (English)'))
+                            ->placeholder(__('Klik pada form dan teks akan terisi otomatis'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
                             ->unique(column: 'slug->en', ignoreRecord: true)
-                            ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
-                            ->helperText('Dapat diedit jika diperlukan'),
+                            ->validationMessages(['unique' => __('Identifier (Slug) sudah digunakan. Pilih identifier lain.')])
+                            ->helperText(__('Dapat diedit jika diperlukan')),
                     ]),
 
-                Section::make('Gambar Banner')
+                Section::make(__('Gambar Banner'))
                     ->columnSpanFull()
                     ->schema([
                         FileUpload::make('image_path')
-                            ->label('Gambar')
-                            ->helperText('Upload gambar banner dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB')
+                            ->label(__('Gambar'))
+                            ->helperText(__('Unggah gambar banner dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB'))
                             ->disk(config('filesystems.media_disk'))
                             ->directory('banners')
                             ->image()
@@ -96,19 +96,19 @@ class BannerPromotionForm
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Publish')
+                Section::make(__('Publikasi'))
                     ->columnSpanFull()
-                    ->description('Atur apakah Banner Promosi ini akan ditampilkan pada halaman website')
+                    ->description(__('Atur apakah Banner Promosi ini akan ditampilkan pada halaman website'))
                     ->schema([
                         Placeholder::make('trash_notice')
-                            ->label('Penghapusan')
-                            ->content('Konten yang dihapus tidak tampil di website. Hanya Super Admin yang dapat memulihkannya.')
+                            ->label(__('Penghapusan'))
+                            ->content(__('Konten yang dihapus tidak tampil di website. Hanya Super Admin yang dapat memulihkannya.'))
                             ->columnSpanFull(),
 
                         Toggle::make('is_active')
-                            ->label('Aktif dan Tampilkan di halaman website')
+                            ->label(__('Aktif dan Tampilkan di halaman website'))
                             ->default(false)
-                            ->helperText('Non-aktifkan untuk menyembunyikan banner promosi ini dari halaman website tanpa menghapus datanya')
+                            ->helperText(__('Non-aktifkan untuk menyembunyikan banner promosi ini dari halaman website tanpa menghapus datanya'))
                             ->columnSpanFull(),
                     ]),
             ]);

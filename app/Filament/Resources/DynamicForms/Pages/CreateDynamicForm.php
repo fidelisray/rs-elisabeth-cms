@@ -41,7 +41,7 @@ class CreateDynamicForm extends CreateRecord
         if ($dupErrors !== []) {
             Notification::make()
                 ->danger()
-                ->title('Terdapat Kunci Duplikat pada Formulir')
+                ->title(__('Terdapat Kunci Duplikat pada Formulir'))
                 ->body(implode(' ', $dupErrors))
                 ->send();
 
@@ -60,7 +60,7 @@ class CreateDynamicForm extends CreateRecord
         if ($logicErrors !== []) {
             Notification::make()
                 ->danger()
-                ->title('Aturan Percabangan Logika Tidak Valid')
+                ->title(__('Aturan Percabangan Logika Tidak Valid'))
                 ->body(implode(' ', $logicErrors))
                 ->send();
 
@@ -103,7 +103,7 @@ class CreateDynamicForm extends CreateRecord
     {
         return Notification::make()
             ->success()
-            ->title('Formulir dinamis berhasil disimpan');
+            ->title(__('Formulir dinamis berhasil disimpan'));
     }
 
     protected function getRedirectUrl(): string

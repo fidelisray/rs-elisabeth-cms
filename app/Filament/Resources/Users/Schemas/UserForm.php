@@ -17,14 +17,14 @@ class UserForm
         return $schema
             ->components([
                 TextInput::make('name')
-                    ->label('Nama Lengkap')
+                    ->label(__('Nama Lengkap'))
                     ->required()
                     ->clearErrorOnInput()
                     ->maxLength(255)
                     ->columnSpanFull(),
 
                 TextInput::make('email')
-                    ->label('Alamat Email')
+                    ->label(__('Alamat Email'))
                     ->mutateStateForValidationUsing(fn (?string $state): string => User::normalizeEmail($state ?? ''))
                     ->dehydrateStateUsing(fn (?string $state): string => User::normalizeEmail($state ?? ''))
                     ->email()
@@ -34,8 +34,8 @@ class UserForm
                     ->columnSpanFull(),
 
                 Toggle::make('is_active')
-                    ->label('Akun Aktif')
-                    ->helperText('Nonaktifkan untuk mencabut akses panel tanpa menghapus role. Akun bisa diaktifkan kembali kapan saja.')
+                    ->label(__('Akun Aktif'))
+                    ->helperText(__('Nonaktifkan untuk mencabut akses panel tanpa menghapus role. Akun bisa diaktifkan kembali kapan saja.'))
                     ->default(true)
                     ->disabled(fn (?User $record): bool => $record?->isSuperAdmin() ?? false)
                     ->columnSpanFull(),
@@ -50,7 +50,7 @@ class UserForm
                     )
                     ->getOptionLabelFromRecordUsing(fn ($record) => str($record->name)->headline())
                     ->preload()
-                    ->label('Role / Jabatan')
+                    ->label(__('Peran / Jabatan'))
                     // Role akun super_admin terkunci (K-3, K-7): tidak ditampilkan sebagai opsi,
                     // jadi pada record itu field tidak wajib, tidak bisa diubah, dan tidak disimpan.
                     ->disabled(fn (?User $record): bool => $record?->isSuperAdmin() ?? false)
@@ -62,7 +62,7 @@ class UserForm
                 // mengganti password saat login berikutnya). Disembunyikan pada akun super_admin
                 // agar perubahan password super_admin selalu melewati StrongNewPassword dan AuditLog.
                 TextInput::make('password')
-                    ->label('Password')
+                    ->label(__('Kata Sandi'))
                     ->password()
                     ->hidden(fn (?User $record): bool => $record?->isSuperAdmin() ?? false)
                     ->dehydrated(fn (?string $state, string $operation): bool => filled($state) || $operation === 'create')
@@ -77,7 +77,7 @@ class UserForm
                         return null;
                     })
                     ->required(false)
-                    ->helperText('Kosongkan jika tidak ingin mengubah password. Untuk user baru, password sementara otomatis "123456". Pengguna wajib menggantinya saat login pertama.')
+                    ->helperText(__('Kosongkan jika tidak ingin mengubah password. Untuk pengguna baru, password sementara otomatis "123456". Pengguna wajib menggantinya saat login pertama.'))
                     ->columnSpanFull(),
             ]);
     }

@@ -2,10 +2,10 @@
     $isAccepting = (bool) ($availability['is_accepting_responses'] ?? false);
     $closedReason = $availability['closed_reason'] ?? null;
     $statusNote = match ($closedReason) {
-        'closed' => 'Status formulir saat ini Ditutup. Responden yang membuka tautan akan melihat pesan penutupan hingga formulir dibuka kembali.',
-        'not_started' => 'Formulir dijadwalkan untuk waktu mendatang. Tautan sudah siap disebarkan, tetapi pengisian baru dibuka sesuai jadwal mulai.',
-        'ended' => 'Periode pengisian formulir telah berakhir. Responden yang membuka tautan akan melihat pesan penutupan.',
-        'quota_full' => 'Kuota respons formulir sudah penuh. Responden baru tidak dapat mengirim jawaban sebelum kuota ditambah.',
+        'closed' => __('Status formulir saat ini Ditutup. Responden yang membuka tautan akan melihat pesan penutupan hingga formulir dibuka kembali.'),
+        'not_started' => __('Formulir dijadwalkan untuk waktu mendatang. Tautan sudah siap disebarkan, tetapi pengisian baru dibuka sesuai jadwal mulai.'),
+        'ended' => __('Periode pengisian formulir telah berakhir. Responden yang membuka tautan akan melihat pesan penutupan.'),
+        'quota_full' => __('Kuota respons formulir sudah penuh. Responden baru tidak dapat mengirim jawaban sebelum kuota ditambah.'),
         default => null,
     };
 @endphp
@@ -71,15 +71,15 @@
                 this.copiedKey = key;
                 this.errorKey = null;
                 this.statusMessage = key === 'qr'
-                    ? 'Link QR Code berhasil disalin ke papan klip.'
-                    : 'Link Publik Umum berhasil disalin ke papan klip.';
+                    ? @js(__('Link QR Code berhasil disalin ke papan klip.'))
+                    : @js(__('Link Publik Umum berhasil disalin ke papan klip.'));
                 this.resetTimer = setTimeout(() => {
                     this.copiedKey = null;
                 }, 2500);
             } else {
                 this.copiedKey = null;
                 this.errorKey = key;
-                this.statusMessage = 'Penyalinan otomatis diblokir browser. Pilih teks tautan lalu tekan Ctrl+C atau Cmd+C.';
+                this.statusMessage = @js(__('Penyalinan otomatis diblokir browser. Pilih teks tautan lalu tekan Ctrl+C atau Cmd+C.'));
             }
         }
     }"
@@ -284,41 +284,41 @@
     <div class="rse-share-status-card">
         <div style="min-width: 0; flex: 1 1 14rem;">
             <p style="font-size: 0.75rem; font-weight: 600; color: var(--rse-s-text-secondary); margin: 0 0 0.25rem;">
-                Path Web Publik
+                {{ __('Path Web Publik') }}
             </p>
             <p style="font-size: 0.875rem; font-weight: 700; margin: 0; overflow-wrap: anywhere;">
                 {{ $relativeWebPath }}
             </p>
             <p style="font-size: 0.75rem; color: var(--rse-s-text-secondary); margin: 0.25rem 0 0;">
                 @if ($isPublicListed)
-                    Tampil di halaman katalog publik /formulir serta dapat dibuka via tautan langsung atau QR Code.
+                    {{ __('Tampil di halaman katalog publik /formulir serta dapat dibuka via tautan langsung atau QR Code.') }}
                 @else
-                    Tidak ditampilkan di katalog /formulir dan memakai meta noindex. Hanya dapat diakses lewat tautan langsung atau QR Code.
+                    {{ __('Tidak ditampilkan di katalog /formulir dan memakai meta noindex. Hanya dapat diakses lewat tautan langsung atau QR Code.') }}
                 @endif
             </p>
         </div>
         <div>
             <span class="rse-share-badge {{ $isPublicListed ? 'rse-share-badge-public' : 'rse-share-badge-unlisted' }}">
-                {{ $isPublicListed ? 'Katalog Publik' : 'Link / QR Saja' }}
+                {{ $isPublicListed ? __('Katalog Publik') : __('Link / QR Saja') }}
             </span>
         </div>
     </div>
 
     @if ($statusNote)
         <div class="rse-share-alert" role="status">
-            <strong>Catatan Ketersediaan:</strong> {{ $statusNote }}
+            <strong>{{ __('Catatan Ketersediaan:') }}</strong> {{ $statusNote }}
         </div>
     @endif
 
     @if (! $isConfigured)
         <div class="rse-share-alert" role="alert">
-            <strong>URL Publik Web Belum Dikonfigurasi.</strong>
-            Atur variabel <code>WEB_FRONTEND_PUBLIC_URL</code> (atau <code>WEB_FRONTEND_WEBHOOK_URL</code>) di file <code>.env</code> CMS agar tautan lengkap dan QR Code dapat dibuat.
+            <strong>{{ __('URL Publik Web Belum Dikonfigurasi.') }}</strong>
+            {!! __('Atur variabel :var1 (atau :var2) di file :env CMS agar tautan lengkap dan QR Code dapat dibuat.', ['var1' => '<code>WEB_FRONTEND_PUBLIC_URL</code>', 'var2' => '<code>WEB_FRONTEND_WEBHOOK_URL</code>', 'env' => '<code>.env</code>']) !!}
         </div>
     @elseif (! ($hasSlug ?? filled($publicUrl)))
         <div class="rse-share-alert" role="alert">
-            <strong>Slug Formulir Belum Tersedia.</strong>
-            Lengkapi slug URL Web pada halaman ubah formulir terlebih dahulu agar tautan publik dan QR Code dapat dibuat.
+            <strong>{{ __('Slug Formulir Belum Tersedia.') }}</strong>
+            {{ __('Lengkapi slug URL Web pada halaman ubah formulir terlebih dahulu agar tautan publik dan QR Code dapat dibuat.') }}
         </div>
     @else
         <div class="sr-only" aria-live="polite" x-text="statusMessage"></div>
@@ -327,10 +327,10 @@
             <div class="rse-share-stack">
                 <div class="rse-share-card">
                     <label for="rse-share-public-url" style="display: block; font-size: 0.875rem; font-weight: 700; margin-bottom: 0.25rem;">
-                        Link Publik Umum
+                        {{ __('Link Publik Umum') }}
                     </label>
                     <p style="font-size: 0.75rem; color: var(--rse-s-text-secondary); margin: 0 0 0.625rem;">
-                        Cocok dibagikan ke WhatsApp, situs web, atau pengumuman. Tercatat sebagai sumber <code>web_public</code>.
+                        {!! __('Cocok dibagikan ke WhatsApp, situs web, atau pengumuman. Tercatat sebagai sumber :source.', ['source' => '<code>web_public</code>']) !!}
                     </p>
                     <input
                         id="rse-share-public-url"
@@ -339,7 +339,7 @@
                         readonly
                         class="rse-share-input"
                         value="{{ $publicUrl }}"
-                        aria-label="Link Publik Umum"
+                        aria-label="{{ __('Link Publik Umum') }}"
                         x-on:click="$el.select()"
                         x-on:focus="$el.select()"
                     />
@@ -349,7 +349,7 @@
                             class="rse-share-btn rse-share-btn-primary"
                             x-on:click="copyLink('public', $refs.publicUrlInput, $el)"
                         >
-                            <span x-text="copiedKey === 'public' ? 'Tersalin' : 'Salin Link'">Salin Link</span>
+                            <span x-text="copiedKey === 'public' ? @js(__('Tersalin')) : @js(__('Salin Link'))">{{ __('Salin Link') }}</span>
                         </button>
                         <a
                             href="{{ $publicUrl }}"
@@ -357,7 +357,7 @@
                             rel="noopener noreferrer"
                             class="rse-share-btn"
                         >
-                            Buka Tautan
+                            {{ __('Buka Tautan') }}
                         </a>
                     </div>
                     <p
@@ -366,16 +366,16 @@
                         role="alert"
                         style="font-size: 0.75rem; color: var(--rse-s-warn-text); margin: 0.5rem 0 0; font-weight: 600;"
                     >
-                        Penyalinan otomatis tidak tersedia. Pilih teks pada kolom di atas lalu tekan Ctrl+C atau Cmd+C.
+                        {{ __('Penyalinan otomatis tidak tersedia. Pilih teks pada kolom di atas lalu tekan Ctrl+C atau Cmd+C.') }}
                     </p>
                 </div>
 
                 <div class="rse-share-card">
                     <label for="rse-share-qr-url" style="display: block; font-size: 0.875rem; font-weight: 700; margin-bottom: 0.25rem;">
-                        Link QR Code
+                        {{ __('Link QR Code') }}
                     </label>
                     <p style="font-size: 0.75rem; color: var(--rse-s-text-secondary); margin: 0 0 0.625rem;">
-                        Otomatis tersemat pada gambar QR Code untuk membedakan pemindaian cetak. Tercatat sebagai sumber <code>qr_barcode</code>.
+                        {!! __('Otomatis tersemat pada gambar QR Code untuk membedakan pemindaian cetak. Tercatat sebagai sumber :source.', ['source' => '<code>qr_barcode</code>']) !!}
                     </p>
                     <input
                         id="rse-share-qr-url"
@@ -384,7 +384,7 @@
                         readonly
                         class="rse-share-input"
                         value="{{ $qrUrl }}"
-                        aria-label="Link QR Code"
+                        aria-label="{{ __('Link QR Code') }}"
                         x-on:click="$el.select()"
                         x-on:focus="$el.select()"
                     />
@@ -394,7 +394,7 @@
                             class="rse-share-btn rse-share-btn-primary"
                             x-on:click="copyLink('qr', $refs.qrUrlInput, $el)"
                         >
-                            <span x-text="copiedKey === 'qr' ? 'Tersalin' : 'Salin Link QR'">Salin Link QR</span>
+                            <span x-text="copiedKey === 'qr' ? @js(__('Tersalin')) : @js(__('Salin Link QR'))">{{ __('Salin Link QR') }}</span>
                         </button>
                         <a
                             href="{{ $qrUrl }}"
@@ -402,7 +402,7 @@
                             rel="noopener noreferrer"
                             class="rse-share-btn"
                         >
-                            Buka Tautan
+                            {{ __('Buka Tautan') }}
                         </a>
                     </div>
                     <p
@@ -411,23 +411,23 @@
                         role="alert"
                         style="font-size: 0.75rem; color: var(--rse-s-warn-text); margin: 0.5rem 0 0; font-weight: 600;"
                     >
-                        Penyalinan otomatis tidak tersedia. Pilih teks pada kolom di atas lalu tekan Ctrl+C atau Cmd+C.
+                        {{ __('Penyalinan otomatis tidak tersedia. Pilih teks pada kolom di atas lalu tekan Ctrl+C atau Cmd+C.') }}
                     </p>
                 </div>
             </div>
 
             <div class="rse-share-qr-panel">
                 <p style="font-size: 0.875rem; font-weight: 700; margin: 0;">
-                    Pratinjau QR Code
+                    {{ __('Pratinjau QR Code') }}
                 </p>
                 <p style="font-size: 0.75rem; color: var(--rse-s-text-secondary); margin: 0.25rem 0 0;">
-                    Mengarah ke tautan <code>?source=qr_barcode</code>
+                    {!! __('Mengarah ke tautan :query', ['query' => '<code>?source=qr_barcode</code>']) !!}
                 </p>
 
                 <div class="rse-share-qr-frame">
                     <img
                         src="{{ $qrPreviewDataUri }}"
-                        alt="QR Code untuk {{ $formTitle }}"
+                        alt="{{ __('QR Code untuk :title', ['title' => $formTitle]) }}"
                         width="192"
                         height="192"
                         style="display: block; width: 192px; max-width: 100%; height: auto;"
@@ -435,7 +435,7 @@
                 </div>
 
                 <p style="font-size: 0.75rem; color: var(--rse-s-text-secondary); margin: 0;">
-                    Koreksi kesalahan Level M, Quiet Zone 4. Gunakan tombol unduhan di bagian bawah untuk berkas cetak PNG (~1000px) atau vektor SVG.
+                    {{ __('Koreksi kesalahan Level M, Quiet Zone 4. Gunakan tombol unduhan di bagian bawah untuk berkas cetak PNG (~1000px) atau vektor SVG.') }}
                 </p>
             </div>
         </div>

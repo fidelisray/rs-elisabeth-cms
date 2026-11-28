@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\DynamicFormSubmissions;
 
+use App\Enums\AdminNavigationGroup;
 use App\Filament\Resources\DynamicFormSubmissions\Pages\ListDynamicFormSubmissions;
 use App\Filament\Resources\DynamicFormSubmissions\Pages\ViewDynamicFormSubmission;
 use App\Filament\Resources\DynamicFormSubmissions\Tables\DynamicFormSubmissionsTable;
@@ -18,17 +19,26 @@ class DynamicFormSubmissionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedInboxStack;
 
-    protected static ?string $navigationLabel = 'Custom Questionnaire Responses';
-
-    protected static ?string $modelLabel = 'Custom Questionnaire Response';
-
-    protected static ?string $pluralModelLabel = 'Custom Questionnaire Responses';
-
-    protected static string|\UnitEnum|null $navigationGroup = 'Patient Feedback';
+    protected static string|\UnitEnum|null $navigationGroup = AdminNavigationGroup::PatientFeedback;
 
     protected static ?int $navigationSort = 4;
 
     protected static ?string $recordTitleAttribute = 'id';
+
+    public static function getNavigationLabel(): string
+    {
+        return __('Respons Formulir Kustom');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('model.dynamic_form_submission');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Respons Formulir Kustom');
+    }
 
     public static function getRecordTitle(?Model $record): ?string
     {
@@ -36,7 +46,7 @@ class DynamicFormSubmissionResource extends Resource
             return null;
         }
 
-        return 'Response #'.$record->id;
+        return __('Respons #:id', ['id' => $record->id]);
     }
 
     public static function canCreate(): bool

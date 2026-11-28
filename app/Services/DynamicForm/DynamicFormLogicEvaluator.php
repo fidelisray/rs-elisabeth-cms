@@ -3,6 +3,7 @@
 namespace App\Services\DynamicForm;
 
 use App\Enums\DynamicFormFieldType;
+use Illuminate\Container\Container;
 
 class DynamicFormLogicEvaluator
 {
@@ -33,18 +34,23 @@ class DynamicFormLogicEvaluator
     public static function operatorOptions(): array
     {
         return [
-            'equals' => 'Sama dengan (=)',
-            'not_equals' => 'Tidak sama dengan (!=)',
-            'in' => 'Salah satu dari (pisahkan koma)',
-            'not_in' => 'Bukan salah satu dari (pisahkan koma)',
-            'contains' => 'Mengandung teks / pilihan',
-            'gt' => 'Lebih besar dari (>)',
-            'gte' => 'Lebih besar atau sama dengan (>=)',
-            'lt' => 'Lebih kecil dari (<)',
-            'lte' => 'Lebih kecil atau sama dengan (<=)',
-            'is_empty' => 'Kosong / tidak diisi',
-            'is_not_empty' => 'Sudah diisi (tidak kosong)',
+            'equals' => self::t('Sama dengan (=)'),
+            'not_equals' => self::t('Tidak sama dengan (!=)'),
+            'in' => self::t('Salah satu dari (pisahkan koma)'),
+            'not_in' => self::t('Bukan salah satu dari (pisahkan koma)'),
+            'contains' => self::t('Mengandung teks / pilihan'),
+            'gt' => self::t('Lebih besar dari (>)'),
+            'gte' => self::t('Lebih besar atau sama dengan (>=)'),
+            'lt' => self::t('Lebih kecil dari (<)'),
+            'lte' => self::t('Lebih kecil atau sama dengan (<=)'),
+            'is_empty' => self::t('Kosong / tidak diisi'),
+            'is_not_empty' => self::t('Sudah diisi (tidak kosong)'),
         ];
+    }
+
+    private static function t(string $key): string
+    {
+        return Container::getInstance()->bound('translator') ? __($key) : $key;
     }
 
     /**
@@ -163,9 +169,9 @@ class DynamicFormLogicEvaluator
             }
 
             if ($usesSelect && $op === 'in') {
-                $filtered[$op] = 'Salah satu dari';
+                $filtered[$op] = self::t('Salah satu dari');
             } elseif ($usesSelect && $op === 'not_in') {
-                $filtered[$op] = 'Bukan salah satu dari';
+                $filtered[$op] = self::t('Bukan salah satu dari');
             } else {
                 $filtered[$op] = $all[$op];
             }

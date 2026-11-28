@@ -41,7 +41,7 @@ class ManageDynamicFormAnalytics extends Page
 
     public function getTitle(): string
     {
-        return 'Ringkasan & Analitik: '.$this->getDynamicForm()->title;
+        return __('Ringkasan & Analitik: :title', ['title' => $this->getDynamicForm()->title]);
     }
 
     public function getDynamicForm(): DynamicForm
@@ -71,8 +71,8 @@ class ManageDynamicFormAnalytics extends Page
             );
         } catch (Throwable $exception) {
             report($exception);
-            $this->errorMessage = 'Ekspor CSV gagal karena filter tanggal tidak valid atau data gagal dibaca.';
-            Notification::make()->danger()->title('Ekspor CSV gagal')->body($this->errorMessage)->send();
+            $this->errorMessage = __('Ekspor CSV gagal karena filter tanggal tidak valid atau data gagal dibaca.');
+            Notification::make()->danger()->title(__('Ekspor CSV gagal'))->body($this->errorMessage)->send();
 
             return null;
         }
@@ -89,8 +89,8 @@ class ManageDynamicFormAnalytics extends Page
             );
         } catch (Throwable $exception) {
             report($exception);
-            $this->errorMessage = 'Ekspor Excel gagal karena filter tanggal tidak valid atau data gagal dibaca.';
-            Notification::make()->danger()->title('Ekspor Excel gagal')->body($this->errorMessage)->send();
+            $this->errorMessage = __('Ekspor Excel gagal karena filter tanggal tidak valid atau data gagal dibaca.');
+            Notification::make()->danger()->title(__('Ekspor Excel gagal'))->body($this->errorMessage)->send();
 
             return null;
         }
@@ -100,20 +100,20 @@ class ManageDynamicFormAnalytics extends Page
     {
         return [
             Action::make('exportCsv')
-                ->label('Ekspor CSV')
+                ->label(__('Ekspor CSV'))
                 ->icon(Heroicon::OutlinedDocumentArrowDown)
                 ->authorize(fn (): bool => Gate::allows('view', $this->getDynamicForm()))
                 ->action(fn () => $this->exportCsv()),
 
             Action::make('exportXlsx')
-                ->label('Ekspor Excel (.xlsx)')
+                ->label(__('Ekspor Excel (.xlsx)'))
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->color('primary')
                 ->authorize(fn (): bool => Gate::allows('view', $this->getDynamicForm()))
                 ->action(fn () => $this->exportXlsx()),
 
             Action::make('editForm')
-                ->label('Sunting Form')
+                ->label(__('Sunting Form'))
                 ->icon(Heroicon::OutlinedClipboardDocumentList)
                 ->url(fn (): string => DynamicFormResource::getUrl('edit', ['record' => $this->getDynamicForm()]))
                 ->visible(fn (): bool => Gate::allows('update', $this->getDynamicForm())),
@@ -133,7 +133,7 @@ class ManageDynamicFormAnalytics extends Page
             $analytics = app(DynamicFormAnalyticsService::class)->summarize($form, $this->activeFilters());
         } catch (Throwable $exception) {
             report($exception);
-            $this->errorMessage = 'Data analitik gagal dimuat. Periksa rentang tanggal atau coba muat ulang halaman.';
+            $this->errorMessage = __('Data analitik gagal dimuat. Periksa rentang tanggal atau coba muat ulang halaman.');
         }
 
         $versions = $form->versions()->orderByDesc('version_number')->get();

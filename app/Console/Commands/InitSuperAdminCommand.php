@@ -5,7 +5,6 @@ namespace App\Console\Commands;
 use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
-use App\Services\RecoveryCodeService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -14,11 +13,12 @@ use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
- * Membuat akun super_admin PERTAMA dengan password acak dan 10 kode pemulihan (K-6, K-18, K-26).
+ * Membuat akun super_admin PERTAMA dengan password acak 24 karakter (K-6, K-18).
  *
  * - Hanya berhasil bila belum ada super_admin (aturan satu super_admin, K-3).
- * - Password acak dan 10 recovery code dicetak SATU KALI di terminal dan tidak disimpan dalam bentuk plaintext.
+ * - Password acak dicetak SATU KALI di terminal dan tidak disimpan dalam bentuk plaintext.
  * - Akun diwajibkan mengganti password saat login pertama (K-8).
+ * - Pemulihan darurat akun super_admin dilakukan eksklusif melalui CLI server (app:super-admin:reset-password).
  */
 class InitSuperAdminCommand extends Command
 {
@@ -26,9 +26,9 @@ class InitSuperAdminCommand extends Command
                             {--email=admin@rs-elisabeth.com : Email akun super_admin}
                             {--name=Super Admin : Nama akun super_admin}';
 
-    protected $description = 'Buat akun super_admin pertama dengan password acak dan 10 kode pemulihan.';
+    protected $description = 'Buat akun super_admin pertama dengan password acak 24 karakter.';
 
-    public function handle(RecoveryCodeService $recoveryCodes): int
+    public function handle(): int
     {
         $email = User::normalizeEmail((string) $this->option('email'));
         $name = (string) $this->option('name');
@@ -55,9 +55,8 @@ class InitSuperAdminCommand extends Command
         }
 
         $password = Str::password(24, symbols: false);
-        $codes = [];
 
-        $created = DB::transaction(function () use ($permissions, $email, $name, $password, $recoveryCodes, &$codes) {
+        $created = DB::transaction(function () use ($permissions, $email, $name, $password) {
             $existingRole = Role::where('name', Role::SUPER_ADMIN)
                 ->where('guard_name', 'web')
                 ->lockForUpdate()
@@ -83,7 +82,6 @@ class InitSuperAdminCommand extends Command
             ]);
 
             $user->assignRole($role);
-            $codes = $recoveryCodes->generateFor($user);
             AuditLog::record('super_admin.created', $user, ['source' => 'app:super-admin:init']);
 
             app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -108,14 +106,9 @@ class InitSuperAdminCommand extends Command
         $this->line("Email         : {$email}");
         $this->line("PASSWORD      : {$password}");
         $this->newLine();
-        $this->info('Kode Pemulihan Darurat (10 kode sekali pakai):');
-        foreach ($codes as $index => $code) {
-            $number = $index + 1;
-            $this->line("RECOVERY_CODE_{$number}={$code}");
-        }
-        $this->newLine();
-        $this->warn('Password awal dan kode pemulihan hanya ditampilkan SEKALI. Simpan di password manager sekarang.');
+        $this->warn('Password awal hanya ditampilkan SEKALI. Simpan di password manager sekarang.');
         $this->warn('Password ini wajib diganti saat login pertama.');
+        $this->line('Pemulihan darurat Super Admin hanya melalui konsol server: php artisan app:super-admin:reset-password');
 
         return self::SUCCESS;
     }

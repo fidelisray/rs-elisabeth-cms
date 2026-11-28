@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\OnlineLibraries;
 
+use App\Enums\AdminNavigationGroup;
+use App\Filament\Concerns\FormatsBilingualRecordTitle;
 use App\Filament\Resources\OnlineLibraries\Pages\CreateOnlineLibrary;
 use App\Filament\Resources\OnlineLibraries\Pages\EditOnlineLibrary;
 use App\Filament\Resources\OnlineLibraries\Pages\ListOnlineLibraries;
@@ -17,23 +19,33 @@ use LaraZeus\SpatieTranslatable\Resources\Concerns\Translatable;
 
 class OnlineLibraryResource extends Resource
 {
+    use FormatsBilingualRecordTitle;
     use Translatable;
 
     protected static ?string $model = OnlineLibrary::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
 
-    protected static ?string $navigationLabel = 'Online Library';
-
-    protected static ?string $modelLabel = 'Online Library';
-
-    protected static ?string $pluralModelLabel = 'Online Library';
-
-    protected static string|\UnitEnum|null $navigationGroup = 'Doctors & Library';
+    protected static string|\UnitEnum|null $navigationGroup = AdminNavigationGroup::DoctorsLibrary;
 
     protected static ?int $navigationSort = 2;
 
     protected static ?string $recordTitleAttribute = 'title';
+
+    public static function getNavigationLabel(): string
+    {
+        return __('Perpustakaan Online');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('Perpustakaan Online');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Perpustakaan Online');
+    }
 
     public static function form(Schema $schema): Schema
     {

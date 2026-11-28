@@ -15,7 +15,7 @@ class ValidRoomNestedContent implements ValidationRule
         $validator = RoomNestedContent::validator(RoomNestedContent::prepare([$this->field => $value]));
 
         if ($validator->fails()) {
-            $fail('Lengkapi struktur dan teks Indonesia serta English pada setiap grup/item. Spesifikasi opsional harus diisi dalam kedua bahasa bila digunakan.');
+            $fail(__('Lengkapi struktur dan teks Indonesia serta English pada setiap grup/item. Spesifikasi opsional harus diisi dalam kedua bahasa bila digunakan.'));
         }
     }
 }

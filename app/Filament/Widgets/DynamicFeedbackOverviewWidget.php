@@ -74,7 +74,7 @@ class DynamicFeedbackOverviewWidget extends Widget
                 ->limit(6)
                 ->get()
                 ->map(fn (DynamicFormSubmission $s): array => [
-                    'response_label' => 'Response #'.$s->id,
+                    'response_label' => __('Respons #:id', ['id' => $s->id]),
                     'form_title' => $s->form?->title ?? '-',
                     'mode_label' => $s->form?->mode?->label() ?? '-',
                     'submitted_at' => optional($s->submitted_at)->format('d M Y, H:i') ?? '-',

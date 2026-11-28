@@ -19,21 +19,39 @@ class ListDoctors extends ListRecords
     {
         return [
             Action::make('syncMedin')
-                ->label('Sinkronisasi API Internal RS')
+                ->label(__('Sinkronisasi API Internal RS'))
                 ->icon('heroicon-o-arrow-path')
                 ->color('primary')
                 ->visible(fn (): bool => auth()->user()?->can('Update:Doctor') ?? false)
                 ->requiresConfirmation()
-                ->modalHeading('Sinkronisasi Data Dokter dari SIMRS')
-                ->modalDescription('Sistem akan menarik data dokter terbaru dari API internal RS. Data profil marketing yang sudah Anda isi (Bio, Lokasi, Pengalaman, Pendidikan) dijamin aman dan tidak akan tertimpa.')
-                ->modalSubmitActionLabel('Mulai Sinkronisasi')
+                ->modalHeading(__('Sinkronisasi Data Dokter dari SIMRS'))
+                ->modalDescription(__('Sistem akan menarik data dokter terbaru dari API internal RS. Data profil marketing yang sudah Anda isi (Bio, Lokasi, Pengalaman, Pendidikan) dijamin aman dan tidak akan tertimpa.'))
+                ->modalSubmitActionLabel(__('Mulai Sinkronisasi'))
                 ->action(function (DoctorSyncService $syncService) {
                     $result = $syncService->syncFromMedInfras();
 
                     $status = $result['status'] ?? 'failed';
+                    $body = __(':total dokter valid diproses (:created baru, :updated diperbarui).', [
+                        'total' => $result['total'],
+                        'created' => $result['created'],
+                        'updated' => $result['updated'],
+                    ]);
+
+                    if (! empty($result['failed_specialties'])) {
+                        $body .= ' '.__('Spesialisasi gagal: :list', [
+                            'list' => implode(', ', $result['failed_specialties']),
+                        ]);
+                    }
+
+                    if (! empty($result['excluded_specialties'])) {
+                        $body .= ' '.__('Spesialisasi dikecualikan: :list', [
+                            'list' => implode(', ', $result['excluded_specialties']),
+                        ]);
+                    }
+
                     $notification = Notification::make()
-                        ->title($status === 'success' ? 'Sinkronisasi Selesai' : 'Sinkronisasi '.$status)
-                        ->body("{$result['total']} dokter valid diproses ({$result['created']} baru, {$result['updated']} diperbarui).".(! empty($result['failed_specialties']) ? ' Spesialisasi gagal: '.implode(', ', $result['failed_specialties']) : '').(! empty($result['excluded_specialties']) ? ' Spesialisasi dikecualikan: '.implode(', ', $result['excluded_specialties']) : ''));
+                        ->title($status === 'success' ? __('Sinkronisasi Selesai') : __('Sinkronisasi :status', ['status' => $status]))
+                        ->body($body);
                     if ($status === 'success') {
                         $notification->success();
                     } elseif ($status === 'partial') {
