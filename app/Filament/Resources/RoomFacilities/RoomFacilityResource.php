@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\RoomFacilities;
 
+use App\Enums\AdminNavigationGroup;
+use App\Filament\Concerns\FormatsBilingualRecordTitle;
 use App\Filament\Resources\RoomFacilities\Pages\CreateRoomFacility;
 use App\Filament\Resources\RoomFacilities\Pages\EditRoomFacility;
 use App\Filament\Resources\RoomFacilities\Pages\ListRoomFacilities;
@@ -17,28 +19,14 @@ use LaraZeus\SpatieTranslatable\Resources\Concerns\Translatable;
 
 class RoomFacilityResource extends Resource
 {
+    use FormatsBilingualRecordTitle;
     use Translatable;
 
     protected static ?string $model = RoomFacility::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
 
-    /**
-     * Label yang muncul di sidebar navigasi admin panel.
-     */
-    protected static ?string $navigationLabel = 'Inpatient Rooms';
-
-    /**
-     * Label plural untuk list page heading.
-     */
-    protected static ?string $pluralModelLabel = 'Inpatient Rooms';
-
-    /**
-     * Label singular untuk create/edit page heading.
-     */
-    protected static ?string $modelLabel = 'Inpatient Room';
-
-    protected static string|\UnitEnum|null $navigationGroup = 'Services & Rooms';
+    protected static string|\UnitEnum|null $navigationGroup = AdminNavigationGroup::ServicesRooms;
 
     protected static ?int $navigationSort = 2;
 
@@ -46,6 +34,21 @@ class RoomFacilityResource extends Resource
      * Kolom yang digunakan sebagai judul record (untuk breadcrumb & relasi).
      */
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getNavigationLabel(): string
+    {
+        return __('Kamar Rawat Inap');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('model.room_facility');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Kamar Rawat Inap');
+    }
 
     public static function form(Schema $schema): Schema
     {

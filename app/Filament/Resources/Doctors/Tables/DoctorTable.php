@@ -18,41 +18,41 @@ class DoctorTable
         return $table
             ->columns([
                 TextColumn::make('paramedic_code')
-                    ->label('Kode')
+                    ->label(__('Kode'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('name')
-                    ->label('Nama Dokter')
+                    ->label(__('Nama Dokter'))
                     ->searchable()
                     ->sortable()
                     ->weight('medium'),
 
                 TextColumn::make('specialty_name')
-                    ->label('Spesialisasi')
+                    ->label(__('Spesialisasi'))
                     ->badge()
                     ->color('info')
                     ->searchable()
                     ->sortable(),
 
                 IconColumn::make('is_profile_complete')
-                    ->label('Kelengkapan Profil')
+                    ->label(__('Kelengkapan Profil'))
                     ->boolean()
                     ->trueIcon('heroicon-o-check-circle')
                     ->falseIcon('heroicon-o-exclamation-circle')
                     ->trueColor('success')
                     ->falseColor('warning')
                     ->tooltip(fn (Doctor $record): string => $record->is_profile_complete
-                        ? 'Profil 4 data marketing lengkap'
-                        : 'Belum dilengkapi (menggunakan fallback bawaan)'),
+                        ? __('Profil 4 data marketing lengkap')
+                        : __('Belum dilengkapi (menggunakan fallback bawaan)')),
 
                 IconColumn::make('is_active')
-                    ->label('Tampil di Web')
+                    ->label(__('Tampil di Web'))
                     ->boolean()
                     ->sortable(),
 
                 TextColumn::make('updated_at')
-                    ->label('Terakhir Diperbarui')
+                    ->label(__('Terakhir Diperbarui'))
                     ->dateTime('d M Y, H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: false),
@@ -60,7 +60,7 @@ class DoctorTable
             ->defaultSort('name', 'asc')
             ->filters([
                 SelectFilter::make('specialty_name')
-                    ->label('Filter Spesialisasi')
+                    ->label(__('Filter Spesialisasi'))
                     ->options(fn () => Doctor::query()
                         ->whereNotNull('specialty_name')
                         ->distinct()
@@ -70,12 +70,12 @@ class DoctorTable
                     ),
 
                 TernaryFilter::make('is_active')
-                    ->label('Status Tampil di Web')
-                    ->trueLabel('Aktif Saja')
-                    ->falseLabel('Nonaktif Saja'),
+                    ->label(__('Status Tampil di Web'))
+                    ->trueLabel(__('Aktif Saja'))
+                    ->falseLabel(__('Nonaktif Saja')),
 
                 TernaryFilter::make('profile_status')
-                    ->label('Kelengkapan 4 Data')
+                    ->label(__('Kelengkapan 4 Data'))
                     ->queries(
                         true: fn (Builder $query) => $query
                             ->whereNotNull('bio->id')->where('bio->id', '!=', '')
@@ -100,7 +100,7 @@ class DoctorTable
             ])
             ->recordActions([
                 EditAction::make()
-                    ->label('Kelola Profil'),
+                    ->label(__('Kelola Profil')),
             ])
             ->toolbarActions([
                 // Tidak ada Bulk Delete (sesuai batasan: no delete)

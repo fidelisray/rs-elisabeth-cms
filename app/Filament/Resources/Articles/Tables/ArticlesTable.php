@@ -2,13 +2,13 @@
 
 namespace App\Filament\Resources\Articles\Tables;
 
+use App\Filament\Support\AccessibleTableColumns;
 use App\Filament\Support\ContentTrashActions;
 use App\Support\TranslatedContentOrder;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -18,42 +18,37 @@ class ArticlesTable
     {
         return $table
             ->columns([
-                ImageColumn::make('image_path')
-                    ->label('Preview')
-                    ->disk(config('filesystems.media_disk'))
-                    ->width(80)
-                    ->height(50),
+                AccessibleTableColumns::thumbnail('image_path', 80, 50, 'title'),
                 TextColumn::make('title')
-                    ->label('Judul')
-                    ->description(fn ($record): ?string => filled($record->getTranslation('title', 'en', false))
-                        ? 'EN: '.$record->getTranslation('title', 'en', false)
-                        : null)
+                    ->label(__('Judul'))
+                    ->getStateUsing(fn ($record): string => AccessibleTableColumns::indonesianPrimary($record, 'title'))
+                    ->description(fn ($record): ?string => AccessibleTableColumns::englishSubtitle($record, 'title'))
                     ->sortable(query: TranslatedContentOrder::column('title'))
                     ->searchable(),
                 TextColumn::make('slug')
-                    ->label('Identifier')
+                    ->label(__('Identifier'))
                     ->sortable(query: TranslatedContentOrder::column('slug'))
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('tags')
-                    ->label('Kategori')
+                    ->label(__('Kategori'))
                     ->badge()
                     ->searchable(),
                 TextColumn::make('author')
-                    ->label('Penulis')
+                    ->label(__('Penulis'))
                     ->searchable(),
                 TextColumn::make('created_at')
-                    ->label('Dibuat Pada')
+                    ->label(__('Dibuat Pada'))
                     ->dateTime()
                     ->sortable(),
                 TextColumn::make('views')
-                    ->label('Dilihat')
+                    ->label(__('Dilihat'))
                     ->numeric()
                     ->sortable(),
                 IconColumn::make('is_active')
                     ->boolean()
-                    ->label('Aktif'),
+                    ->label(__('Aktif')),
                 TextColumn::make('updated_at')
-                    ->label('Diperbarui Pada')
+                    ->label(__('Diperbarui Pada'))
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

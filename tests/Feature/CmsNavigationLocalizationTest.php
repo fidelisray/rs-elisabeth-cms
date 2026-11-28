@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AdminNavigationGroup;
 use App\Filament\Resources\Articles\ArticleResource;
 use App\Filament\Resources\BannerPromotions\BannerPromotionResource;
 use App\Filament\Resources\Doctors\DoctorResource;
@@ -17,6 +18,7 @@ use App\Filament\Resources\RoomFacilities\RoomFacilityResource;
 use App\Filament\Resources\Users\UserResource;
 use App\Filament\Widgets\FeedbackSectionWidget;
 use App\Filament\Widgets\QuestionnaireSectionWidget;
+use App\Http\Middleware\SetAdminPanelLocale;
 use App\Models\Article;
 use App\Models\BannerPromotion;
 use App\Models\Doctor;
@@ -38,6 +40,7 @@ use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
 use Filament\Pages\Dashboard;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Js;
 use Livewire\Livewire;
@@ -107,329 +110,445 @@ class CmsNavigationLocalizationTest extends TestCase
         $this->assertFalse(Permission::where('name', 'View:Dashboard')->exists());
     }
 
-    public function test_resource_navigation_plural_and_singular_labels_match_standard(): void
+    public function test_resource_navigation_plural_and_singular_labels_match_standard_for_both_locales(): void
     {
-        $expected = [
-            ArticleResource::class => [
-                'nav' => 'Articles',
-                'plural' => 'Articles',
-                'singular' => 'Article',
-                'group' => 'Marketing & Editorial',
-                'sort' => 1,
+        $this->actingAs($this->superAdmin);
+
+        $localeStandards = [
+            'id' => [
+                'dashboard' => 'Dasbor',
+                'resources' => [
+                    ArticleResource::class => [
+                        'nav' => 'Artikel',
+                        'plural' => 'Artikel',
+                        'singular' => 'Artikel',
+                        'group_enum' => AdminNavigationGroup::MarketingEditorial,
+                        'group_label' => 'Pemasaran & Editorial',
+                        'sort' => 1,
+                    ],
+                    BannerPromotionResource::class => [
+                        'nav' => 'Banner Promosi',
+                        'plural' => 'Banner Promosi',
+                        'singular' => 'Banner Promosi',
+                        'group_enum' => AdminNavigationGroup::MarketingEditorial,
+                        'group_label' => 'Pemasaran & Editorial',
+                        'sort' => 2,
+                    ],
+                    NewsResource::class => [
+                        'nav' => 'Berita',
+                        'plural' => 'Berita',
+                        'singular' => 'Berita',
+                        'group_enum' => AdminNavigationGroup::MarketingEditorial,
+                        'group_label' => 'Pemasaran & Editorial',
+                        'sort' => 3,
+                    ],
+                    PromotionResource::class => [
+                        'nav' => 'Promosi',
+                        'plural' => 'Promosi',
+                        'singular' => 'Promosi',
+                        'group_enum' => AdminNavigationGroup::MarketingEditorial,
+                        'group_label' => 'Pemasaran & Editorial',
+                        'sort' => 4,
+                    ],
+                    FacilityServiceResource::class => [
+                        'nav' => 'Fasilitas & Layanan',
+                        'plural' => 'Fasilitas & Layanan',
+                        'singular' => 'Fasilitas & Layanan',
+                        'group_enum' => AdminNavigationGroup::ServicesRooms,
+                        'group_label' => 'Layanan & Kamar',
+                        'sort' => 1,
+                    ],
+                    RoomFacilityResource::class => [
+                        'nav' => 'Kamar Rawat Inap',
+                        'plural' => 'Kamar Rawat Inap',
+                        'singular' => 'Kamar Rawat Inap',
+                        'group_enum' => AdminNavigationGroup::ServicesRooms,
+                        'group_label' => 'Layanan & Kamar',
+                        'sort' => 2,
+                    ],
+                    DoctorResource::class => [
+                        'nav' => 'Profil Dokter',
+                        'plural' => 'Profil Dokter',
+                        'singular' => 'Profil Dokter',
+                        'group_enum' => AdminNavigationGroup::DoctorsLibrary,
+                        'group_label' => 'Dokter & Perpustakaan',
+                        'sort' => 1,
+                    ],
+                    OnlineLibraryResource::class => [
+                        'nav' => 'Perpustakaan Online',
+                        'plural' => 'Perpustakaan Online',
+                        'singular' => 'Perpustakaan Online',
+                        'group_enum' => AdminNavigationGroup::DoctorsLibrary,
+                        'group_label' => 'Dokter & Perpustakaan',
+                        'sort' => 2,
+                    ],
+                    FeedbackResource::class => [
+                        'nav' => 'Kritik & Saran',
+                        'plural' => 'Kritik & Saran',
+                        'singular' => 'Kritik & Saran',
+                        'group_enum' => AdminNavigationGroup::PatientFeedback,
+                        'group_label' => 'Masukan Pasien',
+                        'sort' => 1,
+                    ],
+                    QuestionnaireResource::class => [
+                        'nav' => 'Kuesioner Kepuasan',
+                        'plural' => 'Kuesioner Kepuasan',
+                        'singular' => 'Kuesioner Kepuasan',
+                        'group_enum' => AdminNavigationGroup::PatientFeedback,
+                        'group_label' => 'Masukan Pasien',
+                        'sort' => 2,
+                    ],
+                    DynamicFormResource::class => [
+                        'nav' => 'Formulir Kuesioner Kustom',
+                        'plural' => 'Formulir Kuesioner Kustom',
+                        'singular' => 'Formulir Kuesioner Kustom',
+                        'group_enum' => AdminNavigationGroup::PatientFeedback,
+                        'group_label' => 'Masukan Pasien',
+                        'sort' => 3,
+                    ],
+                    DynamicFormSubmissionResource::class => [
+                        'nav' => 'Respons Formulir Kustom',
+                        'plural' => 'Respons Formulir Kustom',
+                        'singular' => 'Respons Formulir Kustom',
+                        'group_enum' => AdminNavigationGroup::PatientFeedback,
+                        'group_label' => 'Masukan Pasien',
+                        'sort' => 4,
+                    ],
+                    UserResource::class => [
+                        'nav' => 'Manajemen Pengguna',
+                        'plural' => 'Pengguna',
+                        'singular' => 'Pengguna',
+                        'group_enum' => AdminNavigationGroup::AccessControl,
+                        'group_label' => 'Kontrol Akses',
+                        'sort' => 1,
+                    ],
+                    RoleResource::class => [
+                        'nav' => 'Peran',
+                        'plural' => 'Peran',
+                        'singular' => 'Peran',
+                        'group_enum' => AdminNavigationGroup::AccessControl,
+                        'group_label' => 'Kontrol Akses',
+                        'sort' => 2,
+                    ],
+                ],
             ],
-            BannerPromotionResource::class => [
-                'nav' => 'Banner Promotions',
-                'plural' => 'Banner Promotions',
-                'singular' => 'Banner Promotion',
-                'group' => 'Marketing & Editorial',
-                'sort' => 2,
-            ],
-            NewsResource::class => [
-                'nav' => 'News',
-                'plural' => 'News',
-                'singular' => 'News',
-                'group' => 'Marketing & Editorial',
-                'sort' => 3,
-            ],
-            PromotionResource::class => [
-                'nav' => 'Promotions',
-                'plural' => 'Promotions',
-                'singular' => 'Promotion',
-                'group' => 'Marketing & Editorial',
-                'sort' => 4,
-            ],
-            FacilityServiceResource::class => [
-                'nav' => 'Facilities & Services',
-                'plural' => 'Facilities & Services',
-                'singular' => 'Facility & Service',
-                'group' => 'Services & Rooms',
-                'sort' => 1,
-            ],
-            RoomFacilityResource::class => [
-                'nav' => 'Inpatient Rooms',
-                'plural' => 'Inpatient Rooms',
-                'singular' => 'Inpatient Room',
-                'group' => 'Services & Rooms',
-                'sort' => 2,
-            ],
-            DoctorResource::class => [
-                'nav' => 'Doctor Profiles',
-                'plural' => 'Doctor Profiles',
-                'singular' => 'Doctor Profile',
-                'group' => 'Doctors & Library',
-                'sort' => 1,
-            ],
-            OnlineLibraryResource::class => [
-                'nav' => 'Online Library',
-                'plural' => 'Online Library',
-                'singular' => 'Online Library',
-                'group' => 'Doctors & Library',
-                'sort' => 2,
-            ],
-            FeedbackResource::class => [
-                'nav' => 'Feedback & Suggestions',
-                'plural' => 'Feedback & Suggestions',
-                'singular' => 'Feedback',
-                'group' => 'Patient Feedback',
-                'sort' => 1,
-            ],
-            QuestionnaireResource::class => [
-                'nav' => 'Satisfaction Questionnaires',
-                'plural' => 'Satisfaction Questionnaires',
-                'singular' => 'Satisfaction Questionnaire',
-                'group' => 'Patient Feedback',
-                'sort' => 2,
-            ],
-            DynamicFormResource::class => [
-                'nav' => 'Custom Questionnaire Form',
-                'plural' => 'Custom Questionnaire Forms',
-                'singular' => 'Custom Questionnaire Form',
-                'group' => 'Patient Feedback',
-                'sort' => 3,
-            ],
-            DynamicFormSubmissionResource::class => [
-                'nav' => 'Custom Questionnaire Responses',
-                'plural' => 'Custom Questionnaire Responses',
-                'singular' => 'Custom Questionnaire Response',
-                'group' => 'Patient Feedback',
-                'sort' => 4,
-            ],
-            UserResource::class => [
-                'nav' => 'User Management',
-                'plural' => 'Users',
-                'singular' => 'User',
-                'group' => 'Access Control',
-                'sort' => 1,
-            ],
-            RoleResource::class => [
-                'nav' => 'Roles',
-                'plural' => 'Roles',
-                'singular' => 'Role',
-                'group' => 'Access Control',
-                'sort' => 2,
+            'en' => [
+                'dashboard' => 'Dashboard',
+                'resources' => [
+                    ArticleResource::class => [
+                        'nav' => 'Articles',
+                        'plural' => 'Articles',
+                        'singular' => 'Article',
+                        'group_enum' => AdminNavigationGroup::MarketingEditorial,
+                        'group_label' => 'Marketing & Editorial',
+                        'sort' => 1,
+                    ],
+                    BannerPromotionResource::class => [
+                        'nav' => 'Banner Promotions',
+                        'plural' => 'Banner Promotions',
+                        'singular' => 'Banner Promotion',
+                        'group_enum' => AdminNavigationGroup::MarketingEditorial,
+                        'group_label' => 'Marketing & Editorial',
+                        'sort' => 2,
+                    ],
+                    NewsResource::class => [
+                        'nav' => 'News',
+                        'plural' => 'News',
+                        'singular' => 'News',
+                        'group_enum' => AdminNavigationGroup::MarketingEditorial,
+                        'group_label' => 'Marketing & Editorial',
+                        'sort' => 3,
+                    ],
+                    PromotionResource::class => [
+                        'nav' => 'Promotions',
+                        'plural' => 'Promotions',
+                        'singular' => 'Promotion',
+                        'group_enum' => AdminNavigationGroup::MarketingEditorial,
+                        'group_label' => 'Marketing & Editorial',
+                        'sort' => 4,
+                    ],
+                    FacilityServiceResource::class => [
+                        'nav' => 'Facilities & Services',
+                        'plural' => 'Facilities & Services',
+                        'singular' => 'Facility & Service',
+                        'group_enum' => AdminNavigationGroup::ServicesRooms,
+                        'group_label' => 'Services & Rooms',
+                        'sort' => 1,
+                    ],
+                    RoomFacilityResource::class => [
+                        'nav' => 'Inpatient Rooms',
+                        'plural' => 'Inpatient Rooms',
+                        'singular' => 'Inpatient Room',
+                        'group_enum' => AdminNavigationGroup::ServicesRooms,
+                        'group_label' => 'Services & Rooms',
+                        'sort' => 2,
+                    ],
+                    DoctorResource::class => [
+                        'nav' => 'Doctor Profiles',
+                        'plural' => 'Doctor Profiles',
+                        'singular' => 'Doctor Profile',
+                        'group_enum' => AdminNavigationGroup::DoctorsLibrary,
+                        'group_label' => 'Doctors & Library',
+                        'sort' => 1,
+                    ],
+                    OnlineLibraryResource::class => [
+                        'nav' => 'Online Library',
+                        'plural' => 'Online Library',
+                        'singular' => 'Online Library',
+                        'group_enum' => AdminNavigationGroup::DoctorsLibrary,
+                        'group_label' => 'Doctors & Library',
+                        'sort' => 2,
+                    ],
+                    FeedbackResource::class => [
+                        'nav' => 'Feedback & Suggestions',
+                        'plural' => 'Feedback & Suggestions',
+                        'singular' => 'Feedback',
+                        'group_enum' => AdminNavigationGroup::PatientFeedback,
+                        'group_label' => 'Patient Feedback',
+                        'sort' => 1,
+                    ],
+                    QuestionnaireResource::class => [
+                        'nav' => 'Satisfaction Questionnaires',
+                        'plural' => 'Satisfaction Questionnaires',
+                        'singular' => 'Satisfaction Questionnaire',
+                        'group_enum' => AdminNavigationGroup::PatientFeedback,
+                        'group_label' => 'Patient Feedback',
+                        'sort' => 2,
+                    ],
+                    DynamicFormResource::class => [
+                        'nav' => 'Custom Questionnaire Form',
+                        'plural' => 'Custom Questionnaire Forms',
+                        'singular' => 'Custom Questionnaire Form',
+                        'group_enum' => AdminNavigationGroup::PatientFeedback,
+                        'group_label' => 'Patient Feedback',
+                        'sort' => 3,
+                    ],
+                    DynamicFormSubmissionResource::class => [
+                        'nav' => 'Custom Questionnaire Responses',
+                        'plural' => 'Custom Questionnaire Responses',
+                        'singular' => 'Custom Questionnaire Response',
+                        'group_enum' => AdminNavigationGroup::PatientFeedback,
+                        'group_label' => 'Patient Feedback',
+                        'sort' => 4,
+                    ],
+                    UserResource::class => [
+                        'nav' => 'User Management',
+                        'plural' => 'Users',
+                        'singular' => 'User',
+                        'group_enum' => AdminNavigationGroup::AccessControl,
+                        'group_label' => 'Access Control',
+                        'sort' => 1,
+                    ],
+                    RoleResource::class => [
+                        'nav' => 'Roles',
+                        'plural' => 'Roles',
+                        'singular' => 'Role',
+                        'group_enum' => AdminNavigationGroup::AccessControl,
+                        'group_label' => 'Access Control',
+                        'sort' => 2,
+                    ],
+                ],
             ],
         ];
 
-        $this->actingAs($this->superAdmin);
+        foreach ($localeStandards as $locale => $standard) {
+            App::setLocale($locale);
 
-        $this->assertSame('Dashboard', Dashboard::getNavigationLabel());
-        $this->assertSame('Dashboard', (new Dashboard)->getTitle());
-        $this->assertNull(Dashboard::getNavigationGroup());
+            $this->assertSame($standard['dashboard'], Dashboard::getNavigationLabel(), "[{$locale}] Dashboard nav mismatch");
+            $this->assertSame($standard['dashboard'], (new Dashboard)->getTitle(), "[{$locale}] Dashboard title mismatch");
+            $this->assertNull(Dashboard::getNavigationGroup());
 
-        foreach ($expected as $resource => $labels) {
-            $this->assertSame($labels['nav'], $resource::getNavigationLabel(), "{$resource} navigationLabel mismatch");
-            $this->assertSame($labels['plural'], $resource::getTitleCasePluralModelLabel(), "{$resource} pluralModelLabel mismatch");
-            $this->assertSame($labels['singular'], $resource::getTitleCaseModelLabel(), "{$resource} modelLabel mismatch");
-            $this->assertSame($labels['group'], $resource::getNavigationGroup(), "{$resource} navigationGroup mismatch");
-            $this->assertSame($labels['sort'], $resource::getNavigationSort(), "{$resource} navigationSort mismatch");
+            foreach ($standard['resources'] as $resource => $labels) {
+                $this->assertSame($labels['nav'], $resource::getNavigationLabel(), "[{$locale}] {$resource} navigationLabel mismatch");
+                $this->assertSame($labels['plural'], $resource::getTitleCasePluralModelLabel(), "[{$locale}] {$resource} pluralModelLabel mismatch");
+                $this->assertSame($labels['singular'], $resource::getTitleCaseModelLabel(), "[{$locale}] {$resource} modelLabel mismatch");
+
+                $group = $resource::getNavigationGroup();
+                $this->assertSame($labels['group_enum'], $group, "[{$locale}] {$resource} navigationGroup enum mismatch");
+                $this->assertSame($labels['group_label'], $group->getLabel(), "[{$locale}] {$resource} navigationGroup label mismatch");
+                $this->assertSame($labels['sort'], $resource::getNavigationSort(), "[{$locale}] {$resource} navigationSort mismatch");
+            }
         }
+
+        App::setLocale('id');
     }
 
-    public function test_super_admin_sidebar_navigation_groups_labels_and_order(): void
+    public function test_super_admin_sidebar_navigation_groups_labels_and_order_in_both_locales(): void
     {
         $this->actingAs($this->superAdmin);
 
-        $panel = Filament::getPanel('admin');
-        $groups = array_values($panel->getNavigation());
-
-        $this->assertCount(6, $groups);
-
-        $expectedGroups = [
-            [
-                'label' => null,
-                'items' => ['Dashboard'],
+        $localeCases = [
+            'id' => [
+                'dashboard' => 'Dasbor',
+                'groups' => [
+                    ['label' => null, 'items' => ['Dasbor']],
+                    ['label' => 'Pemasaran & Editorial', 'items' => ['Artikel', 'Banner Promosi', 'Berita', 'Promosi']],
+                    ['label' => 'Layanan & Kamar', 'items' => ['Fasilitas & Layanan', 'Kamar Rawat Inap']],
+                    ['label' => 'Dokter & Perpustakaan', 'items' => ['Profil Dokter', 'Perpustakaan Online']],
+                    ['label' => 'Masukan Pasien', 'items' => ['Kritik & Saran', 'Kuesioner Kepuasan', 'Formulir Kuesioner Kustom', 'Respons Formulir Kustom']],
+                    ['label' => 'Kontrol Akses', 'items' => ['Manajemen Pengguna', 'Peran']],
+                ],
+                'encodedGroups' => [
+                    'Pemasaran &amp; Editorial',
+                    'Layanan &amp; Kamar',
+                    'Dokter &amp; Perpustakaan',
+                    'Masukan Pasien',
+                    'Kontrol Akses',
+                ],
+                'activeRoutes' => [
+                    '/admin/articles' => ['Pemasaran & Editorial', 'Artikel'],
+                    '/admin/facility-services' => ['Layanan & Kamar', 'Fasilitas & Layanan'],
+                    '/admin/doctors' => ['Dokter & Perpustakaan', 'Profil Dokter'],
+                    '/admin/feedbacks/feedback' => ['Masukan Pasien', 'Kritik & Saran'],
+                    '/admin/users' => ['Kontrol Akses', 'Manajemen Pengguna'],
+                    '/admin/shield/roles' => ['Kontrol Akses', 'Peran'],
+                ],
+                'forbiddenSidebar' => [
+                    'Dashboard',
+                    'Marketing & Editorial',
+                    'Access Control',
+                    'Facility Services',
+                    'Room Facilities',
+                    'Administration',
+                    'Administrasi',
+                    'Filament Shield',
+                    'Konten Halaman Utama',
+                ],
             ],
-            [
-                'label' => 'Marketing & Editorial',
-                'items' => ['Articles', 'Banner Promotions', 'News', 'Promotions'],
-            ],
-            [
-                'label' => 'Services & Rooms',
-                'items' => ['Facilities & Services', 'Inpatient Rooms'],
-            ],
-            [
-                'label' => 'Doctors & Library',
-                'items' => ['Doctor Profiles', 'Online Library'],
-            ],
-            [
-                'label' => 'Patient Feedback',
-                'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires', 'Custom Questionnaire Form', 'Custom Questionnaire Responses'],
-            ],
-            [
-                'label' => 'Access Control',
-                'items' => ['User Management', 'Roles'],
+            'en' => [
+                'dashboard' => 'Dashboard',
+                'groups' => [
+                    ['label' => null, 'items' => ['Dashboard']],
+                    ['label' => 'Marketing & Editorial', 'items' => ['Articles', 'Banner Promotions', 'News', 'Promotions']],
+                    ['label' => 'Services & Rooms', 'items' => ['Facilities & Services', 'Inpatient Rooms']],
+                    ['label' => 'Doctors & Library', 'items' => ['Doctor Profiles', 'Online Library']],
+                    ['label' => 'Patient Feedback', 'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires', 'Custom Questionnaire Form', 'Custom Questionnaire Responses']],
+                    ['label' => 'Access Control', 'items' => ['User Management', 'Roles']],
+                ],
+                'encodedGroups' => [
+                    'Marketing &amp; Editorial',
+                    'Services &amp; Rooms',
+                    'Doctors &amp; Library',
+                    'Patient Feedback',
+                    'Access Control',
+                ],
+                'activeRoutes' => [
+                    '/admin/articles' => ['Marketing & Editorial', 'Articles'],
+                    '/admin/facility-services' => ['Services & Rooms', 'Facilities & Services'],
+                    '/admin/doctors' => ['Doctors & Library', 'Doctor Profiles'],
+                    '/admin/feedbacks/feedback' => ['Patient Feedback', 'Feedback & Suggestions'],
+                    '/admin/users' => ['Access Control', 'User Management'],
+                    '/admin/shield/roles' => ['Access Control', 'Roles'],
+                ],
+                'forbiddenSidebar' => [
+                    'Dasbor',
+                    'Pemasaran & Editorial',
+                    'Kontrol Akses',
+                    'Profil Dokter',
+                    'Facility Services',
+                    'Room Facilities',
+                    'Facilities And Services',
+                    'Perpustakaan Online',
+                    'Kuesioner Kepuasan',
+                    'Kritik & Saran',
+                    'Manajemen User',
+                    'Manajemen Pengguna',
+                    'Administration',
+                    'Administrasi',
+                    'Filament Shield',
+                    'Konten Halaman Utama',
+                    'Peran',
+                ],
             ],
         ];
 
-        foreach ($expectedGroups as $index => $expectedGroup) {
-            /** @var NavigationGroup $group */
-            $group = $groups[$index];
-            $this->assertSame($expectedGroup['label'], $group->getLabel(), "Navigation group label mismatch at index {$index}");
-
-            if ($expectedGroup['label'] !== null) {
-                $this->assertTrue($group->isCollapsible(), "Group [{$expectedGroup['label']}] should be collapsible.");
-                $this->assertFalse($group->isCollapsed(), "Group [{$expectedGroup['label']}] should be expanded by default.");
-                $this->assertNull($group->getIcon(), "Group [{$expectedGroup['label']}] should not define a group icon.");
-            }
-
-            $items = collect($group->getItems())->values();
-            $this->assertSame(
-                $expectedGroup['items'],
-                $items->map(fn (NavigationItem $item): string => $item->getLabel())->all(),
-                "Navigation items mismatch for group [{$expectedGroup['label']}]"
-            );
-
-            foreach ($items as $item) {
-                $this->assertNotNull(
-                    $item->getIcon(),
-                    "Submenu item [{$item->getLabel()}] should retain its icon."
-                );
-            }
-        }
-
-        $response = $this->get('/admin')->assertOk();
-        $html = $response->getContent();
-        $this->assertSame('Dashboard', $this->extractPageHeading($html));
-        $this->assertSame($this->expectedDocumentTitle('Dashboard'), $this->extractPageTitle($html));
-
-        $response->assertSeeInOrder([
-            'Dashboard',
-            'Marketing & Editorial',
-            'Articles',
-            'Banner Promotions',
-            'News',
-            'Promotions',
-            'Services & Rooms',
-            'Facilities & Services',
-            'Inpatient Rooms',
-            'Doctors & Library',
-            'Doctor Profiles',
-            'Online Library',
-            'Patient Feedback',
-            'Feedback & Suggestions',
-            'Satisfaction Questionnaires',
-            'Custom Questionnaire Form',
-            'Custom Questionnaire Responses',
-            'Access Control',
-            'User Management',
-            'Roles',
-        ]);
-
-        $sidebarHtml = $this->extractSidebarNavigationHtml($html);
-        foreach ([
-            'Marketing &amp; Editorial',
-            'Services &amp; Rooms',
-            'Doctors &amp; Library',
-            'Patient Feedback',
-            'Access Control',
-        ] as $encodedGroupLabel) {
-            $this->assertSame(
-                1,
-                preg_match(
-                    '/<li\b[^>]*data-group-label="'.preg_quote($encodedGroupLabel, '/').'"[^>]*\sclass="([^"]*)"/s',
-                    $sidebarHtml,
-                    $groupAttrMatches
-                ),
-                "Expected collapsible sidebar group [{$encodedGroupLabel}] in rendered HTML."
-            );
-            $groupClasses = preg_split('/\s+/', trim($groupAttrMatches[1])) ?: [];
-            $this->assertContains('fi-sidebar-group', $groupClasses);
-            $this->assertContains('fi-collapsible', $groupClasses);
-            $this->assertNotContains(
-                'fi-collapsed',
-                $groupClasses,
-                "Group [{$encodedGroupLabel}] should not render as collapsed initially."
-            );
-        }
-
-        $this->assertStringContainsString('JSON.stringify([])', $sidebarHtml);
-        $this->assertStringNotContainsString('&amp;amp;', $sidebarHtml);
-
-        $renderedItemLabels = $this->extractSidebarItemLabels($sidebarHtml);
-        $this->assertSame([
-            'Dashboard',
-            'Articles',
-            'Banner Promotions',
-            'News',
-            'Promotions',
-            'Facilities & Services',
-            'Inpatient Rooms',
-            'Doctor Profiles',
-            'Online Library',
-            'Feedback & Suggestions',
-            'Satisfaction Questionnaires',
-            'Custom Questionnaire Form',
-            'Custom Questionnaire Responses',
-            'User Management',
-            'Roles',
-        ], $renderedItemLabels);
-
-        $this->assertSame(
-            count($renderedItemLabels),
-            preg_match_all('/<svg[^>]*class="[^"]*fi-sidebar-item-icon[^"]*"/s', $sidebarHtml),
-            'Every sidebar navigation item must render its submenu icon SVG.'
-        );
-
-        $this->assertSidebarDomStructure($html, $expectedGroups, null, 'Dashboard');
-
-        foreach ([
-            '/admin/articles' => ['Marketing & Editorial', 'Articles'],
-            '/admin/facility-services' => ['Services & Rooms', 'Facilities & Services'],
-            '/admin/doctors' => ['Doctors & Library', 'Doctor Profiles'],
-            '/admin/feedbacks/feedback' => ['Patient Feedback', 'Feedback & Suggestions'],
-            '/admin/users' => ['Access Control', 'User Management'],
-            '/admin/shield/roles' => ['Access Control', 'Roles'],
-        ] as $route => [$activeGroup, $activeItem]) {
+        foreach ($localeCases as $locale => $case) {
+            App::setLocale($locale);
             app()->forgetScopedInstances();
-            $routeHtml = $this->get($route)->assertOk()->getContent();
-            $this->assertSidebarDomStructure($routeHtml, $expectedGroups, $activeGroup, $activeItem);
+
+            $panel = Filament::getPanel('admin');
+            $groups = array_values($panel->getNavigation());
+
+            $this->assertCount(6, $groups, "[{$locale}] Navigation group count mismatch");
+
+            foreach ($case['groups'] as $index => $expectedGroup) {
+                /** @var NavigationGroup $group */
+                $group = $groups[$index];
+                $this->assertSame($expectedGroup['label'], $group->getLabel(), "[{$locale}] Group label mismatch at index {$index}");
+
+                if ($expectedGroup['label'] !== null) {
+                    $this->assertTrue($group->isCollapsible(), "[{$locale}] Group [{$expectedGroup['label']}] should be collapsible.");
+                    $this->assertFalse($group->isCollapsed(), "[{$locale}] Group [{$expectedGroup['label']}] should be expanded by default.");
+                    $this->assertNull($group->getIcon(), "[{$locale}] Group [{$expectedGroup['label']}] should not define a group icon.");
+                }
+
+                $items = collect($group->getItems())->values();
+                $this->assertSame(
+                    $expectedGroup['items'],
+                    $items->map(fn (NavigationItem $item): string => $item->getLabel())->all(),
+                    "[{$locale}] Navigation items mismatch for group [{$expectedGroup['label']}]"
+                );
+
+                foreach ($items as $item) {
+                    $this->assertNotNull($item->getIcon(), "[{$locale}] Submenu item [{$item->getLabel()}] should retain its icon.");
+                }
+            }
+
+            $response = $this->withSession([SetAdminPanelLocale::SESSION_KEY => $locale])
+                ->get('/admin')
+                ->assertOk();
+            $html = $response->getContent();
+            $this->assertSame($case['dashboard'], $this->extractPageHeading($html));
+            $this->assertSame($this->expectedDocumentTitle($case['dashboard']), $this->extractPageTitle($html));
+
+            $sidebarHtml = $this->extractSidebarNavigationHtml($html);
+            foreach ($case['encodedGroups'] as $encodedGroupLabel) {
+                $this->assertSame(
+                    1,
+                    preg_match(
+                        '/<li\b[^>]*data-group-label="'.preg_quote($encodedGroupLabel, '/').'"[^>]*\sclass="([^"]*)"/s',
+                        $sidebarHtml,
+                        $groupAttrMatches
+                    ),
+                    "[{$locale}] Expected collapsible sidebar group [{$encodedGroupLabel}] in rendered HTML."
+                );
+                $groupClasses = preg_split('/\s+/', trim($groupAttrMatches[1])) ?: [];
+                $this->assertContains('fi-sidebar-group', $groupClasses);
+                $this->assertContains('fi-collapsible', $groupClasses);
+                $this->assertNotContains('fi-collapsed', $groupClasses);
+            }
+
+            $this->assertStringContainsString('JSON.stringify([])', $sidebarHtml);
+            $this->assertStringNotContainsString('&amp;amp;', $sidebarHtml);
+
+            $expectedItemFlat = collect($case['groups'])->flatMap(fn (array $g): array => $g['items'])->values()->all();
+            $renderedItemLabels = $this->extractSidebarItemLabels($sidebarHtml);
+            $this->assertSame($expectedItemFlat, $renderedItemLabels);
+
+            $this->assertSame(
+                count($renderedItemLabels),
+                preg_match_all('/<svg[^>]*class="[^"]*fi-sidebar-item-icon[^"]*"/s', $sidebarHtml),
+                "[{$locale}] Every sidebar navigation item must render its submenu icon SVG."
+            );
+
+            $this->assertSidebarDomStructure($html, $case['groups'], null, $case['dashboard']);
+
+            foreach ($case['activeRoutes'] as $route => [$activeGroup, $activeItem]) {
+                app()->forgetScopedInstances();
+                $routeHtml = $this->withSession([SetAdminPanelLocale::SESSION_KEY => $locale])
+                    ->get($route)
+                    ->assertOk()
+                    ->getContent();
+                $this->assertSidebarDomStructure($routeHtml, $case['groups'], $activeGroup, $activeItem);
+            }
+
+            $sidebarText = $this->extractSidebarNavigationText($html);
+            foreach ($case['forbiddenSidebar'] as $forbiddenSidebarLabel) {
+                $this->assertStringNotContainsString($forbiddenSidebarLabel, $sidebarText, "[{$locale}] Unexpected [{$forbiddenSidebarLabel}] in sidebar.");
+            }
         }
 
-        foreach ([
-            'Dasbor',
-            'Profil Dokter',
-            'Facility Services',
-            'Facilities And Services',
-            'Room Facilities',
-            'Perpustakaan Online',
-            'Manajemen User',
-            'Administration',
-            'Administrasi',
-            'Filament Shield',
-            'Konten Halaman Utama',
-            'Marketing And Editorial',
-            'Services And Rooms',
-            'Doctors And Library',
-            'Peran',
-            'Daftar Peran',
-        ] as $forbidden) {
-            $response->assertDontSee($forbidden);
-        }
-
-        $sidebarText = $this->extractSidebarNavigationText($html);
-        foreach ([
-            'Dasbor',
-            'Profil Dokter',
-            'Facility Services',
-            'Room Facilities',
-            'Facilities And Services',
-            'Perpustakaan Online',
-            'Kuesioner Kepuasan',
-            'Kritik & Saran',
-            'Manajemen User',
-            'Administration',
-            'Administrasi',
-            'Filament Shield',
-            'Konten Halaman Utama',
-            'Marketing And Editorial',
-            'Services And Rooms',
-            'Doctors And Library',
-            'Peran',
-            'Daftar Peran',
-        ] as $forbiddenSidebarLabel) {
-            $this->assertStringNotContainsString($forbiddenSidebarLabel, $sidebarText);
-        }
-        $this->assertStringNotContainsStringIgnoringCase('peran', $sidebarText);
+        App::setLocale('id');
     }
 
     public function test_role_based_sidebar_navigation_visibility_hides_inaccessible_and_empty_groups(): void
@@ -438,42 +557,36 @@ class CmsNavigationLocalizationTest extends TestCase
         $panelOnlyUser = User::factory()->create(['must_change_password' => false]);
         $panelOnlyUser->assignRole($panelOnlyRole);
 
-        $expectedStaffGroups = [
-            [
-                'label' => null,
-                'items' => ['Dashboard'],
-            ],
-            [
-                'label' => 'Marketing & Editorial',
-                'items' => ['Articles', 'Banner Promotions', 'News', 'Promotions'],
-            ],
-            [
-                'label' => 'Services & Rooms',
-                'items' => ['Facilities & Services', 'Inpatient Rooms'],
-            ],
-            [
-                'label' => 'Doctors & Library',
-                'items' => ['Doctor Profiles', 'Online Library'],
-            ],
-            [
-                'label' => 'Patient Feedback',
-                'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires', 'Custom Questionnaire Form', 'Custom Questionnaire Responses'],
-            ],
+        $expectedStaffGroupsId = [
+            ['label' => null, 'items' => ['Dasbor']],
+            ['label' => 'Pemasaran & Editorial', 'items' => ['Artikel', 'Banner Promosi', 'Berita', 'Promosi']],
+            ['label' => 'Layanan & Kamar', 'items' => ['Fasilitas & Layanan', 'Kamar Rawat Inap']],
+            ['label' => 'Dokter & Perpustakaan', 'items' => ['Profil Dokter', 'Perpustakaan Online']],
+            ['label' => 'Masukan Pasien', 'items' => ['Kritik & Saran', 'Kuesioner Kepuasan', 'Formulir Kuesioner Kustom', 'Respons Formulir Kustom']],
+        ];
+
+        $expectedStaffGroupsEn = [
+            ['label' => null, 'items' => ['Dashboard']],
+            ['label' => 'Marketing & Editorial', 'items' => ['Articles', 'Banner Promotions', 'News', 'Promotions']],
+            ['label' => 'Services & Rooms', 'items' => ['Facilities & Services', 'Inpatient Rooms']],
+            ['label' => 'Doctors & Library', 'items' => ['Doctor Profiles', 'Online Library']],
+            ['label' => 'Patient Feedback', 'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires', 'Custom Questionnaire Form', 'Custom Questionnaire Responses']],
         ];
 
         foreach ([$this->marketing, $this->staffIt] as $staffUser) {
             $this->switchAuthenticatedUser($staffUser);
 
+            // Default Indonesian locale
             $panel = Filament::getPanel('admin');
             $groups = array_values($panel->getNavigation());
             $groupLabels = collect($groups)->map(fn (NavigationGroup $group): ?string => $group->getLabel())->all();
 
             $this->assertSame([
                 null,
-                'Marketing & Editorial',
-                'Services & Rooms',
-                'Doctors & Library',
-                'Patient Feedback',
+                'Pemasaran & Editorial',
+                'Layanan & Kamar',
+                'Dokter & Perpustakaan',
+                'Masukan Pasien',
             ], $groupLabels);
 
             foreach ($groups as $group) {
@@ -482,115 +595,92 @@ class CmsNavigationLocalizationTest extends TestCase
 
             $response = $this->get('/admin')->assertOk();
             $html = $response->getContent();
-            $this->assertSame('Dashboard', $this->extractPageHeading($html));
-            $this->assertSame($this->expectedDocumentTitle('Dashboard'), $this->extractPageTitle($html));
-            $this->assertSidebarDomStructure($html, $expectedStaffGroups, null, 'Dashboard');
+            $this->assertSame('Dasbor', $this->extractPageHeading($html));
+            $this->assertSame($this->expectedDocumentTitle('Dasbor'), $this->extractPageTitle($html));
+            $this->assertSidebarDomStructure($html, $expectedStaffGroupsId, null, 'Dasbor');
 
             $sidebarText = $this->extractSidebarNavigationText($html);
-            $this->assertStringContainsString('Marketing & Editorial', $sidebarText);
-            $this->assertStringContainsString('Services & Rooms', $sidebarText);
-            $this->assertStringContainsString('Doctors & Library', $sidebarText);
-            $this->assertStringContainsString('Patient Feedback', $sidebarText);
-            $this->assertStringNotContainsString('Access Control', $sidebarText);
-            $this->assertStringNotContainsString('Administration', $sidebarText);
-            $this->assertStringNotContainsString('Filament Shield', $sidebarText);
-            $response->assertDontSee('Access Control');
-            $response->assertDontSee('Administration');
-            $response->assertDontSee('User Management');
-            $response->assertDontSee('Peran');
-            $response->assertDontSee('Daftar Peran');
-            $response->assertDontSee('Dasbor');
+            $this->assertStringNotContainsString('Kontrol Akses', $sidebarText);
+            $this->assertStringNotContainsString('Manajemen Pengguna', $sidebarText);
+            $this->assertStringNotContainsString('Peran', $sidebarText);
+            $response->assertDontSee('Kontrol Akses');
+            $response->assertDontSee('Manajemen Pengguna');
+
+            // English locale via session
+            app()->forgetScopedInstances();
+            $enResponse = $this->withSession([SetAdminPanelLocale::SESSION_KEY => 'en'])
+                ->get('/admin')
+                ->assertOk();
+            $enHtml = $enResponse->getContent();
+            $this->assertSame('Dashboard', $this->extractPageHeading($enHtml));
+            $this->assertSidebarDomStructure($enHtml, $expectedStaffGroupsEn, null, 'Dashboard');
+            $enResponse->assertDontSee('Access Control');
+            $enResponse->assertDontSee('User Management');
         }
 
-        // panel_user hanya melihat Dashboard dan Patient Feedback (via PatientSubmissionPolicy).
+        // panel_user hanya melihat Dasbor dan Masukan Pasien (via PatientSubmissionPolicy).
         $this->switchAuthenticatedUser($panelOnlyUser);
 
         $panel = Filament::getPanel('admin');
         $panelUserGroups = array_values($panel->getNavigation());
         $panelUserGroupLabels = collect($panelUserGroups)->map(fn (NavigationGroup $group): ?string => $group->getLabel())->all();
 
-        $expectedPanelUserGroups = [
-            [
-                'label' => null,
-                'items' => ['Dashboard'],
-            ],
-            [
-                'label' => 'Patient Feedback',
-                'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires'],
-            ],
+        $expectedPanelUserGroupsId = [
+            ['label' => null, 'items' => ['Dasbor']],
+            ['label' => 'Masukan Pasien', 'items' => ['Kritik & Saran', 'Kuesioner Kepuasan']],
         ];
 
-        $this->assertSame([null, 'Patient Feedback'], $panelUserGroupLabels);
+        $this->assertSame([null, 'Masukan Pasien'], $panelUserGroupLabels);
         $this->assertSame(
-            ['Dashboard'],
+            ['Dasbor'],
             collect($panelUserGroups[0]->getItems())->map(fn (NavigationItem $item): string => $item->getLabel())->values()->all()
         );
         $this->assertSame(
-            ['Feedback & Suggestions', 'Satisfaction Questionnaires'],
+            ['Kritik & Saran', 'Kuesioner Kepuasan'],
             collect($panelUserGroups[1]->getItems())->map(fn (NavigationItem $item): string => $item->getLabel())->values()->all()
         );
 
         $panelUserResponse = $this->get('/admin')->assertOk();
         $panelUserHtml = $panelUserResponse->getContent();
-        $this->assertSame('Dashboard', $this->extractPageHeading($panelUserHtml));
-        $this->assertSame($this->expectedDocumentTitle('Dashboard'), $this->extractPageTitle($panelUserHtml));
-        $this->assertSidebarDomStructure($panelUserHtml, $expectedPanelUserGroups, null, 'Dashboard');
+        $this->assertSame('Dasbor', $this->extractPageHeading($panelUserHtml));
+        $this->assertSidebarDomStructure($panelUserHtml, $expectedPanelUserGroupsId, null, 'Dasbor');
 
         $panelUserSidebarHtml = $this->extractSidebarNavigationHtml($panelUserHtml);
         $this->assertSame(
-            ['Dashboard', 'Feedback & Suggestions', 'Satisfaction Questionnaires'],
+            ['Dasbor', 'Kritik & Saran', 'Kuesioner Kepuasan'],
             $this->extractSidebarItemLabels($panelUserSidebarHtml)
         );
         $this->assertSame(1, preg_match_all('/<li\b[^>]*\bdata-group-label="([^"]+)"/s', $panelUserSidebarHtml, $panelUserRenderedGroups));
-        $this->assertSame(['Patient Feedback'], $panelUserRenderedGroups[1]);
+        $this->assertSame(['Masukan Pasien'], $panelUserRenderedGroups[1]);
 
         $panelUserSidebarText = $this->extractSidebarNavigationText($panelUserHtml);
-        $this->assertStringContainsString('Dashboard', $panelUserSidebarText);
-        $this->assertStringContainsString('Patient Feedback', $panelUserSidebarText);
-        $this->assertStringContainsString('Feedback & Suggestions', $panelUserSidebarText);
-        $this->assertStringContainsString('Satisfaction Questionnaires', $panelUserSidebarText);
-
         foreach ([
-            'Marketing & Editorial',
-            'Services & Rooms',
-            'Doctors & Library',
-            'Access Control',
-            'Administration',
-            'Filament Shield',
-            'Articles',
-            'Banner Promotions',
-            'News',
-            'Promotions',
-            'Facilities & Services',
-            'Inpatient Rooms',
-            'Doctor Profiles',
-            'Online Library',
-            'User Management',
-            'Roles',
+            'Pemasaran & Editorial',
+            'Layanan & Kamar',
+            'Dokter & Perpustakaan',
+            'Kontrol Akses',
+            'Artikel',
+            'Banner Promosi',
+            'Berita',
+            'Promosi',
+            'Fasilitas & Layanan',
+            'Kamar Rawat Inap',
+            'Profil Dokter',
+            'Perpustakaan Online',
+            'Manajemen Pengguna',
             'Peran',
-            'Daftar Peran',
-            'Dasbor',
         ] as $hiddenForPanelUser) {
             $this->assertStringNotContainsString($hiddenForPanelUser, $panelUserSidebarText);
-            $panelUserResponse->assertDontSee($hiddenForPanelUser);
         }
 
         app()->forgetScopedInstances();
         $panelUserFeedbackHtml = $this->get('/admin/feedbacks/feedback')->assertOk()->getContent();
-        $this->assertSidebarDomStructure(
-            $panelUserFeedbackHtml,
-            $expectedPanelUserGroups,
-            'Patient Feedback',
-            'Feedback & Suggestions'
-        );
+        $this->assertSidebarDomStructure($panelUserFeedbackHtml, $expectedPanelUserGroupsId, 'Masukan Pasien', 'Kritik & Saran');
+
         app()->forgetScopedInstances();
         $panelUserQuestionnaireHtml = $this->get('/admin/questionnaires')->assertOk()->getContent();
-        $this->assertSidebarDomStructure(
-            $panelUserQuestionnaireHtml,
-            $expectedPanelUserGroups,
-            'Patient Feedback',
-            'Satisfaction Questionnaires'
-        );
+        $this->assertSidebarDomStructure($panelUserQuestionnaireHtml, $expectedPanelUserGroupsId, 'Masukan Pasien', 'Kuesioner Kepuasan');
+
         $this->get('/admin/articles')->assertForbidden();
         $this->get('/admin/facility-services')->assertForbidden();
         $this->get('/admin/doctors')->assertForbidden();
@@ -604,50 +694,28 @@ class CmsNavigationLocalizationTest extends TestCase
         $partialUser->assignRole($partialRole);
         $this->switchAuthenticatedUser($partialUser);
 
-        $expectedPartialGroups = [
-            [
-                'label' => null,
-                'items' => ['Dashboard'],
-            ],
-            [
-                'label' => 'Marketing & Editorial',
-                'items' => ['Articles'],
-            ],
-            [
-                'label' => 'Patient Feedback',
-                'items' => ['Feedback & Suggestions', 'Satisfaction Questionnaires'],
-            ],
+        $expectedPartialGroupsId = [
+            ['label' => null, 'items' => ['Dasbor']],
+            ['label' => 'Pemasaran & Editorial', 'items' => ['Artikel']],
+            ['label' => 'Masukan Pasien', 'items' => ['Kritik & Saran', 'Kuesioner Kepuasan']],
         ];
 
         $partialNavGroups = array_values(Filament::getPanel('admin')->getNavigation());
         $this->assertSame(
-            [null, 'Marketing & Editorial', 'Patient Feedback'],
+            [null, 'Pemasaran & Editorial', 'Masukan Pasien'],
             collect($partialNavGroups)->map(fn (NavigationGroup $group): ?string => $group->getLabel())->all()
         );
         $partialDashboardHtml = $this->get('/admin')->assertOk()->getContent();
-        $this->assertSidebarDomStructure($partialDashboardHtml, $expectedPartialGroups, null, 'Dashboard');
-        $partialSidebarText = $this->extractSidebarNavigationText($partialDashboardHtml);
-        foreach ([
-            'Banner Promotions',
-            'News',
-            'Promotions',
-            'Services & Rooms',
-            'Doctors & Library',
-            'Access Control',
-        ] as $hiddenForPartialUser) {
-            $this->assertStringNotContainsString($hiddenForPartialUser, $partialSidebarText);
-        }
+        $this->assertSidebarDomStructure($partialDashboardHtml, $expectedPartialGroupsId, null, 'Dasbor');
 
-        // Pemberian permission User/Role langsung ke non-super_admin tetap tidak membuka grup Access Control.
+        // Pemberian permission User/Role langsung ke non-super_admin tetap tidak membuka grup Kontrol Akses.
         $panelOnlyUser->givePermissionTo(['ViewAny:User', 'ViewAny:Role']);
         $this->switchAuthenticatedUser($panelOnlyUser);
         $groupsAfterDirectPerm = array_values(Filament::getPanel('admin')->getNavigation());
         $this->assertSame(
-            [null, 'Patient Feedback'],
+            [null, 'Masukan Pasien'],
             collect($groupsAfterDirectPerm)->map(fn (NavigationGroup $group): ?string => $group->getLabel())->all()
         );
-        $panelUserAfterPermHtml = $this->get('/admin')->assertOk()->getContent();
-        $this->assertSidebarDomStructure($panelUserAfterPermHtml, $expectedPanelUserGroups, null, 'Dashboard');
 
         // User tanpa role tidak memiliki grup navigasi yang tersisa maupun grup kosong.
         $rolelessUser = User::factory()->create(['must_change_password' => false]);
@@ -660,7 +728,7 @@ class CmsNavigationLocalizationTest extends TestCase
         $this->get('/admin')->assertForbidden();
     }
 
-    public function test_list_create_edit_and_view_page_headings_use_consistent_english_and_clean_ampersands(): void
+    public function test_list_create_edit_and_view_page_headings_switch_cleanly_between_id_and_en(): void
     {
         $this->actingAs($this->superAdmin);
 
@@ -712,88 +780,98 @@ class CmsNavigationLocalizationTest extends TestCase
         $questionnaire = QuestionnaireResponse::factory()->create();
         $role = Role::findByName('marketing', 'web');
 
-        $listExpectations = [
-            ArticleResource::getUrl('index') => 'Articles',
-            BannerPromotionResource::getUrl('index') => 'Banner Promotions',
-            DoctorResource::getUrl('index') => 'Doctor Profiles',
-            FacilityServiceResource::getUrl('index') => 'Facilities & Services',
-            FeedbackResource::getUrl('index') => 'Feedback & Suggestions',
-            RoomFacilityResource::getUrl('index') => 'Inpatient Rooms',
-            NewsResource::getUrl('index') => 'News',
-            OnlineLibraryResource::getUrl('index') => 'Online Library',
-            PromotionResource::getUrl('index') => 'Promotions',
-            QuestionnaireResource::getUrl('index') => 'Satisfaction Questionnaires',
-            UserResource::getUrl('index') => 'Users',
-            RoleResource::getUrl('index') => 'Roles',
+        $expectationsByLocale = [
+            'id' => [
+                ArticleResource::getUrl('index') => 'Artikel',
+                BannerPromotionResource::getUrl('index') => 'Banner Promosi',
+                DoctorResource::getUrl('index') => 'Profil Dokter',
+                FacilityServiceResource::getUrl('index') => 'Fasilitas & Layanan',
+                FeedbackResource::getUrl('index') => 'Kritik & Saran',
+                RoomFacilityResource::getUrl('index') => 'Kamar Rawat Inap',
+                NewsResource::getUrl('index') => 'Berita',
+                OnlineLibraryResource::getUrl('index') => 'Perpustakaan Online',
+                PromotionResource::getUrl('index') => 'Promosi',
+                QuestionnaireResource::getUrl('index') => 'Kuesioner Kepuasan',
+                UserResource::getUrl('index') => 'Pengguna',
+                RoleResource::getUrl('index') => 'Peran',
+                ArticleResource::getUrl('create') => 'Buat Artikel',
+                BannerPromotionResource::getUrl('create') => 'Buat Banner Promosi',
+                FacilityServiceResource::getUrl('create') => 'Buat Fasilitas & Layanan',
+                RoomFacilityResource::getUrl('create') => 'Buat Kamar Rawat Inap',
+                NewsResource::getUrl('create') => 'Buat Berita',
+                OnlineLibraryResource::getUrl('create') => 'Buat Perpustakaan Online',
+                PromotionResource::getUrl('create') => 'Buat Promosi',
+                UserResource::getUrl('create') => 'Buat Pengguna',
+                RoleResource::getUrl('create') => 'Buat Peran',
+                ArticleResource::getUrl('edit', ['record' => $article]) => 'Ubah Artikel Uji',
+                BannerPromotionResource::getUrl('edit', ['record' => $banner]) => 'Ubah Banner Uji',
+                DoctorResource::getUrl('edit', ['record' => $doctor]) => 'Ubah dr. Test Navigation',
+                FacilityServiceResource::getUrl('edit', ['record' => $facility]) => 'Ubah Layanan IGD',
+                FacilityServiceResource::getUrl('edit', ['record' => $facilityWithAmpersand]) => 'Ubah Layanan Ibu & Anak',
+                RoomFacilityResource::getUrl('edit', ['record' => $room]) => 'Ubah Ruang Anggrek',
+                NewsResource::getUrl('edit', ['record' => $news]) => 'Ubah Berita Uji',
+                OnlineLibraryResource::getUrl('edit', ['record' => $library]) => 'Ubah Dokumen Uji',
+                PromotionResource::getUrl('edit', ['record' => $promotion]) => 'Ubah Promo Uji',
+                UserResource::getUrl('edit', ['record' => $this->marketing]) => 'Ubah '.$this->marketing->name,
+                RoleResource::getUrl('edit', ['record' => $role]) => 'Ubah marketing',
+                RoleResource::getUrl('view', ['record' => $role]) => 'Lihat marketing',
+                FeedbackResource::getUrl('view', ['record' => $feedback]) => 'Lihat FB-NAV-001',
+                QuestionnaireResource::getUrl('view', ['record' => $questionnaire]) => 'Lihat Kuesioner Kepuasan',
+            ],
+            'en' => [
+                ArticleResource::getUrl('index') => 'Articles',
+                BannerPromotionResource::getUrl('index') => 'Banner Promotions',
+                DoctorResource::getUrl('index') => 'Doctor Profiles',
+                FacilityServiceResource::getUrl('index') => 'Facilities & Services',
+                FeedbackResource::getUrl('index') => 'Feedback & Suggestions',
+                RoomFacilityResource::getUrl('index') => 'Inpatient Rooms',
+                NewsResource::getUrl('index') => 'News',
+                OnlineLibraryResource::getUrl('index') => 'Online Library',
+                PromotionResource::getUrl('index') => 'Promotions',
+                QuestionnaireResource::getUrl('index') => 'Satisfaction Questionnaires',
+                UserResource::getUrl('index') => 'Users',
+                RoleResource::getUrl('index') => 'Roles',
+                ArticleResource::getUrl('create') => 'Create Article',
+                BannerPromotionResource::getUrl('create') => 'Create Banner Promotion',
+                FacilityServiceResource::getUrl('create') => 'Create Facility & Service',
+                RoomFacilityResource::getUrl('create') => 'Create Inpatient Room',
+                NewsResource::getUrl('create') => 'Create News',
+                OnlineLibraryResource::getUrl('create') => 'Create Online Library',
+                PromotionResource::getUrl('create') => 'Create Promotion',
+                UserResource::getUrl('create') => 'Create User',
+                RoleResource::getUrl('create') => 'Create Role',
+                // Record title remains anchored to Indonesian primary title even in EN panel mode.
+                ArticleResource::getUrl('edit', ['record' => $article]) => 'Edit Artikel Uji',
+                BannerPromotionResource::getUrl('edit', ['record' => $banner]) => 'Edit Banner Uji',
+                DoctorResource::getUrl('edit', ['record' => $doctor]) => 'Edit dr. Test Navigation',
+                FacilityServiceResource::getUrl('edit', ['record' => $facility]) => 'Edit Layanan IGD',
+                FacilityServiceResource::getUrl('edit', ['record' => $facilityWithAmpersand]) => 'Edit Layanan Ibu & Anak',
+                RoomFacilityResource::getUrl('edit', ['record' => $room]) => 'Edit Ruang Anggrek',
+                NewsResource::getUrl('edit', ['record' => $news]) => 'Edit Berita Uji',
+                OnlineLibraryResource::getUrl('edit', ['record' => $library]) => 'Edit Dokumen Uji',
+                PromotionResource::getUrl('edit', ['record' => $promotion]) => 'Edit Promo Uji',
+                UserResource::getUrl('edit', ['record' => $this->marketing]) => 'Edit '.$this->marketing->name,
+                RoleResource::getUrl('edit', ['record' => $role]) => 'Edit marketing',
+                RoleResource::getUrl('view', ['record' => $role]) => 'View marketing',
+                FeedbackResource::getUrl('view', ['record' => $feedback]) => 'View FB-NAV-001',
+                QuestionnaireResource::getUrl('view', ['record' => $questionnaire]) => 'View Satisfaction Questionnaire',
+            ],
         ];
 
-        foreach ($listExpectations as $url => $expectedHeading) {
-            $response = $this->get($url)->assertOk();
-            $html = $response->getContent();
-            $heading = $this->extractPageHeading($html);
-            $title = $this->extractPageTitle($html);
-            $documentPageTitle = $this->extractDocumentPageTitle($html);
-            $this->assertSame($expectedHeading, $heading, "List heading mismatch at [{$url}]");
-            $this->assertSame($this->expectedDocumentTitle($expectedHeading), $title, "List <title> mismatch at [{$url}]");
-            $this->assertStringNotContainsString('And', $heading, "Unexpected capitalized 'And' in [{$heading}]");
-            $this->assertStringNotContainsString('And', $documentPageTitle, "Unexpected capitalized 'And' in <title> [{$title}]");
-        }
-
-        $createExpectations = [
-            ArticleResource::getUrl('create') => 'Create Article',
-            BannerPromotionResource::getUrl('create') => 'Create Banner Promotion',
-            FacilityServiceResource::getUrl('create') => 'Create Facility & Service',
-            RoomFacilityResource::getUrl('create') => 'Create Inpatient Room',
-            NewsResource::getUrl('create') => 'Create News',
-            OnlineLibraryResource::getUrl('create') => 'Create Online Library',
-            PromotionResource::getUrl('create') => 'Create Promotion',
-            UserResource::getUrl('create') => 'Create User',
-            RoleResource::getUrl('create') => 'Create Role',
-        ];
-
-        foreach ($createExpectations as $url => $expectedHeading) {
-            $response = $this->get($url)->assertOk();
-            $html = $response->getContent();
-            $heading = $this->extractPageHeading($html);
-            $title = $this->extractPageTitle($html);
-            $documentPageTitle = $this->extractDocumentPageTitle($html);
-            $this->assertSame($expectedHeading, $heading, "Create heading mismatch at [{$url}]");
-            $this->assertSame($this->expectedDocumentTitle($expectedHeading), $title, "Create <title> mismatch at [{$url}]");
-            $this->assertStringNotContainsString('Buat ', $heading);
-            $this->assertStringNotContainsString('Buat ', $documentPageTitle);
-            $this->assertStringNotContainsString('And', $heading);
-            $this->assertStringNotContainsString('And', $documentPageTitle);
-        }
-
-        $editAndViewExpectations = [
-            ArticleResource::getUrl('edit', ['record' => $article]) => 'Edit Artikel Uji',
-            BannerPromotionResource::getUrl('edit', ['record' => $banner]) => 'Edit Banner Uji',
-            DoctorResource::getUrl('edit', ['record' => $doctor]) => 'Edit dr. Test Navigation',
-            FacilityServiceResource::getUrl('edit', ['record' => $facility]) => 'Edit Layanan IGD',
-            FacilityServiceResource::getUrl('edit', ['record' => $facilityWithAmpersand]) => 'Edit Layanan Ibu & Anak',
-            RoomFacilityResource::getUrl('edit', ['record' => $room]) => 'Edit Ruang Anggrek',
-            NewsResource::getUrl('edit', ['record' => $news]) => 'Edit Berita Uji',
-            OnlineLibraryResource::getUrl('edit', ['record' => $library]) => 'Edit Dokumen Uji',
-            PromotionResource::getUrl('edit', ['record' => $promotion]) => 'Edit Promo Uji',
-            UserResource::getUrl('edit', ['record' => $this->marketing]) => 'Edit '.$this->marketing->name,
-            RoleResource::getUrl('edit', ['record' => $role]) => 'Edit marketing',
-            RoleResource::getUrl('view', ['record' => $role]) => 'View marketing',
-            FeedbackResource::getUrl('view', ['record' => $feedback]) => 'View FB-NAV-001',
-            QuestionnaireResource::getUrl('view', ['record' => $questionnaire]) => 'View Satisfaction Questionnaire',
-        ];
-
-        foreach ($editAndViewExpectations as $url => $expectedHeading) {
-            $response = $this->get($url)->assertOk();
-            $html = $response->getContent();
-            $heading = $this->extractPageHeading($html);
-            $title = $this->extractPageTitle($html);
-            $documentPageTitle = $this->extractDocumentPageTitle($html);
-            $this->assertSame($expectedHeading, $heading, "Edit/View heading mismatch at [{$url}]");
-            $this->assertSame($this->expectedDocumentTitle($expectedHeading), $title, "Edit/View <title> mismatch at [{$url}]");
-            $this->assertStringNotContainsString('Ubah ', $heading);
-            $this->assertStringNotContainsString('Ubah ', $documentPageTitle);
-            $this->assertStringNotContainsString('Lihat ', $heading);
-            $this->assertStringNotContainsString('Lihat ', $documentPageTitle);
+        foreach ($expectationsByLocale as $locale => $expectations) {
+            foreach ($expectations as $url => $expectedHeading) {
+                $response = $this->withSession([SetAdminPanelLocale::SESSION_KEY => $locale])
+                    ->get($url)
+                    ->assertOk();
+                $html = $response->getContent();
+                $heading = $this->extractPageHeading($html);
+                $title = $this->extractPageTitle($html);
+                $documentPageTitle = $this->extractDocumentPageTitle($html);
+                $this->assertSame($expectedHeading, $heading, "[{$locale}] Heading mismatch at [{$url}]");
+                $this->assertSame($this->expectedDocumentTitle($expectedHeading), $title, "[{$locale}] <title> mismatch at [{$url}]");
+                $this->assertStringNotContainsString('And', $heading, "[{$locale}] Unexpected 'And' in [{$heading}]");
+                $this->assertStringNotContainsString('And', $documentPageTitle, "[{$locale}] Unexpected 'And' in <title> [{$title}]");
+            }
         }
     }
 
@@ -806,173 +884,117 @@ class CmsNavigationLocalizationTest extends TestCase
             'slug' => ['id' => 'layanan-ibu-anak', 'en' => 'maternity-child-service'],
         ]);
 
-        $response = $this->get(FacilityServiceResource::getUrl('edit', ['record' => $facility]))->assertOk();
-        $html = $response->getContent();
-        $heading = $this->extractPageHeading($html);
-        $title = $this->extractPageTitle($html);
-        $documentPageTitle = $this->extractDocumentPageTitle($html);
+        foreach ([
+            'id' => 'Ubah Layanan Ibu & Anak',
+            'en' => 'Edit Layanan Ibu & Anak',
+        ] as $locale => $expectedHeading) {
+            $response = $this->withSession([SetAdminPanelLocale::SESSION_KEY => $locale])
+                ->get(FacilityServiceResource::getUrl('edit', ['record' => $facility]))
+                ->assertOk();
+            $html = $response->getContent();
+            $heading = $this->extractPageHeading($html);
+            $title = $this->extractPageTitle($html);
+            $documentPageTitle = $this->extractDocumentPageTitle($html);
 
-        $this->assertSame('Edit Layanan Ibu & Anak', $heading);
-        $this->assertSame($this->expectedDocumentTitle('Edit Layanan Ibu & Anak'), $title);
-        $this->assertSame('Edit Layanan Ibu & Anak', $documentPageTitle);
-        $this->assertStringContainsString('&', $heading);
-        $this->assertStringContainsString('&', $documentPageTitle);
-        $this->assertStringNotContainsString('And', $heading);
-        $this->assertStringNotContainsString('And', $documentPageTitle);
-        $this->assertMatchesRegularExpression('/<h1[^>]*class="[^"]*fi-header-heading[^"]*"[^>]*>[^<]*Edit Layanan Ibu &amp; Anak[^<]*<\/h1>/s', $html);
-        $this->assertMatchesRegularExpression('/<title[^>]*>[^<]*Edit Layanan Ibu &amp; Anak/i', $html);
-        $this->assertDoesNotMatchRegularExpression('/<h1[^>]*class="[^"]*fi-header-heading[^"]*"[^>]*>.*?&amp;amp;.*?<\/h1>/s', $html);
-        $this->assertDoesNotMatchRegularExpression('/<title[^>]*>.*?&amp;amp;.*?<\/title>/si', $html);
-
-        $response
-            ->assertDontSee('Edit Layanan Ibu And Anak')
-            ->assertDontSee('Layanan Ibu And Anak')
-            ->assertDontSee('Ubah Layanan Ibu & Anak');
+            $this->assertSame($expectedHeading, $heading);
+            $this->assertSame($this->expectedDocumentTitle($expectedHeading), $title);
+            $this->assertSame($expectedHeading, $documentPageTitle);
+            $this->assertStringContainsString('&', $heading);
+            $this->assertStringNotContainsString('And', $heading);
+            $this->assertDoesNotMatchRegularExpression('/<h1[^>]*class="[^"]*fi-header-heading[^"]*"[^>]*>.*?&amp;amp;.*?<\/h1>/s', $html);
+            $this->assertDoesNotMatchRegularExpression('/<title[^>]*>.*?&amp;amp;.*?<\/title>/si', $html);
+            $response->assertDontSee('Layanan Ibu And Anak');
+        }
     }
 
-    public function test_shield_role_create_page_renders_english_resource_permission_section_labels(): void
+    public function test_shield_role_create_page_renders_localized_resource_permission_section_labels(): void
     {
         $this->actingAs($this->superAdmin);
 
         $this->assertStringEndsWith('/admin/shield/roles/create', RoleResource::getUrl('create'));
 
-        $response = $this->get('/admin/shield/roles/create')->assertOk();
-        $html = $response->getContent();
-
-        $this->assertSame('Create Role', $this->extractPageHeading($html));
-        $this->assertSame($this->expectedDocumentTitle('Create Role'), $this->extractPageTitle($html));
-
-        $sectionHeadings = $this->extractSectionHeadings($html);
-        $expectedSectionLabels = [
-            'Article',
-            'Banner Promotion',
-            'Custom Questionnaire Form',
-            'Custom Questionnaire Response',
-            'Doctor Profile',
-            'Facility & Service',
-            'Feedback',
-            'Inpatient Room',
-            'News',
-            'Online Library',
-            'Promotion',
-            'Role',
-            'Satisfaction Questionnaire',
-            'User',
+        $cases = [
+            'id' => [
+                'heading' => 'Buat Peran',
+                'sections' => [
+                    'Artikel',
+                    'Banner Promosi',
+                    'Berita',
+                    'Fasilitas & Layanan',
+                    'Formulir Kuesioner Kustom',
+                    'Kamar Rawat Inap',
+                    'Kritik & Saran',
+                    'Kuesioner Kepuasan',
+                    'Pengguna',
+                    'Peran',
+                    'Perpustakaan Online',
+                    'Profil Dokter',
+                    'Promosi',
+                    'Respons Formulir Kustom',
+                ],
+            ],
+            'en' => [
+                'heading' => 'Create Role',
+                'sections' => [
+                    'Article',
+                    'Banner Promotion',
+                    'Custom Questionnaire Form',
+                    'Custom Questionnaire Response',
+                    'Doctor Profile',
+                    'Facility & Service',
+                    'Feedback',
+                    'Inpatient Room',
+                    'News',
+                    'Online Library',
+                    'Promotion',
+                    'Role',
+                    'Satisfaction Questionnaire',
+                    'User',
+                ],
+            ],
         ];
-        $this->assertCount(count($expectedSectionLabels), $sectionHeadings, 'Unexpected Shield resource permission section count on /admin/shield/roles/create.');
 
-        foreach ($expectedSectionLabels as $expectedSectionLabel) {
-            $response->assertSee($expectedSectionLabel);
-            $this->assertContains($expectedSectionLabel, $sectionHeadings, "Missing Shield section heading [{$expectedSectionLabel}].");
-        }
+        foreach ($cases as $locale => $case) {
+            $response = $this->withSession([SetAdminPanelLocale::SESSION_KEY => $locale])
+                ->get('/admin/shield/roles/create')
+                ->assertOk();
+            $html = $response->getContent();
 
-        foreach ($sectionHeadings as $sectionHeading) {
-            $this->assertStringNotContainsString('And', $sectionHeading, "Unexpected capitalized 'And' in Shield section [{$sectionHeading}].");
-            $this->assertStringNotContainsStringIgnoringCase('peran', $sectionHeading, "Unexpected Indonesian 'Peran' in Shield section [{$sectionHeading}].");
-            $this->assertNotSame('Facility Service', $sectionHeading);
-            $this->assertNotSame('Room Facility', $sectionHeading);
-            $this->assertNotSame('Profil Dokter', $sectionHeading);
-            $this->assertNotSame('Kuesioner', $sectionHeading);
-            $this->assertNotSame('Kuesioner Kepuasan', $sectionHeading);
-            $this->assertNotSame('Kritik & Saran', $sectionHeading);
-            $this->assertNotSame('Perpustakaan Online', $sectionHeading);
-        }
+            $this->assertSame($case['heading'], $this->extractPageHeading($html), "[{$locale}] Shield create heading mismatch");
+            $this->assertSame($this->expectedDocumentTitle($case['heading']), $this->extractPageTitle($html));
 
-        $sidebarText = $this->extractSidebarNavigationText($html);
-        $this->assertStringNotContainsStringIgnoringCase('peran', $sidebarText);
-        $this->assertStringNotContainsString('Filament Shield', $sidebarText);
-        $this->assertStringNotContainsString('Administration', $sidebarText);
-        $this->assertStringNotContainsString('Administrasi', $sidebarText);
+            $sectionHeadings = $this->extractSectionHeadings($html);
+            $this->assertCount(count($case['sections']), $sectionHeadings, "[{$locale}] Unexpected Shield section count.");
 
-        foreach ([
-            'Peran',
-            'Daftar Peran',
-            'Buat Peran',
-            'Facility And Service',
-            'Facilities And Services',
-            'Room Facility',
-            'Facility Service',
-            'Profil Dokter',
-            'Kuesioner Kepuasan',
-            'Administration',
-            'Administrasi',
-            'Filament Shield',
-            'Konten Halaman Utama',
-        ] as $forbidden) {
-            $response->assertDontSee($forbidden);
+            foreach ($case['sections'] as $expectedSectionLabel) {
+                $response->assertSee($expectedSectionLabel);
+                $this->assertContains($expectedSectionLabel, $sectionHeadings, "[{$locale}] Missing Shield section heading [{$expectedSectionLabel}].");
+            }
+
+            foreach ($sectionHeadings as $sectionHeading) {
+                $this->assertStringNotContainsString('And', $sectionHeading, "[{$locale}] Unexpected 'And' in Shield section [{$sectionHeading}].");
+            }
         }
     }
 
-    public function test_document_titles_and_absence_of_stale_indonesian_menu_labels_on_dashboard_and_questionnaires(): void
+    public function test_widgets_form_labels_and_action_buttons_switch_dynamically_between_id_and_en(): void
     {
         $this->actingAs($this->superAdmin);
-
-        $dashboardResponse = $this->get('/admin')->assertOk();
-        $dashboardHtml = $dashboardResponse->getContent();
-        $this->assertSame('Dashboard', $this->extractPageHeading($dashboardHtml));
-        $this->assertSame(
-            $this->expectedDocumentTitle('Dashboard'),
-            $this->extractPageTitle($dashboardHtml)
-        );
-        $dashboardSidebarText = $this->extractSidebarNavigationText($dashboardHtml);
-        $this->assertStringContainsString('Roles', $dashboardSidebarText);
-        $this->assertStringNotContainsStringIgnoringCase('peran', $dashboardSidebarText);
-        $this->assertStringNotContainsString('Dasbor', $dashboardSidebarText);
-        $dashboardResponse
-            ->assertDontSee('Peran')
-            ->assertDontSee('Daftar Peran')
-            ->assertDontSee('Dasbor');
-
-        $questionnaireResponse = $this->get('/admin/questionnaires')->assertOk();
-        $questionnaireHtml = $questionnaireResponse->getContent();
-        $this->assertSame('Satisfaction Questionnaires', $this->extractPageHeading($questionnaireHtml));
-        $this->assertSame(
-            $this->expectedDocumentTitle('Satisfaction Questionnaires'),
-            $this->extractPageTitle($questionnaireHtml)
-        );
-        $questionnaireSidebarText = $this->extractSidebarNavigationText($questionnaireHtml);
-        $this->assertStringContainsString('Satisfaction Questionnaires', $questionnaireSidebarText);
-        $this->assertStringNotContainsString('Kuesioner Kepuasan', $questionnaireSidebarText);
-        $this->assertStringNotContainsStringIgnoringCase('peran', $questionnaireSidebarText);
-        $questionnaireResponse
-            ->assertDontSee('Kuesioner Kepuasan')
-            ->assertDontSee('Peran');
-
-        $representativeTitles = [
-            FacilityServiceResource::getUrl('index') => 'Facilities & Services',
-            FacilityServiceResource::getUrl('create') => 'Create Facility & Service',
-            RoomFacilityResource::getUrl('index') => 'Inpatient Rooms',
-            RoomFacilityResource::getUrl('create') => 'Create Inpatient Room',
-            RoleResource::getUrl('create') => 'Create Role',
-        ];
-
-        foreach ($representativeTitles as $url => $expectedPageTitle) {
-            $response = $this->get($url)->assertOk();
-            $this->assertSame(
-                $this->expectedDocumentTitle($expectedPageTitle),
-                $this->extractPageTitle($response->getContent()),
-                "Representative <title> mismatch at [{$url}]"
-            );
-        }
-    }
-
-    public function test_indonesian_widgets_form_labels_and_action_buttons_remain_intact(): void
-    {
-        $this->actingAs($this->superAdmin);
-
-        Livewire::test(FeedbackSectionWidget::class)
-            ->assertSee('Kritik')
-            ->assertSee('Saran Pasien')
-            ->assertSee('Belum ada kritik dan saran masuk.');
-
-        Livewire::test(QuestionnaireSectionWidget::class)
-            ->assertSee('Kuesioner Kepuasan Pasien');
 
         $article = Article::create([
             'title' => ['id' => 'Artikel Aksi', 'en' => 'Action Article'],
             'slug' => ['id' => 'artikel-aksi', 'en' => 'action-article'],
             'content' => ['id' => 'Isi artikel.', 'en' => 'Article content.'],
         ]);
+
+        // Indonesian (default)
+        App::setLocale('id');
+        Livewire::test(FeedbackSectionWidget::class)
+            ->assertSee('Kritik & Saran Pasien')
+            ->assertSee('Belum ada kritik dan saran masuk.');
+
+        Livewire::test(QuestionnaireSectionWidget::class)
+            ->assertSee('Kuesioner Kepuasan Pasien');
 
         $this->get(ArticleResource::getUrl('create'))
             ->assertOk()
@@ -992,8 +1014,40 @@ class CmsNavigationLocalizationTest extends TestCase
             ->assertSee('Pilih Semua')
             ->assertSee('Lihat semua')
             ->assertSee('Buat')
-            ->assertSee('Batal')
-            ->assertDontSee('Buat Peran');
+            ->assertSee('Batal');
+
+        // English (after session locale switch)
+        App::setLocale('en');
+        Livewire::test(FeedbackSectionWidget::class)
+            ->assertSee('Patient Feedback & Suggestions')
+            ->assertSee('No feedback or suggestions submitted yet.');
+
+        Livewire::test(QuestionnaireSectionWidget::class)
+            ->assertSee('Patient Satisfaction Questionnaires');
+
+        $this->withSession([SetAdminPanelLocale::SESSION_KEY => 'en'])
+            ->get(ArticleResource::getUrl('create'))
+            ->assertOk()
+            ->assertSee('Article Title (Indonesian)')
+            ->assertSee('Create')
+            ->assertSee('Cancel');
+
+        $this->withSession([SetAdminPanelLocale::SESSION_KEY => 'en'])
+            ->get(ArticleResource::getUrl('edit', ['record' => $article]))
+            ->assertOk()
+            ->assertSee('Article Title (Indonesian)')
+            ->assertSee('Save')
+            ->assertSee('Cancel');
+
+        $this->withSession([SetAdminPanelLocale::SESSION_KEY => 'en'])
+            ->get(RoleResource::getUrl('create'))
+            ->assertOk()
+            ->assertSee('Name')
+            ->assertSee('Select All')
+            ->assertSee('Create')
+            ->assertSee('Cancel');
+
+        App::setLocale('id');
     }
 
     public function test_route_accessibility_and_existing_slugs_across_panel_roles(): void
@@ -1192,6 +1246,7 @@ class CmsNavigationLocalizationTest extends TestCase
     {
         session()->flush();
         app()->forgetScopedInstances();
+        App::setLocale('id');
         $this->actingAs($user);
     }
 

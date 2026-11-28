@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Promotions;
 
+use App\Enums\AdminNavigationGroup;
+use App\Filament\Concerns\FormatsBilingualRecordTitle;
 use App\Filament\Resources\Promotions\Pages\CreatePromotion;
 use App\Filament\Resources\Promotions\Pages\EditPromotion;
 use App\Filament\Resources\Promotions\Pages\ListPromotions;
@@ -17,23 +19,33 @@ use LaraZeus\SpatieTranslatable\Resources\Concerns\Translatable;
 
 class PromotionResource extends Resource
 {
+    use FormatsBilingualRecordTitle;
     use Translatable;
 
     protected static ?string $model = Promotion::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMegaphone;
 
-    protected static ?string $navigationLabel = 'Promotions';
-
-    protected static ?string $pluralModelLabel = 'Promotions';
-
-    protected static ?string $modelLabel = 'Promotion';
-
-    protected static string|\UnitEnum|null $navigationGroup = 'Marketing & Editorial';
+    protected static string|\UnitEnum|null $navigationGroup = AdminNavigationGroup::MarketingEditorial;
 
     protected static ?int $navigationSort = 4;
 
     protected static ?string $recordTitleAttribute = 'title';
+
+    public static function getNavigationLabel(): string
+    {
+        return __('Promosi');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('model.promotion');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Promosi');
+    }
 
     public static function form(Schema $schema): Schema
     {

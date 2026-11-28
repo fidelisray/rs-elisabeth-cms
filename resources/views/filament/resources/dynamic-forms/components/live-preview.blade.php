@@ -208,13 +208,13 @@
         <div>
             <p style="font-size: 0.9375rem; font-weight: 700; margin: 0;">{{ $formTitle }}</p>
             <p style="font-size: 0.75rem; color: var(--rse-p-text-secondary); margin: 0.125rem 0 0;">
-                Mode simulasi: jawaban pratinjau tidak disimpan ke database.
+                {{ __('Mode simulasi: jawaban pratinjau tidak disimpan ke database.') }}
             </p>
         </div>
         <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;">
             <span class="rse-preview-badge">{{ $sourceLabel }}</span>
             <button type="button" wire:click="resetPreview" class="rse-preview-btn">
-                Ulangi Pratinjau
+                {{ __('Ulangi Pratinjau') }}
             </button>
         </div>
     </div>
@@ -226,43 +226,43 @@
     @endif
 
     <div wire:loading.flex wire:target="nextSection,previousSection,resetPreview" style="align-items: center; gap: 0.5rem; padding: 0.625rem 0.875rem; margin-bottom: 0.75rem; border-radius: 0.5rem; background-color: var(--rse-p-muted); border: 1px solid var(--rse-p-divider); font-size: 0.8125rem;">
-        <span>Memproses aturan percabangan dan validasi bagian...</span>
+        <span>{{ __('Memproses aturan percabangan dan validasi bagian...') }}</span>
     </div>
 
     @if ($previewError)
         <div role="alert" style="padding: 1rem; border-radius: 0.5rem; background-color: var(--rse-p-err-bg); color: var(--rse-p-err-text); margin-bottom: 1rem;">
-            <p style="font-weight: 700; margin: 0 0 0.25rem;">Pratinjau tidak dapat dilanjutkan</p>
+            <p style="font-weight: 700; margin: 0 0 0.25rem;">{{ __('Pratinjau tidak dapat dilanjutkan') }}</p>
             <p style="font-size: 0.875rem; margin: 0;">{{ $previewError }}</p>
         </div>
     @endif
 
     @if (count($sections) === 0)
         <div class="rse-preview-card" style="text-align: center; padding: 2rem;">
-            <p style="font-weight: 700; margin: 0 0 0.375rem;">Belum ada bagian dan pertanyaan pada formulir ini.</p>
+            <p style="font-weight: 700; margin: 0 0 0.375rem;">{{ __('Belum ada bagian dan pertanyaan pada formulir ini.') }}</p>
             <p style="font-size: 0.875rem; color: var(--rse-p-text-secondary); margin: 0;">
-                Tambahkan minimal satu bagian dan pertanyaan pada langkah Section & Pertanyaan untuk menguji alur pratinjau.
+                {{ __('Tambahkan minimal satu bagian dan pertanyaan pada langkah Section & Pertanyaan untuk menguji alur pratinjau.') }}
             </p>
         </div>
     @elseif ($isCompleted)
         <div class="rse-preview-card">
             <div style="padding: 1rem; border-radius: 0.5rem; background-color: var(--rse-p-ok-bg); color: var(--rse-p-ok-text); margin-bottom: 1rem;">
-                <p style="font-weight: 700; margin: 0 0 0.25rem;">Simulasi Pengisian Berhasil</p>
+                <p style="font-weight: 700; margin: 0 0 0.25rem;">{{ __('Simulasi Pengisian Berhasil') }}</p>
                 <p style="font-size: 0.875rem; margin: 0;">
-                    Semua validasi dan aturan percabangan terpenuhi tanpa error.
+                    {{ __('Semua validasi dan aturan percabangan terpenuhi tanpa error.') }}
                 </p>
             </div>
-            <p style="font-size: 0.8125rem; font-weight: 700; margin: 0 0 0.5rem;">Jejak Jawaban Tersanitasi (Payload Simulasi):</p>
+            <p style="font-size: 0.8125rem; font-weight: 700; margin: 0 0 0.5rem;">{{ __('Jejak Jawaban Tersanitasi (Payload Simulasi):') }}</p>
             <pre style="padding: 0.875rem; border-radius: 0.5rem; background-color: var(--rse-p-muted); border: 1px solid var(--rse-p-divider); overflow-x: auto; font-size: 0.75rem;">{{ json_encode($evaluation['sanitized_answers'] ?? [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
             <div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.75rem;">
-                <button type="button" wire:click="previousSection" class="rse-preview-btn">Kembali ke Bagian Terakhir</button>
-                <button type="button" wire:click="resetPreview" class="rse-preview-btn rse-preview-btn-primary">Mulai Simulasi Baru</button>
+                <button type="button" wire:click="previousSection" class="rse-preview-btn">{{ __('Kembali ke Bagian Terakhir') }}</button>
+                <button type="button" wire:click="resetPreview" class="rse-preview-btn rse-preview-btn-primary">{{ __('Mulai Simulasi Baru') }}</button>
             </div>
         </div>
     @elseif ($currentSection)
         <div class="rse-preview-card">
             <div style="margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--rse-p-divider);">
                 <p style="font-size: 0.75rem; font-weight: 600; color: var(--rse-p-text-secondary); margin: 0 0 0.25rem;">
-                    Bagian {{ count($sectionHistory) }}
+                    {{ __('Bagian :number', ['number' => count($sectionHistory)]) }}
                 </p>
                 <h3 style="font-size: 1.0625rem; font-weight: 700; margin: 0;">{{ $currentSection['title'] }}</h3>
                 @php
@@ -278,7 +278,7 @@
             @if (count($visibleFields) === 0)
                 <div class="rse-preview-field">
                     <p style="font-size: 0.875rem; color: var(--rse-p-text-secondary); margin: 0;">
-                        Tidak ada pertanyaan yang tampil pada bagian ini berdasarkan kondisi jawaban saat ini.
+                        {{ __('Tidak ada pertanyaan yang tampil pada bagian ini berdasarkan kondisi jawaban saat ini.') }}
                     </p>
                 </div>
             @endif
@@ -344,7 +344,7 @@
                                 @if ($inputMode) inputmode="{{ $inputMode }}" @endif
                                 class="rse-preview-input"
                                 wire:model.live="answers.{{ $fKey }}"
-                                placeholder="{{ $field['placeholder'] ?? ($subtype === 'phone' ? 'Contoh: 081234567890' : 'Ketik jawaban Anda') }}"
+                                placeholder="{{ $field['placeholder'] ?? ($subtype === 'phone' ? __('Contoh: 081234567890') : __('Ketik jawaban Anda')) }}"
                             />
                         @elseif ($fType === 'long_text')
                             <textarea
@@ -352,7 +352,7 @@
                                 rows="3"
                                 class="rse-preview-input"
                                 wire:model.live="answers.{{ $fKey }}"
-                                placeholder="{{ $field['placeholder'] ?? 'Ketik uraian jawaban Anda' }}"
+                                placeholder="{{ $field['placeholder'] ?? __('Ketik uraian jawaban Anda') }}"
                             ></textarea>
                         @elseif ($fType === 'radio')
                             <div>
@@ -375,7 +375,7 @@
                                             value="__other__"
                                             wire:model.live="answers.{{ $fKey }}.selected"
                                         />
-                                        <span style="font-size: 0.875rem;">{{ $fOpts['other_label'] ?? 'Lainnya' }}</span>
+                                        <span style="font-size: 0.875rem;">{{ $fOpts['other_label'] ?? __('Lainnya') }}</span>
                                     </label>
                                     @if (($answers[$fKey]['selected'] ?? null) === '__other__')
                                         <input
@@ -383,8 +383,8 @@
                                             class="rse-preview-input"
                                             style="margin-top: 0.375rem;"
                                             wire:model.live="answers.{{ $fKey }}.other_text"
-                                            aria-label="{{ $field['label'] }} - {{ $fOpts['other_label'] ?? 'Lainnya' }}"
-                                            placeholder="Tuliskan jawaban lainnya..."
+                                            aria-label="{{ $field['label'] }} - {{ $fOpts['other_label'] ?? __('Lainnya') }}"
+                                            placeholder="{{ __('Tuliskan jawaban lainnya...') }}"
                                         />
                                     @endif
                                 @endif
@@ -408,7 +408,7 @@
                                             value="__other__"
                                             wire:model.live="answers.{{ $fKey }}.selected"
                                         />
-                                        <span style="font-size: 0.875rem;">{{ $fOpts['other_label'] ?? 'Lainnya' }}</span>
+                                        <span style="font-size: 0.875rem;">{{ $fOpts['other_label'] ?? __('Lainnya') }}</span>
                                     </label>
                                     @if (in_array('__other__', (array) ($answers[$fKey]['selected'] ?? []), true))
                                         <input
@@ -416,15 +416,15 @@
                                             class="rse-preview-input"
                                             style="margin-top: 0.375rem;"
                                             wire:model.live="answers.{{ $fKey }}.other_text"
-                                            aria-label="{{ $field['label'] }} - {{ $fOpts['other_label'] ?? 'Lainnya' }}"
-                                            placeholder="Tuliskan jawaban lainnya..."
+                                            aria-label="{{ $field['label'] }} - {{ $fOpts['other_label'] ?? __('Lainnya') }}"
+                                            placeholder="{{ __('Tuliskan jawaban lainnya...') }}"
                                         />
                                     @endif
                                 @endif
                             </div>
                         @elseif ($fType === 'dropdown')
                             <select id="pv-input-{{ $fKey }}" class="rse-preview-input" wire:model.live="answers.{{ $fKey }}">
-                                <option value="">Pilih salah satu...</option>
+                                <option value="">{{ __('Pilih salah satu...') }}</option>
                                 @foreach ((array) ($fOpts['choices'] ?? []) as $choice)
                                     <option value="{{ $choice['key'] }}">{{ $choice['label'] }}</option>
                                 @endforeach
@@ -468,7 +468,7 @@
                                 <table class="rse-preview-matrix">
                                     <thead>
                                         <tr>
-                                            <th>Aspek / Butir</th>
+                                            <th>{{ __('Aspek / Butir') }}</th>
                                             @foreach ($mCols as $col)
                                                 <th>{{ $col['label'] }}</th>
                                             @endforeach
@@ -509,7 +509,10 @@
                             <input id="pv-input-{{ $fKey }}" type="time" class="rse-preview-input" wire:model.live="answers.{{ $fKey }}" />
                         @elseif ($fType === 'file_upload')
                             <div style="padding: 0.75rem; border-radius: 0.375rem; border: 1px dashed var(--rse-p-border); background-color: var(--rse-p-surface); font-size: 0.8125rem; color: var(--rse-p-text-secondary);">
-                                Unggahan berkas (ekstensi: {{ implode(', ', (array) ($fOpts['allowed_extensions'] ?? ['pdf'])) }}, maks. {{ $fOpts['max_file_size_mb'] ?? 5 }} MB) akan diproses via endpoint two-step upload di Web Frontend.
+                                {{ __('Unggahan berkas (ekstensi: :extensions, maks. :size MB) akan diproses via endpoint two-step upload di Web Frontend.', [
+                                    'extensions' => implode(', ', (array) ($fOpts['allowed_extensions'] ?? ['pdf'])),
+                                    'size' => $fOpts['max_file_size_mb'] ?? 5,
+                                ]) }}
                             </div>
                         @endif
 
@@ -526,12 +529,12 @@
                 <div>
                     @if (count($sectionHistory) > 1)
                         <button type="button" wire:click="previousSection" class="rse-preview-btn">
-                            Bagian Sebelumnya
+                            {{ __('Bagian Sebelumnya') }}
                         </button>
                     @endif
                 </div>
                 <button type="button" wire:click="nextSection" class="rse-preview-btn rse-preview-btn-primary">
-                    Lanjutkan / Uji Langkah Ini
+                    {{ __('Lanjutkan / Uji Langkah Ini') }}
                 </button>
             </div>
         </div>

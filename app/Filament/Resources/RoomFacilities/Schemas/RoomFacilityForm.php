@@ -24,15 +24,15 @@ class RoomFacilityForm
         return $schema
             ->components([
 
-                Section::make('Konten Ruangan - Bahasa Indonesia (ID)')
-                    ->description('Informasi utama, deskripsi, dan pesan WhatsApp ruangan dalam Bahasa Indonesia.')
+                Section::make(__('Konten Ruangan - Bahasa Indonesia (ID)'))
+                    ->description(__('Informasi utama, deskripsi, dan pesan WhatsApp ruangan dalam Bahasa Indonesia.'))
                     ->columnSpanFull()
                     ->columns(2)
                     ->schema([
 
                         TextInput::make('name.id')
-                            ->label('Nama Ruangan (Indonesia)')
-                            ->placeholder('President Suite, VIP, Kelas I...')
+                            ->label(__('Nama Ruangan (Indonesia)'))
+                            ->placeholder(__('President Suite, VIP, Kelas I...'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(100)
@@ -47,50 +47,50 @@ class RoomFacilityForm
                             }),
 
                         TextInput::make('slug.id')
-                            ->label('Identifier / Slug (Indonesia)')
-                            ->placeholder('Klik pada form, teks akan terisi otomatis')
+                            ->label(__('Identifier / Slug (Indonesia)'))
+                            ->placeholder(__('Klik pada form dan teks akan terisi otomatis'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(100)
                             ->unique(column: 'slug->id', ignoreRecord: true)
-                            ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
-                            ->helperText('Dapat diedit jika diperlukan'),
+                            ->validationMessages(['unique' => __('Identifier (Slug) sudah digunakan. Pilih identifier lain.')])
+                            ->helperText(__('Dapat diedit jika diperlukan')),
 
                         Textarea::make('tagline.id')
-                            ->label('Tagline / Deskripsi Singkat (Indonesia)')
+                            ->label(__('Tagline / Deskripsi Singkat (Indonesia)'))
                             ->required()
                             ->clearErrorOnInput()
-                            ->placeholder('Deskripsi singkat sebagai highlight untuk ruangan ini...')
+                            ->placeholder(__('Deskripsi singkat sebagai highlight untuk ruangan ini...'))
                             ->maxLength(500)
                             ->rows(3)
                             ->columnSpanFull(),
 
                         Textarea::make('description.id')
-                            ->label('Deskripsi Lengkap (Indonesia)')
+                            ->label(__('Deskripsi Lengkap (Indonesia)'))
                             ->required()
                             ->clearErrorOnInput()
-                            ->placeholder('Deskripsi lengkap ruangan terkait fasilitas, keunggulan, atau layanan lainnya...')
+                            ->placeholder(__('Deskripsi lengkap ruangan terkait fasilitas, keunggulan, atau layanan lainnya...'))
                             ->rows(5)
                             ->columnSpanFull(),
 
                         TextInput::make('whatsapp_text.id')
-                            ->label('Pesan Otomatis WhatsApp (Indonesia - Opsional)')
-                            ->placeholder('Contoh: Halo, saya ingin informasi Ruangan President Suite')
+                            ->label(__('Pesan Otomatis WhatsApp (Indonesia - Opsional)'))
+                            ->placeholder(__('Contoh: Halo, saya ingin informasi Ruangan President Suite'))
                             ->maxLength(255)
                             ->clearErrorOnInput()
-                            ->helperText('Isi kedua bahasa (Indonesia & English) jika pesan otomatis digunakan, atau kosongkan keduanya.')
+                            ->helperText(__('Isi kedua bahasa (Indonesia & English) jika pesan otomatis digunakan, atau kosongkan keduanya.'))
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Konten Ruangan - Bahasa Inggris (EN)')
-                    ->description('Informasi utama, deskripsi, dan pesan WhatsApp ruangan dalam Bahasa Inggris.')
+                Section::make(__('Konten Ruangan - Bahasa Inggris (EN)'))
+                    ->description(__('Informasi utama, deskripsi, dan pesan WhatsApp ruangan dalam Bahasa Inggris.'))
                     ->columnSpanFull()
                     ->columns(2)
                     ->schema([
 
                         TextInput::make('name.en')
-                            ->label('Nama Ruangan (English)')
-                            ->placeholder('President Suite, VIP Room, Class I...')
+                            ->label(__('Nama Ruangan (English)'))
+                            ->placeholder(__('Contoh: President Suite, VIP Room, Class I...'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(100)
@@ -102,48 +102,48 @@ class RoomFacilityForm
                             }),
 
                         TextInput::make('slug.en')
-                            ->label('Identifier / Slug (English)')
-                            ->placeholder('Klik pada form, teks akan terisi otomatis')
+                            ->label(__('Identifier / Slug (English)'))
+                            ->placeholder(__('Klik pada form dan teks akan terisi otomatis'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(100)
                             ->unique(column: 'slug->en', ignoreRecord: true)
-                            ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
-                            ->helperText('Dapat diedit jika diperlukan'),
+                            ->validationMessages(['unique' => __('Identifier (Slug) sudah digunakan. Pilih identifier lain.')])
+                            ->helperText(__('Dapat diedit jika diperlukan')),
 
                         Textarea::make('tagline.en')
-                            ->label('Tagline / Deskripsi Singkat (English)')
+                            ->label(__('Tagline / Deskripsi Singkat (English)'))
                             ->required()
                             ->clearErrorOnInput()
-                            ->placeholder('Short highlight description for this room...')
+                            ->placeholder(__('Deskripsi singkat sebagai highlight untuk ruangan ini...'))
                             ->maxLength(500)
                             ->rows(3)
                             ->columnSpanFull(),
 
                         Textarea::make('description.en')
-                            ->label('Deskripsi Lengkap (English)')
+                            ->label(__('Deskripsi Lengkap (English)'))
                             ->required()
                             ->clearErrorOnInput()
-                            ->placeholder('Comprehensive description of room facilities, advantages, and services...')
+                            ->placeholder(__('Deskripsi lengkap ruangan terkait fasilitas, keunggulan, atau layanan lainnya...'))
                             ->rows(5)
                             ->columnSpanFull(),
 
                         TextInput::make('whatsapp_text.en')
-                            ->label('Pesan Otomatis WhatsApp (English - Opsional)')
-                            ->placeholder('Contoh: Hello, I would like information about the President Suite room')
+                            ->label(__('Pesan Otomatis WhatsApp (English - Opsional)'))
+                            ->placeholder(__('Contoh: Hello, I would like information about the President Suite room'))
                             ->maxLength(255)
                             ->clearErrorOnInput()
-                            ->helperText('Isi kedua bahasa (Indonesia & English) jika pesan otomatis digunakan, atau kosongkan keduanya.')
+                            ->helperText(__('Isi kedua bahasa (Indonesia & English) jika pesan otomatis digunakan, atau kosongkan keduanya.'))
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Foto Ruangan')
+                Section::make(__('Foto Ruangan'))
                     ->columnSpanFull()
-                    ->description('Upload foto ruangan dengan format landscape (16:9)')
+                    ->description(__('Unggah foto ruangan dengan format landscape (16:9)'))
                     ->schema([
 
                         FileUpload::make('image_path')
-                            ->label('Foto Ruangan')
+                            ->label(__('Foto Ruangan'))
                             ->disk(config('filesystems.media_disk'))
                             ->directory('room_facilities')
                             ->image()
@@ -156,150 +156,150 @@ class RoomFacilityForm
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                             ->required()
                             ->clearErrorOnChange()
-                            ->helperText('Upload foto dengan format JPEG/JPG/PNG/WebP, ukuran maksimal 5 MB, Resolusi ideal 1920x1080')
+                            ->helperText(__('Unggah foto dengan format JPEG/JPG/PNG/WebP, ukuran maksimal 5 MB, resolusi ideal 1920x1080'))
                             ->columnSpanFull(),
                     ]),
 
                 // Kelompok fasilitas menggunakan grup tetap:
                 // Nama Grup — Indonesia: Fasilitas Utama & Fasilitas Tambahan
                 // Nama Grup — English: Primary Facilities & Supplementary Facilities
-                Section::make('Daftar Fasilitas')
-                    ->description('Kelompok fasilitas terbagi atas Fasilitas Utama (wajib min. 1 item jika fasilitas diisi) dan Fasilitas Tambahan (opsional).')
+                Section::make(__('Daftar Fasilitas'))
+                    ->description(__('Kelompok fasilitas terbagi atas Fasilitas Utama (wajib min. 1 item jika fasilitas diisi) dan Fasilitas Tambahan (opsional).'))
                     ->columnSpanFull()
                     ->schema([
 
-                        Section::make('Fasilitas Utama')
-                            ->description('Fasilitas pokok yang wajib tersedia pada ruangan ini.')
+                        Section::make(__('Fasilitas Utama'))
+                            ->description(__('Fasilitas pokok yang wajib tersedia pada ruangan ini.'))
                             ->schema([
                                 Repeater::make('main_amenities')
-                                    ->label('Item Fasilitas Utama')
+                                    ->label(__('Item Fasilitas Utama'))
                                     ->rule(function (Get $get) {
                                         return function (string $attribute, $value, \Closure $fail) use ($get) {
                                             $additional = $get('additional_amenities');
                                             if (! empty($additional) && empty($value)) {
-                                                $fail('Fasilitas Utama wajib diisi minimal 1 item jika Fasilitas Tambahan diisi.');
+                                                $fail(__('Fasilitas Utama wajib diisi minimal 1 item jika Fasilitas Tambahan diisi.'));
                                             }
                                         };
                                     })
                                     ->schema([
                                         TextInput::make('name.id')
-                                            ->label('Nama Fasilitas — Indonesia')
-                                            ->placeholder('Contoh: Air Conditioner (AC)')
+                                            ->label(__('Nama Fasilitas — Indonesia'))
+                                            ->placeholder(__('Contoh: Air Conditioner (AC)'))
                                             ->required()
                                             ->clearErrorOnInput()
                                             ->maxLength(100),
 
                                         TextInput::make('name.en')
-                                            ->label('Nama Fasilitas — English')
-                                            ->placeholder('Contoh: Air Conditioner (AC)')
+                                            ->label(__('Nama Fasilitas — English'))
+                                            ->placeholder(__('Contoh: Air Conditioner (AC)'))
                                             ->required()
                                             ->clearErrorOnInput()
                                             ->maxLength(100),
 
                                         TextInput::make('value.id')
-                                            ->label('Spesifikasi — Indonesia (Opsional)')
-                                            ->placeholder('contoh: 55" Smart TV, Central')
+                                            ->label(__('Spesifikasi — Indonesia (Opsional)'))
+                                            ->placeholder(__('Contoh: 55" Smart TV, Central'))
                                             ->maxLength(255),
 
                                         TextInput::make('value.en')
-                                            ->label('Spesifikasi — English (Opsional)')
-                                            ->helperText('Isi kedua bahasa jika spesifikasi digunakan, atau kosongkan keduanya.')
+                                            ->label(__('Spesifikasi — English (Opsional)'))
+                                            ->helperText(__('Isi kedua bahasa jika spesifikasi digunakan, atau kosongkan keduanya.'))
                                             ->maxLength(255),
 
                                         Toggle::make('show_in_comparison')
                                             ->columnSpanFull()
-                                            ->label('Highlight Fasilitas')
+                                            ->label(__('Highlight Fasilitas'))
                                             ->default(false)
-                                            ->helperText('Aktifkan agar fasilitas ini ikut muncul di tabel perbandingan antar-ruangan'),
+                                            ->helperText(__('Aktifkan agar fasilitas ini ikut muncul di tabel perbandingan antar-ruangan')),
                                     ])
                                     ->columns(2)
-                                    ->addActionLabel('+ Tambah Fasilitas Utama')
+                                    ->addActionLabel(__('+ Tambah Fasilitas Utama'))
                                     ->defaultItems(0)
                                     ->collapsible()
                                     ->columnSpanFull(),
                             ]),
 
-                        Section::make('Fasilitas Tambahan')
-                            ->description('Fasilitas pelengkap atau ekstra (opsional).')
+                        Section::make(__('Fasilitas Tambahan'))
+                            ->description(__('Fasilitas pelengkap atau ekstra (opsional).'))
                             ->schema([
                                 Repeater::make('additional_amenities')
-                                    ->label('Item Fasilitas Tambahan')
+                                    ->label(__('Item Fasilitas Tambahan'))
                                     ->schema([
                                         TextInput::make('name.id')
-                                            ->label('Nama Fasilitas — Indonesia')
-                                            ->placeholder('Contoh: Kursi Penunggu')
+                                            ->label(__('Nama Fasilitas — Indonesia'))
+                                            ->placeholder(__('Contoh: Kursi Penunggu'))
                                             ->required()
                                             ->clearErrorOnInput()
                                             ->maxLength(100),
 
                                         TextInput::make('name.en')
-                                            ->label('Nama Fasilitas — English')
-                                            ->placeholder('Contoh: Companion Chair')
+                                            ->label(__('Nama Fasilitas — English'))
+                                            ->placeholder(__('Contoh: Companion Chair'))
                                             ->required()
                                             ->clearErrorOnInput()
                                             ->maxLength(100),
 
                                         TextInput::make('value.id')
-                                            ->label('Spesifikasi — Indonesia (Opsional)')
-                                            ->placeholder('contoh: Meja Kerja')
+                                            ->label(__('Spesifikasi — Indonesia (Opsional)'))
+                                            ->placeholder(__('Contoh: Meja Kerja'))
                                             ->maxLength(255),
 
                                         TextInput::make('value.en')
-                                            ->label('Spesifikasi — English (Opsional)')
-                                            ->helperText('Isi kedua bahasa jika spesifikasi digunakan, atau kosongkan keduanya.')
+                                            ->label(__('Spesifikasi — English (Opsional)'))
+                                            ->helperText(__('Isi kedua bahasa jika spesifikasi digunakan, atau kosongkan keduanya.'))
                                             ->maxLength(255),
 
                                         Toggle::make('show_in_comparison')
                                             ->columnSpanFull()
-                                            ->label('Highlight Fasilitas')
+                                            ->label(__('Highlight Fasilitas'))
                                             ->default(false)
-                                            ->helperText('Aktifkan agar fasilitas ini ikut muncul di tabel perbandingan antar-ruangan'),
+                                            ->helperText(__('Aktifkan agar fasilitas ini ikut muncul di tabel perbandingan antar-ruangan')),
                                     ])
                                     ->columns(2)
-                                    ->addActionLabel('+ Tambah Fasilitas Tambahan')
+                                    ->addActionLabel(__('+ Tambah Fasilitas Tambahan'))
                                     ->defaultItems(0)
                                     ->collapsible()
                                     ->columnSpanFull(),
                             ]),
                     ]),
 
-                Section::make('Highlight Tags')
-                    ->description('Highlight keunggulan utama yang dimiliki ruangan ini')
+                Section::make(__('Highlight Tags'))
+                    ->description(__('Highlight keunggulan utama yang dimiliki ruangan ini'))
                     ->schema([
 
                         Repeater::make('highlight_tags')
-                            ->label('Highlight Tags')
+                            ->label(__('Highlight Tags'))
                             ->rules([new ValidRoomNestedContent('highlight_tags')])
                             ->schema([
 
                                 Select::make('icon')
-                                    ->label('Pilih Ikon')
-                                    ->options([
-                                        'Fasilitas & Kenyamanan' => [
-                                            'fa-solid fa-bed' => 'Tempat Tidur',
-                                            'fa-solid fa-couch' => 'Sofa / Ruang Tamu',
-                                            'fa-solid fa-bath' => 'Kamar Mandi',
-                                            'fa-solid fa-snowflake' => 'AC / Pendingin Ruangan',
-                                            'fa-solid fa-tv' => 'TV / Hiburan',
-                                            'fa-solid fa-wifi' => 'WiFi / Internet',
-                                            'fa-solid fa-mug-hot' => 'Dispenser / Teko Elektrik',
-                                            'fa-solid fa-utensils' => 'Meja / Lemari Pribadi',
-                                            'fa-solid fa-temperature-arrow-down' => 'Kulkas',
+                                    ->label(__('Pilih Ikon'))
+                                    ->options(fn (): array => [
+                                        __('Fasilitas & Kenyamanan') => [
+                                            'fa-solid fa-bed' => __('Tempat Tidur'),
+                                            'fa-solid fa-couch' => __('Sofa / Ruang Tamu'),
+                                            'fa-solid fa-bath' => __('Kamar Mandi'),
+                                            'fa-solid fa-snowflake' => __('AC / Pendingin Ruangan'),
+                                            'fa-solid fa-tv' => __('TV / Hiburan'),
+                                            'fa-solid fa-wifi' => __('WiFi / Internet'),
+                                            'fa-solid fa-mug-hot' => __('Dispenser / Teko Elektrik'),
+                                            'fa-solid fa-utensils' => __('Meja / Lemari Pribadi'),
+                                            'fa-solid fa-temperature-arrow-down' => __('Kulkas'),
                                         ],
-                                        'Pelayanan & Medis' => [
-                                            'fa-solid fa-user-nurse' => 'Perawat 24 Jam',
-                                            'fa-solid fa-stethoscope' => 'Peralatan Medis Lengkap',
-                                            'fa-solid fa-heart-pulse' => 'Pemantauan Pasien',
-                                            'fa-solid fa-bell' => 'Bel Panggilan Darurat',
-                                            'fa-solid fa-wheelchair' => 'Akses Kursi Roda',
+                                        __('Pelayanan & Medis') => [
+                                            'fa-solid fa-user-nurse' => __('Perawat 24 Jam'),
+                                            'fa-solid fa-stethoscope' => __('Peralatan Medis Lengkap'),
+                                            'fa-solid fa-heart-pulse' => __('Pemantauan Pasien'),
+                                            'fa-solid fa-bell' => __('Bel Panggilan Darurat'),
+                                            'fa-solid fa-wheelchair' => __('Akses Kursi Roda'),
                                         ],
-                                        'Keunggulan & Label' => [
-                                            'fa-solid fa-crown' => 'Mahkota (Premium / VIP)',
-                                            'fa-solid fa-star' => 'Bintang (Populer / Favorit)',
-                                            'fa-solid fa-award' => 'Terbaik / Rekomendasi',
-                                            'fa-solid fa-thumbs-up' => 'Sangat Direkomendasikan',
-                                            'fa-solid fa-shield-heart' => 'Keamanan Ekstra',
-                                            'fa-solid fa-hands-holding-child' => 'Ramah Anak & Keluarga',
+                                        __('Keunggulan & Label') => [
+                                            'fa-solid fa-crown' => __('Mahkota (Premium / VIP)'),
+                                            'fa-solid fa-star' => __('Bintang (Populer / Favorit)'),
+                                            'fa-solid fa-award' => __('Terbaik / Rekomendasi'),
+                                            'fa-solid fa-thumbs-up' => __('Sangat Direkomendasikan'),
+                                            'fa-solid fa-shield-heart' => __('Keamanan Ekstra'),
+                                            'fa-solid fa-hands-holding-child' => __('Ramah Anak & Keluarga'),
                                         ],
                                     ])
                                     ->searchable()
@@ -307,26 +307,26 @@ class RoomFacilityForm
                                     ->clearErrorOnChange(),
 
                                 TextInput::make('label.id')
-                                    ->label('Label Tag — Indonesia')
-                                    ->placeholder('Contoh: Kamar Terluas')
+                                    ->label(__('Label Tag — Indonesia'))
+                                    ->placeholder(__('Contoh: Kamar Terluas'))
                                     ->required()
                                     ->clearErrorOnInput()
                                     ->maxLength(100),
 
                                 TextInput::make('label.en')
-                                    ->label('Label Tag — English')
+                                    ->label(__('Label Tag — English'))
                                     ->required()
                                     ->clearErrorOnInput()
                                     ->maxLength(100),
                             ])
                             ->columns(2)
-                            ->addActionLabel('+ Tambah Highlight Tag')
+                            ->addActionLabel(__('+ Tambah Highlight Tag'))
                             ->defaultItems(0)
                             ->collapsible()
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Spesifikasi Kamar')
+                Section::make(__('Spesifikasi Kamar'))
                     ->columns(2)
                     ->schema([
 
@@ -336,37 +336,37 @@ class RoomFacilityForm
                             ->dehydrateStateUsing(fn () => null),
 
                         TextInput::make('bed_count')
-                            ->label('Jumlah Tempat Tidur')
+                            ->label(__('Jumlah Tempat Tidur'))
                             ->numeric()
-                            ->suffix('Bed')
-                            ->placeholder('Contoh: 1')
+                            ->suffix(__('Tempat Tidur'))
+                            ->placeholder(__('Contoh: 1'))
                             ->maxValue(99),
 
                         TextInput::make('max_companion')
-                            ->label('Maks. Penunggu')
+                            ->label(__('Maks. Penunggu'))
                             ->numeric()
-                            ->suffix('Orang')
-                            ->placeholder('Contoh: 2')
+                            ->suffix(__('Orang'))
+                            ->placeholder(__('Contoh: 2'))
                             ->maxValue(99),
                     ]),
 
-                Section::make('Publish')
+                Section::make(__('Publikasi'))
                     ->columnSpanFull()
-                    ->description('Atur apakah ruangan ini akan ditampilkan pada halaman website')
+                    ->description(__('Atur apakah ruangan ini akan ditampilkan pada halaman website'))
                     ->columns(2)
                     ->schema([
                         Placeholder::make('trash_notice')
-                            ->label('Penghapusan')
-                            ->content('Konten yang dihapus tidak tampil di website. Hanya Super Admin yang dapat memulihkannya.')
+                            ->label(__('Penghapusan'))
+                            ->content(__('Konten yang dihapus tidak tampil di website. Hanya Super Admin yang dapat memulihkannya.'))
                             ->columnSpanFull(),
 
                         Hidden::make('sort_order')
                             ->default(0),
 
                         Toggle::make('is_active')
-                            ->label('Aktif dan Tampilkan di halaman website')
+                            ->label(__('Aktif dan Tampilkan di halaman website'))
                             ->default(false)
-                            ->helperText('Non-aktifkan untuk menyembunyikan ruangan ini dari halaman website tanpa menghapus datanya')
+                            ->helperText(__('Non-aktifkan untuk menyembunyikan ruangan ini dari halaman website tanpa menghapus datanya'))
                             ->columnSpanFull(),
                     ]),
 

@@ -90,30 +90,30 @@
         </style>
 
         <x-filament::section>
-            <x-slot name="heading">Custom Questionnaire Form & Respons Terbaru</x-slot>
+            <x-slot name="heading">{{ __('Formulir Kuesioner Kustom & Respons Terbaru') }}</x-slot>
             <x-slot name="description">
-                Ringkasan formulir kustom terpublikasi dan daftar respons terbaru yang masuk.
+                {{ __('Ringkasan formulir kustom terpublikasi dan daftar respons terbaru yang masuk.') }}
             </x-slot>
 
             <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem;">
                 <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
                     @if ($canViewForms)
                         <span style="padding: 0.375rem 0.75rem; border-radius: 0.375rem; background-color: var(--rse-w-muted); border: 1px solid var(--rse-w-divider); font-size: 0.8125rem; font-weight: 600;">
-                            Formulir Aktif: {{ $activeFormsCount }}
+                            {{ __('Formulir Aktif:') }} {{ $activeFormsCount }}
                         </span>
                     @endif
                     @if ($canViewSubmissions)
                         <span style="padding: 0.375rem 0.75rem; border-radius: 0.375rem; background-color: var(--rse-w-badge-bg); color: var(--rse-w-badge-text); font-size: 0.8125rem; font-weight: 700;">
-                            Total Respons Masuk: {{ $totalSubmissionsCount }}
+                            {{ __('Total Respons Masuk:') }} {{ $totalSubmissionsCount }}
                         </span>
                     @endif
                 </div>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
                     @if ($formsIndexUrl)
-                        <a href="{{ $formsIndexUrl }}" class="rse-dfw-cta">Kelola Custom Questionnaire Form</a>
+                        <a href="{{ $formsIndexUrl }}" class="rse-dfw-cta">{{ __('Kelola Formulir Kustom') }}</a>
                     @endif
                     @if ($submissionsIndexUrl)
-                        <a href="{{ $submissionsIndexUrl }}" class="rse-dfw-link">Semua Custom Questionnaire Responses</a>
+                        <a href="{{ $submissionsIndexUrl }}" class="rse-dfw-link">{{ __('Semua Respons Formulir Kustom') }}</a>
                     @endif
                 </div>
             </div>
@@ -122,11 +122,11 @@
                 @if ($canViewForms)
                     <div class="rse-dfw-box">
                         <h3 style="font-size: 0.875rem; font-weight: 700; margin: 0 0 0.75rem;">
-                            Formulir Kustom Terpublikasi
+                            {{ __('Formulir Kustom Terpublikasi') }}
                         </h3>
                         @if ($activeForms === [])
                             <p style="font-size: 0.8125rem; color: var(--rse-w-text-secondary); margin: 0;">
-                                Belum ada formulir kustom yang dipublikasikan. Buat dan publikasikan formulir di menu Custom Questionnaire Form.
+                                {{ __('Belum ada formulir kustom yang dipublikasikan. Buat dan publikasikan formulir di menu Formulir Kuesioner Kustom.') }}
                             </p>
                         @else
                             <div style="display: flex; flex-direction: column; gap: 0.5rem;">
@@ -135,10 +135,10 @@
                                         <div style="min-width: 0; flex: 1 1 12rem;">
                                             <p style="font-size: 0.875rem; font-weight: 600; margin: 0; overflow-wrap: anywhere;">{{ $formItem['title'] }}</p>
                                             <p style="font-size: 0.75rem; color: var(--rse-w-text-secondary); margin: 0;">
-                                                {{ $formItem['mode'] }} · {{ $formItem['submissions_count'] }} respons
+                                                {{ $formItem['mode'] }} · {{ __(':count respons', ['count' => $formItem['submissions_count']]) }}
                                             </p>
                                         </div>
-                                        <a href="{{ $formItem['analytics_url'] }}" class="rse-dfw-link">Analitik</a>
+                                        <a href="{{ $formItem['analytics_url'] }}" class="rse-dfw-link">{{ __('Analitik') }}</a>
                                     </div>
                                 @endforeach
                             </div>
@@ -149,11 +149,11 @@
                 @if ($canViewSubmissions)
                     <div class="rse-dfw-box">
                         <h3 style="font-size: 0.875rem; font-weight: 700; margin: 0 0 0.75rem;">
-                            Respons Terbaru Masuk
+                            {{ __('Respons Terbaru Masuk') }}
                         </h3>
                         @if ($latestSubmissions === [])
                             <p style="font-size: 0.8125rem; color: var(--rse-w-text-secondary); margin: 0;">
-                                Belum ada respons yang masuk saat ini.
+                                {{ __('Belum ada respons yang masuk saat ini.') }}
                             </p>
                         @else
                             <div style="display: flex; flex-direction: column; gap: 0.5rem;">
@@ -165,7 +165,7 @@
                                                 {{ $item['form_title'] }} ({{ $item['mode_label'] }}) · {{ $item['submitted_at'] }}
                                             </p>
                                         </div>
-                                        <a href="{{ $item['view_url'] }}" class="rse-dfw-link">Lihat</a>
+                                        <a href="{{ $item['view_url'] }}" class="rse-dfw-link">{{ __('Lihat') }}</a>
                                     </div>
                                 @endforeach
                             </div>

@@ -1,8 +1,8 @@
 <div x-show="password.length > 0" x-cloak class="rse-pw-strength-card">
     <div class="rse-pw-strength-head">
-        <span class="rse-pw-strength-title">Kekuatan Password:</span>
+        <span class="rse-pw-strength-title">{{ __('Kekuatan Password:') }}</span>
         <div class="rse-pw-strength-meta">
-            <span class="rse-pw-strength-ratio" x-text="score + '/4 kriteria'"></span>
+            <span class="rse-pw-strength-ratio" x-text="score + '/4 ' + @js(__('kriteria'))"></span>
             <span
                 class="rse-pw-strength-badge"
                 :class="{
@@ -19,7 +19,7 @@
     <div
         class="rse-pw-bar-track"
         role="progressbar"
-        aria-label="Tingkat kekuatan password"
+        aria-label="{{ __('Tingkat kekuatan password') }}"
         aria-valuemin="0"
         aria-valuemax="4"
         :aria-valuenow="score"
@@ -51,7 +51,7 @@
                     <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.5 2.5"/>
                 </svg>
             </template>
-            <span>Minimal 8 karakter</span>
+            <span>{{ __('Minimal 8 karakter') }}</span>
         </div>
 
         <div class="rse-pw-criterion" :class="hasUpperAndLower ? 'rse-pw-criterion-valid' : ''">
@@ -68,7 +68,7 @@
                     <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.5 2.5"/>
                 </svg>
             </template>
-            <span>Huruf besar & huruf kecil</span>
+            <span>{{ __('Huruf besar & huruf kecil') }}</span>
         </div>
 
         <div class="rse-pw-criterion" :class="hasNumber ? 'rse-pw-criterion-valid' : ''">
@@ -85,7 +85,7 @@
                     <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.5 2.5"/>
                 </svg>
             </template>
-            <span>Mengandung angka (0-9)</span>
+            <span>{{ __('Mengandung angka (0-9)') }}</span>
         </div>
 
         <div class="rse-pw-criterion" :class="hasSpecial ? 'rse-pw-criterion-valid' : ''">
@@ -102,7 +102,7 @@
                     <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.5 2.5"/>
                 </svg>
             </template>
-            <span>Mengandung simbol (!@#$...)</span>
+            <span>{{ __('Mengandung simbol (!@#$...)') }}</span>
         </div>
     </div>
 </div>

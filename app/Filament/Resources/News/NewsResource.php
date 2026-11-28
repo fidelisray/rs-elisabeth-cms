@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\News;
 
+use App\Enums\AdminNavigationGroup;
+use App\Filament\Concerns\FormatsBilingualRecordTitle;
 use App\Filament\Resources\News\Pages\CreateNews;
 use App\Filament\Resources\News\Pages\EditNews;
 use App\Filament\Resources\News\Pages\ListNews;
@@ -17,23 +19,33 @@ use LaraZeus\SpatieTranslatable\Resources\Concerns\Translatable;
 
 class NewsResource extends Resource
 {
+    use FormatsBilingualRecordTitle;
     use Translatable;
 
     protected static ?string $model = News::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $navigationLabel = 'News';
-
-    protected static ?string $pluralModelLabel = 'News';
-
-    protected static ?string $modelLabel = 'News';
-
-    protected static string|\UnitEnum|null $navigationGroup = 'Marketing & Editorial';
+    protected static string|\UnitEnum|null $navigationGroup = AdminNavigationGroup::MarketingEditorial;
 
     protected static ?int $navigationSort = 3;
 
     protected static ?string $recordTitleAttribute = 'title';
+
+    public static function getNavigationLabel(): string
+    {
+        return __('Berita');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('Berita');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Berita');
+    }
 
     public static function form(Schema $schema): Schema
     {

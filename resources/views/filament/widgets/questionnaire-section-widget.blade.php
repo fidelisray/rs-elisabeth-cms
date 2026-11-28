@@ -397,22 +397,22 @@
     </style>
 
     <x-filament::section>
-        <x-slot name="heading">Kuesioner Kepuasan Pasien</x-slot>
+        <x-slot name="heading">{{ __('Kuesioner Kepuasan Pasien') }}</x-slot>
         <x-slot name="description">
-            Hasil kuesioner per layanan. Setiap layanan memiliki ringkasan sendiri.
+            {{ __('Hasil kuesioner per layanan. Setiap layanan memiliki ringkasan sendiri.') }}
         </x-slot>
 
         <div class="rse-qs-root" x-data="{ tab: '{{ $groups[0]['type'] ?? 'igd' }}' }">
             <div class="rse-qs-topbar">
                 <div class="rse-qs-summary-pill">
-                    <span>Total keseluruhan: <strong>{{ $totalAllUnits }}</strong> pengisian dari {{ count($groups) }} unit layanan</span>
+                    <span>{{ __('Total keseluruhan:') }} <strong>{{ $totalAllUnits }}</strong> {{ __('pengisian dari :units unit layanan', ['units' => count($groups)]) }}</span>
                 </div>
                 <a class="rse-qs-cta-link" href="{{ $indexUrl }}">
-                    Lihat seluruh pengisian kuesioner
+                    {{ __('Lihat seluruh pengisian kuesioner') }}
                 </a>
             </div>
 
-            <div class="rse-qs-tablist" role="tablist" aria-label="Pilih unit layanan kuesioner">
+            <div class="rse-qs-tablist" role="tablist" aria-label="{{ __('Pilih unit layanan kuesioner') }}">
                 @foreach ($groups as $group)
                     <button
                         type="button"
@@ -422,7 +422,7 @@
                         @click="tab = '{{ $group['type'] }}'"
                     >
                         <span>{{ $group['label'] }} ({{ $group['total'] }})</span>
-                        <span class="rse-qs-tab-meta">{{ $group['satisfaction'] }}% puas</span>
+                        <span class="rse-qs-tab-meta">{{ __(':percent% puas', ['percent' => $group['satisfaction']]) }}</span>
                     </button>
                 @endforeach
             </div>
@@ -444,26 +444,26 @@
                 >
                     <div class="rse-qs-kpi-row">
                         <div class="rse-qs-kpi-card">
-                            <p class="rse-qs-kpi-label">Total pengisian</p>
+                            <p class="rse-qs-kpi-label">{{ __('Total pengisian') }}</p>
                             <p class="rse-qs-kpi-value">{{ $groupTotal }}</p>
-                            <p class="rse-qs-kpi-note">Responden layanan {{ $group['label'] }}</p>
+                            <p class="rse-qs-kpi-note">{{ __('Responden layanan :unit', ['unit' => $group['label']]) }}</p>
                         </div>
 
                         <div class="rse-qs-kpi-card">
-                            <p class="rse-qs-kpi-label">Tingkat kepuasan</p>
+                            <p class="rse-qs-kpi-label">{{ __('Tingkat kepuasan') }}</p>
                             <p class="rse-qs-kpi-value" style="color: var(--rse-emerald-text);">{{ $satisfaction }}%</p>
                             <div class="rse-qs-bar-track" aria-hidden="true">
                                 <div style="width: {{ min(100, max(0, $satisfaction)) }}%; height: 100%; background-color: var(--rse-brand-secondary, #159e74);"></div>
                             </div>
-                            <p class="rse-qs-kpi-note">Proporsi jawaban positif pada dua skala tertinggi</p>
+                            <p class="rse-qs-kpi-note">{{ __('Proporsi jawaban positif pada dua skala tertinggi') }}</p>
                         </div>
                     </div>
 
                     <div class="rse-qs-analytics-grid">
                         <div class="rse-qs-panel">
-                            <p class="rse-qs-panel-title">Berdasarkan kelompok usia</p>
+                            <p class="rse-qs-panel-title">{{ __('Berdasarkan kelompok usia') }}</p>
                             @if (count($group['by_age']) === 0)
-                                <p style="font-size: 0.875rem; color: var(--rse-text-secondary);">Belum ada pengisian.</p>
+                                <p style="font-size: 0.875rem; color: var(--rse-text-secondary);">{{ __('Belum ada pengisian.') }}</p>
                             @else
                                 <ul class="rse-qs-dist-list" style="list-style: none; padding: 0; margin: 0;">
                                     @foreach ($group['by_age'] as $age => $count)
@@ -486,7 +486,7 @@
                             @if (count($byPayment) > 0)
                                 <div style="margin-top: 1rem; padding-top: 0.875rem; border-top: 1px solid var(--rse-border-subtle);">
                                     <p style="font-size: 0.8125rem; font-weight: 700; color: var(--rse-text); margin-bottom: 0.375rem;">
-                                        Distribusi cara bayar
+                                        {{ __('Distribusi cara bayar') }}
                                     </p>
                                     <div class="rse-qs-payment-pills">
                                         @foreach ($byPayment as $paymentMethod => $paymentCount)
@@ -504,15 +504,15 @@
                         </div>
 
                         <div class="rse-qs-panel">
-                            <p class="rse-qs-panel-title">Evaluasi Aspek Layanan ({{ $group['label'] }})</p>
+                            <p class="rse-qs-panel-title">{{ __('Evaluasi Aspek Layanan (:unit)', ['unit' => $group['label']]) }}</p>
                             @if (count($highestAspects) === 0)
                                 <p style="font-size: 0.875rem; color: var(--rse-text-secondary);">
-                                    Belum ada data penilaian pertanyaan untuk dianalisis pada unit ini.
+                                    {{ __('Belum ada data penilaian pertanyaan untuk dianalisis pada unit ini.') }}
                                 </p>
                             @else
                                 <div class="rse-qs-aspect-group">
                                     <p class="rse-qs-aspect-subtitle" style="color: var(--rse-emerald-text);">
-                                        Aspek Apresiasi Tertinggi
+                                        {{ __('Aspek Apresiasi Tertinggi') }}
                                     </p>
                                     <div class="rse-qs-dist-list">
                                         @foreach ($highestAspects as $aspect)
@@ -533,7 +533,7 @@
 
                                 <div class="rse-qs-aspect-group">
                                     <p class="rse-qs-aspect-subtitle" style="color: var(--rse-amber-text);">
-                                        Aspek Perlu Perhatian
+                                        {{ __('Aspek Perlu Perhatian') }}
                                     </p>
                                     <div class="rse-qs-dist-list">
                                         @foreach ($lowestAspects as $aspect)
@@ -562,24 +562,24 @@
                     </div>
 
                     <p style="font-size: 0.875rem; font-weight: 700; color: var(--rse-text); margin-bottom: 0.625rem;">
-                        Pengisian terbaru
+                        {{ __('Pengisian terbaru') }}
                     </p>
                     @if (count($group['latest']) === 0)
                         <div class="rse-qs-empty">
-                            <p style="font-weight: 600; color: var(--rse-text);">Belum ada pengisian.</p>
+                            <p style="font-weight: 600; color: var(--rse-text);">{{ __('Belum ada pengisian.') }}</p>
                         </div>
                     @else
                         <div class="rse-qs-table-wrap">
                             <table class="rse-qs-table">
                                 <thead>
                                     <tr>
-                                        <th>Usia</th>
-                                        <th>Jenis kelamin</th>
-                                        <th>Cara bayar</th>
-                                        <th>Skor Responden</th>
-                                        <th>Saran Pasien</th>
-                                        <th>Waktu</th>
-                                        <th>Tindakan</th>
+                                        <th>{{ __('Usia') }}</th>
+                                        <th>{{ __('Jenis kelamin') }}</th>
+                                        <th>{{ __('Cara bayar') }}</th>
+                                        <th>{{ __('Skor Responden') }}</th>
+                                        <th>{{ __('Saran Pasien') }}</th>
+                                        <th>{{ __('Waktu') }}</th>
+                                        <th>{{ __('Tindakan') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -603,17 +603,17 @@
                                             <td style="white-space: nowrap;">
                                                 @if ($scoreTot > 0)
                                                     <span class="rse-qs-badge {{ $scoreBadgeClass }}">
-                                                        {{ $scorePct }}% ({{ $scorePos }}/{{ $scoreTot }} positif)
+                                                        {{ __(':percent% (:positive/:total positif)', ['percent' => $scorePct, 'positive' => $scorePos, 'total' => $scoreTot]) }}
                                                     </span>
                                                 @else
-                                                    <span style="color: var(--rse-text-secondary); font-size: 0.8125rem;">Belum dinilai</span>
+                                                    <span style="color: var(--rse-text-secondary); font-size: 0.8125rem;">{{ __('Belum dinilai') }}</span>
                                                 @endif
                                             </td>
                                             <td style="max-width: 22rem; line-height: 1.45;">
                                                 @if (! empty($row['suggestions']))
                                                     {{ \Illuminate\Support\Str::limit($row['suggestions'], 100) }}
                                                 @else
-                                                    <span style="color: var(--rse-text-secondary); font-size: 0.8125rem;">Tanpa catatan saran</span>
+                                                    <span style="color: var(--rse-text-secondary); font-size: 0.8125rem;">{{ __('Tanpa catatan saran') }}</span>
                                                 @endif
                                             </td>
                                             <td style="white-space: nowrap;">
@@ -626,7 +626,7 @@
                                             </td>
                                             <td style="white-space: nowrap;">
                                                 <a class="rse-qs-read-btn" href="{{ $row['url'] }}">
-                                                    {{ $row['submitted'] }} : Baca jawaban
+                                                    {{ $row['submitted'] }} : {{ __('Baca jawaban') }}
                                                 </a>
                                             </td>
                                         </tr>

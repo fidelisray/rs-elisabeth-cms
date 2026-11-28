@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\BannerPromotions\Tables;
 
+use App\Filament\Support\AccessibleTableColumns;
 use App\Filament\Support\ContentTrashActions;
 use App\Support\ApiCacheInvalidator;
 use App\Support\TranslatedContentOrder;
@@ -9,10 +10,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
 class BannerPromotionsTable
@@ -26,45 +24,40 @@ class BannerPromotionsTable
                 ApiCacheInvalidator::forModule('banner_promotions');
             })
             ->columns([
-                ImageColumn::make('image_path')
-                    ->label('Preview')
-                    ->disk(config('filesystems.media_disk'))
-                    ->width(120)
-                    ->height(68), // Menjaga aspek rasio 16:9 pada preview tabel
+                AccessibleTableColumns::thumbnail('image_path', 120, 68, 'title'),
 
                 TextColumn::make('title')
-                    ->label('Judul Banner')
-                    ->description(fn ($record): ?string => filled($record->getTranslation('title', 'en', false))
-                        ? 'EN: '.$record->getTranslation('title', 'en', false)
-                        : null)
+                    ->label(__('Judul Banner'))
+                    ->getStateUsing(fn ($record): string => AccessibleTableColumns::indonesianPrimary($record, 'title'))
+                    ->description(fn ($record): ?string => AccessibleTableColumns::englishSubtitle($record, 'title'))
                     ->searchable()
                     ->sortable(query: TranslatedContentOrder::column('title'))
                     ->limit(50),
 
                 TextColumn::make('slug')
-                    ->label('Identifier')
+                    ->label(__('Identifier'))
                     ->sortable(query: TranslatedContentOrder::column('slug'))
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('created_by')
-                    ->label('Dibuat Oleh')
+                    ->label(__('Dibuat Oleh'))
                     ->searchable(),
 
                 TextColumn::make('created_at')
-                    ->label('Dibuat')
+                    ->label(__('Dibuat'))
                     ->dateTime('d M Y, H:i'),
 
                 TextColumn::make('updated_by')
-                    ->label('Diperbarui Oleh')
+                    ->label(__('Diperbarui Oleh'))
                     ->searchable(),
 
                 TextColumn::make('updated_at')
-                    ->label('Diperbarui')
+                    ->label(__('Diperbarui'))
                     ->dateTime('d M Y, H:i'),
 
                 IconColumn::make('is_active')
                     ->boolean()
-                    ->label('Aktif'),
+                    ->label(__('Aktif')),
             ])
             ->filters([
                 ContentTrashActions::trashedFilter(),

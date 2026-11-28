@@ -423,7 +423,7 @@ class DynamicFormPanelTest extends TestCase
 
         // Empty state widget
         Livewire::test(DynamicFeedbackOverviewWidget::class)
-            ->assertSee('Custom Questionnaire Form')
+            ->assertSee('Formulir Kuesioner Kustom')
             ->assertSee('Belum ada formulir kustom yang dipublikasikan.');
 
         $form = DynamicForm::factory()->feedback()->create([
@@ -756,7 +756,7 @@ class DynamicFormPanelTest extends TestCase
         $this->get(DynamicFormSubmissionResource::getUrl('view', ['record' => $sub]))
             ->assertOk()
             ->assertSee('Form Dihapus Permanen')
-            ->assertSee('Response #'.$sub->id);
+            ->assertSee('Respons #'.$sub->id);
 
         // Hard Delete oleh super_admin harus bersih tanpa error FK constraint
         $this->assertTrue(app(HardDeleteContent::class)->handle($formWithSubs->fresh()));

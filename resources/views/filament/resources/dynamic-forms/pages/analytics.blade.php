@@ -185,13 +185,13 @@
             <div class="rse-dfa-filter-grid">
                 <div>
                     <label for="dfa-version" style="display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.375rem; color: var(--rse-a-text-secondary);">
-                        Versi Formulir
+                        {{ __('Versi Formulir') }}
                     </label>
                     <select id="dfa-version" class="rse-dfa-input" wire:model.live="versionFilter">
-                        <option value="all">Semua Versi (Penyelarasan field_key)</option>
+                        <option value="all">{{ __('Semua Versi (Penyelarasan field_key)') }}</option>
                         @foreach ($versions as $ver)
                             <option value="{{ $ver->id }}">
-                                Versi v{{ $ver->version_number }} ({{ strtoupper($ver->status) }})
+                                {{ __('Versi v:version (:status)', ['version' => $ver->version_number, 'status' => strtoupper($ver->status)]) }}
                             </option>
                         @endforeach
                     </select>
@@ -199,61 +199,61 @@
 
                 <div>
                     <label for="dfa-from" style="display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.375rem; color: var(--rse-a-text-secondary);">
-                        Dari Tanggal
+                        {{ __('Dari Tanggal') }}
                     </label>
                     <input id="dfa-from" type="date" class="rse-dfa-input" wire:model.live="dateFrom" />
                 </div>
 
                 <div>
                     <label for="dfa-to" style="display: block; font-size: 0.75rem; font-weight: 700; margin-bottom: 0.375rem; color: var(--rse-a-text-secondary);">
-                        Sampai Tanggal
+                        {{ __('Sampai Tanggal') }}
                     </label>
                     <input id="dfa-to" type="date" class="rse-dfa-input" wire:model.live="dateTo" />
                 </div>
 
                 <div>
                     <button type="button" wire:click="resetFilters" class="rse-dfa-btn" style="width: 100%;">
-                        Reset Filter
+                        {{ __('Reset Filter') }}
                     </button>
                 </div>
             </div>
 
             <div wire:loading.flex wire:target="versionFilter,dateFrom,dateTo,resetFilters" style="align-items: center; gap: 0.5rem; margin-top: 0.875rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; background-color: var(--rse-a-muted); font-size: 0.8125rem;">
-                <span>Menyusun ulang statistik analitik berdasarkan filter aktif...</span>
+                <span>{{ __('Menyusun ulang statistik analitik berdasarkan filter aktif...') }}</span>
             </div>
         </div>
 
         @if ($errorMessage)
             <div role="alert" style="padding: 1rem 1.25rem; border-radius: 0.75rem; background-color: var(--rse-a-err-bg); color: var(--rse-a-err-text); margin-bottom: 1.25rem;">
-                <p style="font-weight: 700; margin: 0 0 0.25rem;">Terjadi Kesalahan Analitik</p>
+                <p style="font-weight: 700; margin: 0 0 0.25rem;">{{ __('Terjadi Kesalahan Analitik') }}</p>
                 <p style="font-size: 0.875rem; margin: 0 0 0.75rem;">{{ $errorMessage }}</p>
-                <button type="button" wire:click="resetFilters" class="rse-dfa-btn">Muat Ulang Filter Bawaan</button>
+                <button type="button" wire:click="resetFilters" class="rse-dfa-btn">{{ __('Muat Ulang Filter Bawaan') }}</button>
             </div>
         @endif
 
         <div class="rse-dfa-kpi-grid">
             <div class="rse-dfa-kpi">
                 <p style="font-size: 0.75rem; font-weight: 700; color: var(--rse-a-text-secondary); margin: 0 0 0.375rem;">
-                    Total Respons Terfilter
+                    {{ __('Total Respons Terfilter') }}
                 </p>
                 <p style="font-size: 1.75rem; font-weight: 800; margin: 0;">{{ $totalResponses }}</p>
             </div>
 
             <div class="rse-dfa-kpi">
                 <p style="font-size: 0.75rem; font-weight: 700; color: var(--rse-a-text-secondary); margin: 0 0 0.375rem;">
-                    Rata-Rata Keterisian Pertanyaan
+                    {{ __('Rata-Rata Keterisian Pertanyaan') }}
                 </p>
                 <p style="font-size: 1.75rem; font-weight: 800; margin: 0;">
-                    {{ $avgFillRate !== null ? $avgFillRate.'%' : 'Belum ada data' }}
+                    {{ $avgFillRate !== null ? $avgFillRate.'%' : __('Belum ada data') }}
                 </p>
             </div>
 
             <div class="rse-dfa-kpi">
                 <p style="font-size: 0.75rem; font-weight: 700; color: var(--rse-a-text-secondary); margin: 0 0 0.375rem;">
-                    Respons Terakhir Masuk
+                    {{ __('Respons Terakhir Masuk') }}
                 </p>
                 <p style="font-size: 1rem; font-weight: 700; margin: 0;">
-                    {{ $lastSubmittedAt ? $lastSubmittedAt->format('d M Y, H:i') : 'Belum ada respons' }}
+                    {{ $lastSubmittedAt ? $lastSubmittedAt->format('d M Y, H:i') : __('Belum ada respons') }}
                 </p>
             </div>
         </div>
@@ -262,23 +262,23 @@
             <div class="rse-dfa-panel" style="text-align: center; padding: 2.5rem 1.5rem;">
                 @if (! empty($hasActiveFilters))
                     <p style="font-size: 1rem; font-weight: 700; margin: 0 0 0.375rem;">
-                        Tidak ada respons yang cocok dengan filter aktif.
+                        {{ __('Tidak ada respons yang cocok dengan filter aktif.') }}
                     </p>
                     <p style="font-size: 0.875rem; color: var(--rse-a-text-secondary); margin: 0 0 1rem;">
-                        Ubah pilihan versi atau rentang tanggal pengisian untuk menampilkan data respons.
+                        {{ __('Ubah pilihan versi atau rentang tanggal pengisian untuk menampilkan data respons.') }}
                     </p>
                     <button type="button" wire:click="resetFilters" class="rse-dfa-btn">
-                        Reset Filter ke Semua Data
+                        {{ __('Reset Filter ke Semua Data') }}
                     </button>
                 @else
                     <p style="font-size: 1rem; font-weight: 700; margin: 0 0 0.375rem;">
-                        Belum ada respons masuk untuk formulir ini.
+                        {{ __('Belum ada respons masuk untuk formulir ini.') }}
                     </p>
                     <p style="font-size: 0.875rem; color: var(--rse-a-text-secondary); margin: 0 0 1rem;">
-                        Publikasikan form agar Web Frontend dapat mulai menerima pengisian.
+                        {{ __('Publikasikan form agar Web Frontend dapat mulai menerima pengisian.') }}
                     </p>
                     <a href="{{ \App\Filament\Resources\DynamicForms\DynamicFormResource::getUrl('edit', ['record' => $formRecord]) }}" class="rse-dfa-btn">
-                        Periksa Pengaturan & Publikasi Form
+                        {{ __('Periksa Pengaturan & Publikasi Form') }}
                     </a>
                 @endif
             </div>
@@ -290,13 +290,13 @@
                             <p style="font-size: 0.75rem; font-weight: 600; color: var(--rse-a-text-secondary); margin: 0 0 0.125rem;">
                                 {{ $question['section_title'] }} · {{ $question['type_label'] }} ({{ $question['field_key'] }})
                                 @if (! empty($question['is_legacy']))
-                                    · Arsip Versi Lama
+                                    · {{ __('Arsip Versi Lama') }}
                                 @endif
                             </p>
                             <h3 style="font-size: 1rem; font-weight: 700; margin: 0;">{{ $question['label'] }}</h3>
                         </div>
                         <span style="padding: 0.25rem 0.625rem; border-radius: 0.375rem; background-color: var(--rse-a-badge-bg); color: var(--rse-a-badge-text); font-size: 0.75rem; font-weight: 700;">
-                            {{ $question['answered_count'] }} jawaban
+                            {{ __(':count jawaban', ['count' => $question['answered_count']]) }}
                         </span>
                     </div>
 
@@ -316,7 +316,7 @@
                         </div>
                         @if (! empty($question['other_samples']))
                             <div style="margin-top: 0.875rem; padding: 0.75rem; border-radius: 0.5rem; background-color: var(--rse-a-muted); font-size: 0.8125rem;">
-                                <p style="font-weight: 700; margin: 0 0 0.25rem;">Contoh isian Lainnya terbaru:</p>
+                                <p style="font-weight: 700; margin: 0 0 0.25rem;">{{ __('Contoh isian Lainnya terbaru:') }}</p>
                                 <ul style="margin: 0; padding-left: 1.25rem;">
                                     @foreach ($question['other_samples'] as $sample)
                                         <li>{{ $sample }}</li>
@@ -327,11 +327,11 @@
                     @elseif ($question['chart_kind'] === 'numeric_scale')
                         <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
                             <div style="padding: 0.75rem 1rem; border-radius: 0.5rem; background-color: var(--rse-a-muted); border: 1px solid var(--rse-a-divider);">
-                                <span style="font-size: 0.75rem; color: var(--rse-a-text-secondary);">Rata-rata:</span>
+                                <span style="font-size: 0.75rem; color: var(--rse-a-text-secondary);">{{ __('Rata-rata:') }}</span>
                                 <strong style="font-size: 1.125rem; margin-left: 0.25rem;">{{ $question['average'] ?? '-' }}</strong>
                             </div>
                             <div style="padding: 0.75rem 1rem; border-radius: 0.5rem; background-color: var(--rse-a-muted); border: 1px solid var(--rse-a-divider);">
-                                <span style="font-size: 0.75rem; color: var(--rse-a-text-secondary);">Median:</span>
+                                <span style="font-size: 0.75rem; color: var(--rse-a-text-secondary);">{{ __('Median:') }}</span>
                                 <strong style="font-size: 1.125rem; margin-left: 0.25rem;">{{ $question['median'] ?? '-' }}</strong>
                             </div>
                         </div>
@@ -339,10 +339,10 @@
                             @foreach ($question['distribution'] as $item)
                                 <div>
                                     <div style="display: flex; justify-content: space-between; font-size: 0.875rem; margin-bottom: 0.25rem;">
-                                        <span style="font-weight: 600;">Nilai {{ $item['label'] }}</span>
+                                        <span style="font-weight: 600;">{{ __('Nilai :value', ['value' => $item['label']]) }}</span>
                                         <span style="color: var(--rse-a-text-secondary);">{{ $item['count'] }} ({{ $item['percent'] }}%)</span>
                                     </div>
-                                    <div class="rse-dfa-bar-track" role="progressbar" aria-valuenow="{{ $item['percent'] }}" aria-valuemin="0" aria-valuemax="100" aria-label="Nilai {{ $item['label'] }}">
+                                    <div class="rse-dfa-bar-track" role="progressbar" aria-valuenow="{{ $item['percent'] }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ __('Nilai :value', ['value' => $item['label']]) }}">
                                         <div class="rse-dfa-bar-fill" style="width: {{ min(100, (float) $item['percent']) }}%;"></div>
                                     </div>
                                 </div>
@@ -353,11 +353,11 @@
                             <table class="rse-dfa-table">
                                 <thead>
                                     <tr>
-                                        <th>Butir Pertanyaan</th>
+                                        <th>{{ __('Butir Pertanyaan') }}</th>
                                         @foreach ($question['columns'] as $col)
                                             <th>{{ $col['label'] }}</th>
                                         @endforeach
-                                        <th>Rata-rata Skor</th>
+                                        <th>{{ __('Rata-rata Skor') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -375,16 +375,16 @@
                         </div>
                     @elseif ($question['chart_kind'] === 'files')
                         @if (empty($question['recent_files']))
-                            <p style="font-size: 0.875rem; color: var(--rse-a-text-secondary); margin: 0;">Belum ada berkas diunggah.</p>
+                            <p style="font-size: 0.875rem; color: var(--rse-a-text-secondary); margin: 0;">{{ __('Belum ada berkas diunggah.') }}</p>
                         @else
                             <div class="rse-dfa-table-wrap">
                                 <table class="rse-dfa-table">
                                     <thead>
                                         <tr>
-                                            <th>Nama Berkas</th>
-                                            <th>Ukuran</th>
-                                            <th>Waktu Kirim</th>
-                                            <th>Tindakan</th>
+                                            <th>{{ __('Nama Berkas') }}</th>
+                                            <th>{{ __('Ukuran') }}</th>
+                                            <th>{{ __('Waktu Kirim') }}</th>
+                                            <th>{{ __('Tindakan') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -398,15 +398,15 @@
                                                         <div style="display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;">
                                                             @if (! empty($fileItem['can_inline_preview']))
                                                                 <a class="rse-dfa-link" href="{{ route('filament.admin.dynamic-forms.uploads.download', ['upload' => $fileItem['upload_id'], 'inline' => 1]) }}" target="_blank" rel="noopener noreferrer">
-                                                                    Lihat
+                                                                    {{ __('Lihat') }}
                                                                 </a>
                                                             @endif
                                                             <a class="rse-dfa-link" href="{{ route('filament.admin.dynamic-forms.uploads.download', ['upload' => $fileItem['upload_id']]) }}">
-                                                                Unduh Berkas
+                                                                {{ __('Unduh Berkas') }}
                                                             </a>
                                                         </div>
                                                     @else
-                                                        <span>Akses Terbatas</span>
+                                                        <span>{{ __('Akses Terbatas') }}</span>
                                                     @endif
                                                 </td>
                                             </tr>
@@ -417,15 +417,15 @@
                         @endif
                     @else
                         @if (empty($question['recent_responses']))
-                            <p style="font-size: 0.875rem; color: var(--rse-a-text-secondary); margin: 0;">Belum ada jawaban teks pada filter ini.</p>
+                            <p style="font-size: 0.875rem; color: var(--rse-a-text-secondary); margin: 0;">{{ __('Belum ada jawaban teks pada filter ini.') }}</p>
                         @else
                             <div class="rse-dfa-table-wrap">
                                 <table class="rse-dfa-table">
                                     <thead>
                                         <tr>
-                                            <th>Jawaban Responden</th>
-                                            <th>Waktu Kirim</th>
-                                            <th>Detail</th>
+                                            <th>{{ __('Jawaban Responden') }}</th>
+                                            <th>{{ __('Waktu Kirim') }}</th>
+                                            <th>{{ __('Detail') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -436,7 +436,7 @@
                                                 <td style="white-space: nowrap;">
                                                     @if ($canViewSubmissions)
                                                         <a class="rse-dfa-link" href="{{ \App\Filament\Resources\DynamicFormSubmissions\DynamicFormSubmissionResource::getUrl('view', ['record' => $resp['submission_id']]) }}">
-                                                            Lihat Respons
+                                                            {{ __('Lihat Respons') }}
                                                         </a>
                                                     @else
                                                         <span>-</span>

@@ -66,8 +66,8 @@ trait ValidatesTranslatableLocales
             foreach ($translatableAttributes as $attribute) {
                 if (str_starts_with($errorKey, "data.{$attribute}.")) {
                     Notification::make()
-                        ->title('Data Multi-Bahasa Belum Lengkap')
-                        ->body('Semua field wajib diisi untuk seluruh bahasa (Indonesia & English) sebelum data dapat disimpan.')
+                        ->title(__('Data Multi-Bahasa Belum Lengkap'))
+                        ->body(__('Semua field wajib diisi untuk seluruh bahasa (Indonesia & English) sebelum data dapat disimpan.'))
                         ->danger()
                         ->persistent()
                         ->send();
@@ -123,7 +123,10 @@ trait ValidatesTranslatableLocales
                     $missingInLocale[] = $attribute;
                     $this->addError(
                         "data.{$attribute}.{$locale}",
-                        $this->getTranslatableAttributeLabel($attribute).' wajib diisi untuk '.$this->getTranslatableLocaleLabel($locale).'.'
+                        __(':field wajib diisi untuk :locale.', [
+                            'field' => $this->getTranslatableAttributeLabel($attribute),
+                            'locale' => $this->getTranslatableLocaleLabel($locale),
+                        ])
                     );
                 }
             }
@@ -141,10 +144,13 @@ trait ValidatesTranslatableLocales
                     ->exists();
 
                 if ($isDuplicate) {
-                    $slugErrors[$locale] = "Identifier (Slug) '{$currentSlug}' sudah digunakan pada ".$this->getTranslatableLocaleLabel($locale).'.';
+                    $slugErrors[$locale] = __("Identifier (Slug) ':slug' sudah digunakan pada :locale.", [
+                        'slug' => $currentSlug,
+                        'locale' => $this->getTranslatableLocaleLabel($locale),
+                    ]);
                     $this->addError(
                         "data.slug.{$locale}",
-                        'Identifier (Slug) sudah digunakan. Pilih identifier lain.'
+                        __('Identifier (Slug) sudah digunakan. Pilih identifier lain.')
                     );
                 }
             }
@@ -163,12 +169,12 @@ trait ValidatesTranslatableLocales
             }
 
             $body = ($missingByLocale
-                ? 'Semua field wajib diisi untuk seluruh bahasa (Indonesia & English) sebelum data dapat disimpan.'
-                : 'Gunakan identifier (slug) yang belum dipakai pada bahasa terkait, termasuk oleh konten yang sudah dihapus.')
+                ? __('Semua field wajib diisi untuk seluruh bahasa (Indonesia & English) sebelum data dapat disimpan.')
+                : __('Gunakan identifier (slug) yang belum dipakai pada bahasa terkait, termasuk oleh konten yang sudah dihapus.'))
                 ."\n\n".implode("\n", $messages);
 
             Notification::make()
-                ->title($missingByLocale ? 'Data Multi-Bahasa Belum Lengkap' : 'Identifier (Slug) Sudah Digunakan')
+                ->title($missingByLocale ? __('Data Multi-Bahasa Belum Lengkap') : __('Identifier (Slug) Sudah Digunakan'))
                 ->body($body)
                 ->danger()
                 ->persistent()
@@ -223,7 +229,9 @@ trait ValidatesTranslatableLocales
                 throw $exception;
             }
 
-            $message = 'Identifier (Slug) sudah digunakan pada '.$this->getTranslatableLocaleLabel($locale).'. Pilih identifier lain.';
+            $message = __('Identifier (Slug) sudah digunakan pada :locale. Pilih identifier lain.', [
+                'locale' => $this->getTranslatableLocaleLabel($locale),
+            ]);
 
             throw ValidationException::withMessages([
                 "data.slug.{$locale}" => $message,
@@ -299,22 +307,22 @@ trait ValidatesTranslatableLocales
     protected function getTranslatableAttributeLabel(string $attribute): string
     {
         return match ($attribute) {
-            'title' => 'Judul',
-            'name' => 'Nama',
-            'slug' => 'Identifier (Slug)',
-            'shorts' => 'Ringkasan',
-            'short_description' => 'Deskripsi Singkat',
-            'content' => 'Konten',
-            'description' => 'Deskripsi',
-            'tagline' => 'Tagline / Highlight',
-            'category', 'tags' => 'Kategori',
-            'wa_link_text' => 'Label Tombol WhatsApp',
-            'wa_prefilled_message' => 'Pesan Otomatis WhatsApp',
-            'whatsapp_text' => 'Pesan WhatsApp Kamar',
-            'bio' => 'Biografi / Tentang Dokter',
-            'location' => 'Data Lokasi Praktik',
-            'experience' => 'Data Pengalaman',
-            'education' => 'Data Riwayat Pendidikan',
+            'title' => __('Judul'),
+            'name' => __('Nama'),
+            'slug' => __('Identifier (Slug)'),
+            'shorts' => __('Ringkasan'),
+            'short_description' => __('Deskripsi Singkat'),
+            'content' => __('Konten'),
+            'description' => __('Deskripsi'),
+            'tagline' => __('Tagline / Highlight'),
+            'category', 'tags' => __('Kategori'),
+            'wa_link_text' => __('Label Tombol WhatsApp'),
+            'wa_prefilled_message' => __('Pesan Otomatis WhatsApp'),
+            'whatsapp_text' => __('Pesan WhatsApp Kamar'),
+            'bio' => __('Biografi / Tentang Dokter'),
+            'location' => __('Data Lokasi Praktik'),
+            'experience' => __('Data Pengalaman'),
+            'education' => __('Data Riwayat Pendidikan'),
             default => ucfirst(str_replace('_', ' ', $attribute)),
         };
     }
@@ -325,8 +333,8 @@ trait ValidatesTranslatableLocales
     protected function getTranslatableLocaleLabel(string $locale): string
     {
         return match ($locale) {
-            'id' => 'Bahasa Indonesia (ID)',
-            'en' => 'English (EN)',
+            'id' => __('Bahasa Indonesia (ID)'),
+            'en' => __('Bahasa Inggris (EN)'),
             default => strtoupper($locale),
         };
     }

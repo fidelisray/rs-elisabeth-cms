@@ -518,109 +518,29 @@
     </style>
 
     <x-filament::section>
-        <x-slot name="heading">Kritik & Saran Pasien</x-slot>
+        <x-slot name="heading">{{ __('Kritik & Saran Pasien') }}</x-slot>
         <x-slot name="description">
-            Ringkasan dari formulir kritik dan saran di website. Nama dan nomor telepon pasien tidak ditampilkan di sini.
+            {{ __('Ringkasan dari formulir kritik dan saran di website. Nama dan nomor telepon pasien tidak ditampilkan di sini.') }}
         </x-slot>
 
-        <div class="rse-fb-root" x-data="{ statusFilter: 'all', categoryFilter: 'all', categoryLabel: 'Semua Kategori' }">
+        <div class="rse-fb-root" x-data="{ statusFilter: 'all', categoryFilter: 'all', categoryLabel: @js(__('Semua Kategori')) }">
             <div class="rse-fb-topbar">
                 <div class="rse-fb-privacy-pill">
-                    <span>Data pribadi pelapor & pasien disamarkan pada tampilan ringkasan ini</span>
+                    <span>{{ __('Data pribadi pelapor & pasien disamarkan pada tampilan ringkasan ini') }}</span>
                 </div>
                 <a class="rse-fb-cta-link" href="{{ $indexUrl }}">
-                    Lihat seluruh kritik dan saran
+                    {{ __('Lihat seluruh kritik dan saran') }}
                 </a>
             </div>
 
-            {{--
-            <div class="rse-fb-kpi-grid" role="group" aria-label="Filter ringkasan status kritik dan saran">
-                <button
-                    type="button"
-                    class="rse-fb-kpi-card"
-                    :aria-pressed="statusFilter === 'all' ? 'true' : 'false'"
-                    @click="statusFilter = 'all'"
-                >
-                    <div class="rse-fb-kpi-header">
-                        <span class="rse-fb-kpi-label">Total</span>
-                        <span class="rse-fb-kpi-pct">100%</span>
-                    </div>
-                    <p class="rse-fb-kpi-value">{{ $totalCount }}</p>
-                    <p class="rse-fb-kpi-sub">Semua laporan masuk</p>
-                </button>
-
-                <button
-                    type="button"
-                    class="rse-fb-kpi-card"
-                    :aria-pressed="statusFilter === 'baru' ? 'true' : 'false'"
-                    @click="statusFilter = (statusFilter === 'baru' ? 'all' : 'baru')"
-                >
-                    <div class="rse-fb-kpi-header">
-                        <span class="rse-fb-kpi-label">Baru</span>
-                        <span class="rse-fb-kpi-pct">{{ $baruPct }}%</span>
-                    </div>
-                    <p class="rse-fb-kpi-value" style="color: var(--rse-amber-text);">{{ $baruCount }}</p>
-                    <p class="rse-fb-kpi-sub">Menunggu triase awal</p>
-                </button>
-
-                <button
-                    type="button"
-                    class="rse-fb-kpi-card"
-                    :aria-pressed="statusFilter === 'diproses' ? 'true' : 'false'"
-                    @click="statusFilter = (statusFilter === 'diproses' ? 'all' : 'diproses')"
-                >
-                    <div class="rse-fb-kpi-header">
-                        <span class="rse-fb-kpi-label">Diproses</span>
-                        <span class="rse-fb-kpi-pct">{{ $diprosesPct }}%</span>
-                    </div>
-                    <p class="rse-fb-kpi-value" style="color: var(--rse-sky-text);">{{ $diprosesCount }}</p>
-                    <p class="rse-fb-kpi-sub">Sedang ditindaklanjuti unit</p>
-                </button>
-
-                <button
-                    type="button"
-                    class="rse-fb-kpi-card"
-                    :aria-pressed="statusFilter === 'selesai' ? 'true' : 'false'"
-                    @click="statusFilter = (statusFilter === 'selesai' ? 'all' : 'selesai')"
-                >
-                    <div class="rse-fb-kpi-header">
-                        <span class="rse-fb-kpi-label">Selesai</span>
-                        <span class="rse-fb-kpi-pct">{{ $selesaiPct }}%</span>
-                    </div>
-                    <p class="rse-fb-kpi-value" style="color: var(--rse-emerald-text);">{{ $selesaiCount }}</p>
-                    <p class="rse-fb-kpi-sub">Penanganan tuntas ({{ $selesaiPct }}%)</p>
-                </button>
-            </div>
-
-            @if ($totalCount > 0)
-                <div class="rse-fb-progress-box" aria-label="Proporsi penyelesaian laporan">
-                    <div class="rse-fb-progress-head">
-                        <span style="font-weight: 600; color: var(--rse-text);">Distribusi Penyelesaian Tiket</span>
-                        <span>Selesai {{ $selesaiPct }}% · Diproses {{ $diprosesPct }}% · Baru {{ $baruPct }}%</span>
-                    </div>
-                    <div class="rse-fb-progress-track">
-                        @if ($selesaiPct > 0)
-                            <div style="width: {{ $selesaiPct }}%; background-color: #059669;" title="Selesai: {{ $selesaiCount }} ({{ $selesaiPct }}%)"></div>
-                        @endif
-                        @if ($diprosesPct > 0)
-                            <div style="width: {{ $diprosesPct }}%; background-color: #0284c7;" title="Diproses: {{ $diprosesCount }} ({{ $diprosesPct }}%)"></div>
-                        @endif
-                        @if ($baruPct > 0)
-                            <div style="width: {{ $baruPct }}%; background-color: #d97706;" title="Baru: {{ $baruCount }} ({{ $baruPct }}%)"></div>
-                        @endif
-                    </div>
-                </div>
-            @endif
-            --}}
-
-            <div class="rse-fb-filter-box" role="group" aria-label="Filter kelompok kategori kritik dan saran">
+            <div class="rse-fb-filter-box" role="group" aria-label="{{ __('Filter kelompok kategori kritik dan saran') }}">
                 <div class="rse-fb-filter-head">
                     <div>
-                        <p class="rse-fb-filter-title">Filter Kelompok Kategori</p>
-                        <p class="rse-fb-filter-subtitle">Pilih kelompok kategori untuk menyaring daftar kritik dan saran pasien di bawah ini.</p>
+                        <p class="rse-fb-filter-title">{{ __('Filter Kelompok Kategori') }}</p>
+                        <p class="rse-fb-filter-subtitle">{{ __('Pilih kelompok kategori untuk menyaring daftar kritik dan saran pasien di bawah ini.') }}</p>
                     </div>
                     <span class="rse-fb-privacy-pill" style="padding: 0.25rem 0.625rem;">
-                        Total laporan tersimpan: <strong>{{ $totalCount }}</strong>
+                        {{ __('Total laporan tersimpan:') }} <strong>{{ $totalCount }}</strong>
                     </span>
                 </div>
 
@@ -629,9 +549,9 @@
                         type="button"
                         class="rse-fb-filter-pill"
                         :aria-pressed="categoryFilter === 'all' ? 'true' : 'false'"
-                        @click="categoryFilter = 'all'; categoryLabel = 'Semua Kategori'"
+                        @click="categoryFilter = 'all'; categoryLabel = @js(__('Semua Kategori'))"
                     >
-                        <span>Semua Kategori</span>
+                        <span>{{ __('Semua Kategori') }}</span>
                         <span class="rse-fb-filter-count">{{ count($latest) }}</span>
                     </button>
 
@@ -647,7 +567,7 @@
                             data-cat-key="{{ $catKey }}"
                             data-cat-label="{{ $catNameLabel }}"
                             :aria-pressed="categoryFilter === $el.dataset.catKey ? 'true' : 'false'"
-                            @click="if (categoryFilter === $el.dataset.catKey) { categoryFilter = 'all'; categoryLabel = 'Semua Kategori'; } else { categoryFilter = $el.dataset.catKey; categoryLabel = $el.dataset.catLabel; }"
+                            @click="if (categoryFilter === $el.dataset.catKey) { categoryFilter = 'all'; categoryLabel = @js(__('Semua Kategori')); } else { categoryFilter = $el.dataset.catKey; categoryLabel = $el.dataset.catLabel; }"
                         >
                             <span>{{ $catNameLabel }}</span>
                             <span class="rse-fb-filter-count">{{ $catCount }}</span>
@@ -659,74 +579,45 @@
             @if (count($latest) === 0)
                 <div class="rse-fb-empty">
                     <p style="font-size: 0.9375rem; font-weight: 600; color: var(--rse-text); margin-bottom: 0.25rem;">
-                        Belum ada kritik dan saran masuk.
+                        {{ __('Belum ada kritik dan saran masuk.') }}
                     </p>
                     <p style="font-size: 0.8125rem; color: var(--rse-text-secondary);">
-                        Laporan yang dikirim pasien melalui formulir website akan otomatis muncul di daftar ini.
+                        {{ __('Laporan yang dikirim pasien melalui formulir website akan otomatis muncul di daftar ini.') }}
                     </p>
                 </div>
             @else
                 <div class="rse-fb-toolbar">
                     <div style="font-size: 0.875rem; font-weight: 600; color: var(--rse-text);">
-                        <span>10 Laporan Terbaru</span>
+                        <span>{{ __('10 Laporan Terbaru') }}</span>
                         <span x-show="categoryFilter !== 'all'" x-cloak style="font-weight: 500; color: var(--rse-text-secondary);">
-                            (Kategori: <span x-text="categoryLabel"></span>)
+                            ({{ __('Kategori') }}: <span x-text="categoryLabel"></span>)
                         </span>
-                        {{--
-                        <span x-show="statusFilter !== 'all'" x-cloak style="font-weight: 500; color: var(--rse-text-secondary);">
-                            (Filter aktif: <span x-text="statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)"></span>)
-                        </span>
-                        --}}
                     </div>
                     <button
                         type="button"
                         x-show="categoryFilter !== 'all'"
                         x-cloak
                         class="rse-fb-reset-btn"
-                        @click="categoryFilter = 'all'; categoryLabel = 'Semua Kategori'"
+                        @click="categoryFilter = 'all'; categoryLabel = @js(__('Semua Kategori'))"
                     >
-                        Tampilkan semua kategori
+                        {{ __('Tampilkan semua kategori') }}
                     </button>
-                    {{--
-                    <button
-                        type="button"
-                        x-show="statusFilter !== 'all'"
-                        x-cloak
-                        class="rse-fb-reset-btn"
-                        @click="statusFilter = 'all'"
-                    >
-                        Tampilkan semua status
-                    </button>
-                    --}}
                 </div>
 
                 <div class="rse-fb-table-wrap">
                     <table class="rse-fb-table">
                         <thead>
                             <tr>
-                                <th>Kode</th>
-                                {{-- <th>Tiket</th> --}}
-                                <th>Kategori</th>
-                                <th>Keluhan</th>
-                                {{-- <th>Status</th> --}}
-                                <th>Waktu</th>
-                                <th>Tindakan</th>
+                                <th>{{ __('Kode') }}</th>
+                                <th>{{ __('Kategori') }}</th>
+                                <th>{{ __('Keluhan') }}</th>
+                                <th>{{ __('Waktu') }}</th>
+                                <th>{{ __('Tindakan') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($latest as $row)
                                 @php
-                                    $rowStatus = strtolower((string) ($row['status'] ?? 'baru'));
-                                    $statusClass = match ($rowStatus) {
-                                        'selesai' => 'rse-fb-status-selesai',
-                                        'diproses' => 'rse-fb-status-diproses',
-                                        default => 'rse-fb-status-baru',
-                                    };
-                                    $dotColor = match ($rowStatus) {
-                                        'selesai' => '#059669',
-                                        'diproses' => '#0284c7',
-                                        default => '#d97706',
-                                    };
                                     $categories = array_values($row['category_list'] ?? array_filter(array_map('trim', explode(',', (string) ($row['categories'] ?? '')))));
                                 @endphp
                                 <tr
@@ -746,20 +637,12 @@
                                                 @endforeach
                                             </div>
                                         @else
-                                            <span style="color: var(--rse-text-secondary); font-size: 0.8125rem;">Umum</span>
+                                            <span style="color: var(--rse-text-secondary); font-size: 0.8125rem;">{{ __('Umum') }}</span>
                                         @endif
                                     </td>
                                     <td style="max-width: 28rem; line-height: 1.45;">
                                         {{ \Illuminate\Support\Str::limit($row['detail'], 140) }}
                                     </td>
-                                    {{--
-                                    <td>
-                                        <span class="rse-fb-status-badge {{ $statusClass }}">
-                                            <span class="rse-fb-status-dot" style="background-color: {{ $dotColor }};"></span>
-                                            {{ ucfirst($row['status']) }}
-                                        </span>
-                                    </td>
-                                    --}}
                                     <td style="white-space: nowrap;">
                                         <div style="font-weight: 600;">{{ $row['submitted'] }}</div>
                                         @if (! empty($row['submitted_human']))
@@ -774,8 +657,7 @@
                                                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                                                 <circle cx="12" cy="12" r="3"/>
                                             </svg>
-                                            <span>Lihat</span>
-                                            {{-- Buka Tiket --}}
+                                            <span>{{ __('Lihat') }}</span>
                                         </a>
                                     </td>
                                 </tr>

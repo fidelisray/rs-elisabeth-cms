@@ -11,9 +11,9 @@ enum DynamicFormTextFormatPreset: string
     public function label(): string
     {
         return match ($this) {
-            self::LettersSpaces => 'Hanya Huruf & Spasi (Contoh: Nama Lengkap, dr. Budi)',
-            self::DigitsOnly => 'Hanya Angka / Digit (Contoh: NIK, No. BPJS, No. RM)',
-            self::CodeDash => 'Huruf, Angka & Tanda Hubung (Contoh: RM-001, IGD-02)',
+            self::LettersSpaces => __('Hanya Huruf & Spasi (Contoh: Nama Lengkap, dr. Budi)'),
+            self::DigitsOnly => __('Hanya Angka / Digit (Contoh: NIK, No. BPJS, No. RM)'),
+            self::CodeDash => __('Huruf, Angka & Tanda Hubung (Contoh: RM-001, IGD-02)'),
         };
     }
 
@@ -61,14 +61,14 @@ enum DynamicFormTextFormatPreset: string
     public static function unifiedShortTextOptions(): array
     {
         return [
-            'text' => 'Teks Bebas (Semua karakter)',
+            'text' => __('Teks Bebas (Semua karakter)'),
             self::LettersSpaces->value => self::LettersSpaces->label(),
             self::DigitsOnly->value => self::DigitsOnly->label(),
             self::CodeDash->value => self::CodeDash->label(),
-            'phone' => 'Nomor Telepon Indonesia (08 / +628, 10-13 digit)',
-            'email' => 'Alamat Email',
-            'number' => 'Angka / Nilai Hitung (Dengan batas min/maks & statistik)',
-            'url' => 'Tautan URL (http/https)',
+            'phone' => __('Nomor Telepon Indonesia (08 / +628, 10-13 digit)'),
+            'email' => __('Alamat Email'),
+            'number' => __('Angka / Nilai Hitung (Dengan batas min/maks & statistik)'),
+            'url' => __('Tautan URL (http/https)'),
         ];
     }
 

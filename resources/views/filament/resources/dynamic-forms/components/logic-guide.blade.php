@@ -123,43 +123,43 @@
 
     <div class="rse-lg-grid">
         <div class="rse-lg-card rse-lg-card-primary">
-            <span class="rse-lg-pill rse-lg-pill-primary">Level Pertanyaan · Langsung</span>
-            <p class="rse-lg-title">1. Tampil / Sembunyi Pertanyaan</p>
+            <span class="rse-lg-pill rse-lg-pill-primary">{{ __('Level Pertanyaan · Langsung') }}</span>
+            <p class="rse-lg-title">{{ __('1. Tampil / Sembunyi Pertanyaan') }}</p>
             <p class="rse-lg-desc">
-                Memunculkan atau menyembunyikan <strong>pertanyaan tertentu secara real-time</strong> berdasarkan jawaban pertanyaan sebelumnya (mendukung kombinasi AND/OR dan semua tipe input).
+                {!! __('Memunculkan atau menyembunyikan :highlight berdasarkan jawaban pertanyaan sebelumnya (mendukung kombinasi AND/OR dan semua tipe input).', ['highlight' => '<strong>'.e(__('pertanyaan tertentu secara real-time')).'</strong>']) !!}
             </p>
             <p class="rse-lg-example">
-                <strong>Contoh:</strong> Jika <em>"Pakai Asuransi?" = Ya</em> → muncul isian <em>"Nama Asuransi"</em> tepat di bawahnya.
+                <strong>{{ __('Contoh:') }}</strong> {{ __('Jika "Pakai Asuransi?" = Ya → muncul isian "Nama Asuransi" tepat di bawahnya.') }}
             </p>
         </div>
 
         <div class="rse-lg-card rse-lg-card-secondary">
-            <span class="rse-lg-pill rse-lg-pill-secondary">Level Halaman · Saat Klik Lanjut</span>
-            <p class="rse-lg-title">2. Lompatan Bagian per Jawaban</p>
+            <span class="rse-lg-pill rse-lg-pill-secondary">{{ __('Level Halaman · Saat Klik Lanjut') }}</span>
+            <p class="rse-lg-title">{{ __('2. Lompatan Bagian per Jawaban') }}</p>
             <p class="rse-lg-desc">
-                Mengalihkan responden <strong>melompati halaman/Bagian</strong> atau langsung mengirim formulir berdasarkan opsi <strong>Radio/Dropdown</strong> (maksimal 1 pertanyaan pemicu per Bagian).
+                {!! __('Mengalihkan responden :highlight atau langsung mengirim formulir berdasarkan opsi Radio/Dropdown (maksimal 1 pertanyaan pemicu per Bagian).', ['highlight' => '<strong>'.e(__('melompati halaman/Bagian')).'</strong>']) !!}
             </p>
             <p class="rse-lg-example">
-                <strong>Contoh:</strong> Pilih <em>"IGD"</em> → lompat ke <em>Bagian 2 (IGD)</em>; pilih <em>"Rawat Jalan"</em> → lompat ke <em>Bagian 3</em>.
+                <strong>{{ __('Contoh:') }}</strong> {{ __('Pilih "IGD" → lompat ke Bagian 2 (IGD); pilih "Rawat Jalan" → lompat ke Bagian 3.') }}
             </p>
         </div>
 
         <div class="rse-lg-card rse-lg-card-neutral">
-            <span class="rse-lg-pill rse-lg-pill-neutral">Pasangan Menu 2 · Tujuan Default</span>
-            <p class="rse-lg-title">3. Aturan Lanjut di Akhir Bagian</p>
+            <span class="rse-lg-pill rse-lg-pill-neutral">{{ __('Pasangan Menu 2 · Tujuan Default') }}</span>
+            <p class="rse-lg-title">{{ __('3. Aturan Lanjut di Akhir Bagian') }}</p>
             <p class="rse-lg-desc">
-                Menentukan tujuan <strong>setelah responden selesai mengisi satu Bagian</strong> apabila tidak ada lompatan Menu 2 yang terpicu di Bagian tersebut.
+                {!! __('Menentukan tujuan :highlight apabila tidak ada lompatan Menu 2 yang terpicu di Bagian tersebut.', ['highlight' => '<strong>'.e(__('setelah responden selesai mengisi satu Bagian')).'</strong>']) !!}
             </p>
             <p class="rse-lg-example">
-                <strong>Contoh:</strong> Setelah selesai <em>Bagian 2 (IGD)</em> → lompat ke <em>Bagian 4 (Penutup)</em> agar tidak masuk ke Rawat Jalan.
+                <strong>{{ __('Contoh:') }}</strong> {{ __('Setelah selesai Bagian 2 (IGD) → lompat ke Bagian 4 (Penutup) agar tidak masuk ke Rawat Jalan.') }}
             </p>
         </div>
     </div>
 
     @if ($sectionCount < 2)
         <div class="rse-lg-callout" role="note">
-            <strong>Catatan Struktur Bagian:</strong> Formulir ini saat ini baru memiliki <strong>{{ $sectionCount }} Bagian</strong>.
-            Anda dapat langsung memakai <strong>Menu 1 (Tampil/Sembunyi Pertanyaan)</strong> di dalam Bagian yang sama, sedangkan <strong>Menu 2 &amp; Menu 3</strong> baru dapat melompat antar-halaman setelah Anda menambahkan minimal 2 Bagian di Langkah 2 (atau gunakan opsi <em>Kirim Formulir (Selesai)</em>).
+            <strong>{{ __('Catatan Struktur Bagian:') }}</strong>
+            {{ __('Formulir ini saat ini baru memiliki :count Bagian. Anda dapat langsung memakai Menu 1 (Tampil/Sembunyi Pertanyaan) di dalam Bagian yang sama, sedangkan Menu 2 & Menu 3 baru dapat melompat antar-halaman setelah Anda menambahkan minimal 2 Bagian di Langkah 2 (atau gunakan opsi Kirim Formulir (Selesai)).', ['count' => $sectionCount]) }}
         </div>
     @endif
 </div>

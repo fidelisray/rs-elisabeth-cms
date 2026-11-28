@@ -10,8 +10,8 @@ enum DynamicFormMode: string
     public function label(): string
     {
         return match ($this) {
-            self::Questionnaire => 'Kuesioner / Survei',
-            self::Feedback => 'Kritik & Saran',
+            self::Questionnaire => __('Kuesioner / Survei'),
+            self::Feedback => __('Kritik & Saran'),
         };
     }
 

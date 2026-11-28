@@ -1,7 +1,7 @@
 <div class="rse-brand-lockup">
     <img
         src="{{ asset('images/web-icon.webp') }}"
-        alt="Logo RS Elisabeth"
+        alt="{{ __('Logo RS Elisabeth') }}"
         width="32"
         height="32"
         decoding="async"

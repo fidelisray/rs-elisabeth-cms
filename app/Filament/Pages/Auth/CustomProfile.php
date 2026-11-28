@@ -2,7 +2,6 @@
 
 namespace App\Filament\Pages\Auth;
 
-use App\Services\RecoveryCodeService;
 use Filament\Actions\Action;
 use Filament\Auth\Pages\EditProfile as BaseEditProfile;
 use Filament\Schemas\Components\Actions;
@@ -17,29 +16,20 @@ class CustomProfile extends BaseEditProfile
             ->components([
                 $this->getNameFormComponent()->clearErrorOnInput(),
                 $this->getEmailFormComponent()->disabled(),
-                Section::make('Keamanan Kata Sandi')
-                    ->description('Demi menjaga keamanan akun, seluruh pembaruan kata sandi dilakukan secara terpusat dengan sistem pengecekan kekuatan sandi.')
+                Section::make(__('Keamanan Kata Sandi'))
+                    ->description(__('Demi menjaga keamanan akun, seluruh pembaruan kata sandi dilakukan secara terpusat dengan sistem pengecekan kekuatan sandi.'))
                     ->schema([
                         Actions::make([
                             Action::make('changePassword')
-                                ->label('Ganti Password')
+                                ->label(__('Ganti Password'))
                                 ->icon('heroicon-o-key')
                                 ->color('primary')
                                 ->button()
                                 ->url(ForcePasswordChange::getUrl()),
                         ]),
                     ]),
-                Section::make('Kode Pemulihan Darurat')
-                    ->description(function (): string {
-                        $remaining = app(RecoveryCodeService::class)->remainingCount($this->getUser());
-                        $message = "Tersisa {$remaining} dari ".RecoveryCodeService::CODE_COUNT.' kode pemulihan sekali pakai.';
-
-                        if ($remaining < 3) {
-                            $message .= ' Peringatan: sisa kode pemulihan kurang dari 3. Segera buat ulang melalui terminal dengan perintah php artisan app:super-admin:recovery-codes:regenerate.';
-                        }
-
-                        return $message;
-                    })
+                Section::make(__('Pemulihan Akses Darurat (CLI Break-Glass)'))
+                    ->description(__('Demi keamanan standar enterprise, pemulihan darurat akun Super Admin tidak tersedia melalui antarmuka web. Jika akses terkunci, lakukan reset teraudit melalui konsol server dengan perintah php artisan app:super-admin:reset-password.'))
                     ->visible(fn (): bool => $this->getUser()->isSuperAdmin()),
             ]);
     }

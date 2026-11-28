@@ -20,14 +20,14 @@ class ArticleForm
     {
         return $schema
             ->components([
-                Section::make('Konten Artikel - Bahasa Indonesia (ID)')
-                    ->description('Lengkapi judul, kategori, ringkasan, dan isi artikel dalam Bahasa Indonesia.')
+                Section::make(__('Konten Artikel - Bahasa Indonesia (ID)'))
+                    ->description(__('Lengkapi judul, kategori, ringkasan, dan isi artikel dalam Bahasa Indonesia.'))
                     ->columnSpanFull()
                     ->columns(3)
                     ->schema([
 
                         TextInput::make('title.id')
-                            ->label('Judul Artikel (Indonesia)')
+                            ->label(__('Judul Artikel (Indonesia)'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
@@ -39,44 +39,44 @@ class ArticleForm
                             }),
 
                         TextInput::make('slug.id')
-                            ->label('Identifier / Slug (Indonesia)')
-                            ->placeholder('Klik pada form dan teks akan terisi otomatis')
+                            ->label(__('Identifier / Slug (Indonesia)'))
+                            ->placeholder(__('Klik pada form dan teks akan terisi otomatis'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
                             ->unique(column: 'slug->id', ignoreRecord: true)
-                            ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
-                            ->helperText('Dapat diedit jika diperlukan'),
+                            ->validationMessages(['unique' => __('Identifier (Slug) sudah digunakan. Pilih identifier lain.')])
+                            ->helperText(__('Dapat diedit jika diperlukan')),
 
                         TextInput::make('tags.id')
-                            ->label('Kategori (Indonesia)')
-                            ->placeholder('Masukkan kategori dalam Bahasa Indonesia')
+                            ->label(__('Kategori (Indonesia)'))
+                            ->placeholder(__('Masukkan kategori dalam Bahasa Indonesia'))
                             ->maxLength(100)
                             ->required()
                             ->clearErrorOnInput(),
 
                         Textarea::make('shorts.id')
-                            ->label('Ringkasan Artikel (Indonesia)')
+                            ->label(__('Ringkasan Artikel (Indonesia)'))
                             ->maxLength(250)
                             ->columnSpanFull()
                             ->required()
                             ->clearErrorOnInput(),
 
                         RichEditor::make('content.id')
-                            ->label('Isi Konten Artikel (Indonesia)')
+                            ->label(__('Isi Konten Artikel (Indonesia)'))
                             ->columnSpanFull()
                             ->required()
                             ->clearErrorOnInput(),
                     ]),
 
-                Section::make('Konten Artikel - Bahasa Inggris (EN)')
-                    ->description('Lengkapi judul, kategori, ringkasan, dan isi artikel dalam Bahasa Inggris.')
+                Section::make(__('Konten Artikel - Bahasa Inggris (EN)'))
+                    ->description(__('Lengkapi judul, kategori, ringkasan, dan isi artikel dalam Bahasa Inggris.'))
                     ->columnSpanFull()
                     ->columns(3)
                     ->schema([
 
                         TextInput::make('title.en')
-                            ->label('Judul Artikel (English)')
+                            ->label(__('Judul Artikel (English)'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
@@ -88,47 +88,48 @@ class ArticleForm
                             }),
 
                         TextInput::make('slug.en')
-                            ->label('Identifier / Slug (English)')
-                            ->placeholder('Klik pada form dan teks akan terisi otomatis')
+                            ->label(__('Identifier / Slug (English)'))
+                            ->placeholder(__('Klik pada form dan teks akan terisi otomatis'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(255)
                             ->unique(column: 'slug->en', ignoreRecord: true)
-                            ->validationMessages(['unique' => 'Identifier (Slug) sudah digunakan. Pilih identifier lain.'])
-                            ->helperText('Dapat diedit jika diperlukan'),
+                            ->validationMessages(['unique' => __('Identifier (Slug) sudah digunakan. Pilih identifier lain.')])
+                            ->helperText(__('Dapat diedit jika diperlukan')),
 
                         TextInput::make('tags.en')
-                            ->label('Kategori (English)')
-                            ->placeholder('Masukkan kategori dalam Bahasa Inggris')
+                            ->label(__('Kategori (English)'))
+                            ->placeholder(__('Masukkan kategori dalam Bahasa Inggris'))
                             ->maxLength(100)
                             ->required()
                             ->clearErrorOnInput(),
 
                         Textarea::make('shorts.en')
-                            ->label('Ringkasan Artikel (English)')
+                            ->label(__('Ringkasan Artikel (English)'))
                             ->maxLength(250)
                             ->columnSpanFull()
                             ->required()
                             ->clearErrorOnInput(),
 
                         RichEditor::make('content.en')
-                            ->label('Isi Konten Artikel (English)')
+                            ->label(__('Isi Konten Artikel (English)'))
                             ->columnSpanFull()
                             ->required()
                             ->clearErrorOnInput(),
                     ]),
 
-                Section::make('Penulis & Thumbnail Artikel')
+                Section::make(__('Penulis & Thumbnail Artikel'))
                     ->columnSpanFull()
                     ->schema([
                         TextInput::make('author')
-                            ->label('Author')
+                            ->label(__('Penulis'))
                             ->required()
                             ->clearErrorOnInput()
                             ->maxLength(50)
                             ->columnSpanFull(),
 
                         FileUpload::make('image_path')
+                            ->label(__('Gambar'))
                             ->required()
                             ->clearErrorOnChange()
                             ->disk(config('filesystems.media_disk'))
@@ -141,22 +142,22 @@ class ArticleForm
                             ->automaticallyResizeImagesMode('cover')
                             ->maxSize(5120)
                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                            ->helperText('Upload thumbnail artikel dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB'),
+                            ->helperText(__('Unggah thumbnail artikel dengan format JPEG/JPG/PNG/WebP, ukuran maks 5 MB')),
                     ]),
 
-                Section::make('Publish')
+                Section::make(__('Publikasi'))
                     ->columnSpanFull()
-                    ->description('Atur apakah artikel ini akan ditampilkan pada halaman website')
+                    ->description(__('Atur apakah artikel ini akan ditampilkan pada halaman website'))
                     ->schema([
                         Placeholder::make('trash_notice')
-                            ->label('Penghapusan')
-                            ->content('Konten yang dihapus tidak tampil di website. Hanya Super Admin yang dapat memulihkannya.')
+                            ->label(__('Penghapusan'))
+                            ->content(__('Konten yang dihapus tidak tampil di website. Hanya Super Admin yang dapat memulihkannya.'))
                             ->columnSpanFull(),
 
                         Toggle::make('is_active')
-                            ->label('Aktif dan Tampilkan di halaman website')
+                            ->label(__('Aktif dan Tampilkan di halaman website'))
                             ->default(false)
-                            ->helperText('Non-aktifkan untuk menyembunyikan artikel ini dari halaman website tanpa menghapus datanya')
+                            ->helperText(__('Non-aktifkan untuk menyembunyikan artikel ini dari halaman website tanpa menghapus datanya'))
                             ->columnSpanFull(),
                     ]),
 

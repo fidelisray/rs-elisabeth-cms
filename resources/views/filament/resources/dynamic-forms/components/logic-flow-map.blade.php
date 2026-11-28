@@ -133,7 +133,7 @@
 
     @if ($flowSections === [])
         <div class="rse-fm-empty">
-            Belum ada Bagian pada formulir ini. Tambahkan Bagian dan pertanyaan di Langkah 2 terlebih dahulu.
+            {{ __('Belum ada Bagian pada formulir ini. Tambahkan Bagian dan pertanyaan di Langkah 2 terlebih dahulu.') }}
         </div>
     @else
         <div class="rse-fm-list">
@@ -143,11 +143,11 @@
                         <p class="rse-fm-title">{{ $sec['label'] }}</p>
                         <div class="rse-fm-badges">
                             <span class="rse-fm-badge rse-fm-badge-neutral">
-                                {{ $sec['field_count'] }} pertanyaan
+                                {{ __(':count pertanyaan', ['count' => $sec['field_count']]) }}
                             </span>
                             @if ($sec['visibility_count'] > 0)
                                 <span class="rse-fm-badge rse-fm-badge-primary">
-                                    {{ $sec['visibility_count'] }} bersyarat (Menu 1)
+                                    {{ __(':count bersyarat (Menu 1)', ['count' => $sec['visibility_count']]) }}
                                 </span>
                             @endif
                         </div>
@@ -157,7 +157,7 @@
                         <ul class="rse-fm-branches">
                             @foreach ($sec['choice_branches'] as $branch)
                                 <li class="rse-fm-branch">
-                                    <strong>Jika</strong> "{{ $branch['field_label'] }}" = "{{ $branch['choice_label'] }}"
+                                    <strong>{{ __('Jika') }}</strong> "{{ $branch['field_label'] }}" = "{{ $branch['choice_label'] }}"
                                     &rarr; <strong>{{ $branch['target_label'] }}</strong>
                                 </li>
                             @endforeach
@@ -165,7 +165,7 @@
                     @endif
 
                     <p class="rse-fm-default">
-                        Tujuan default akhir bagian: <strong>{{ $sec['default_next_label'] }}</strong>
+                        {{ __('Tujuan default akhir bagian:') }} <strong>{{ $sec['default_next_label'] }}</strong>
                     </p>
 
                     @foreach ($sec['warnings'] as $warning)

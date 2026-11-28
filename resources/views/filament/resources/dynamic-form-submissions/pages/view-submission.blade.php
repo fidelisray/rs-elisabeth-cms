@@ -118,28 +118,28 @@
         </style>
 
         <div class="rse-dfs-card">
-            <h2 style="font-size: 1rem; font-weight: 700; margin: 0 0 1rem;">Metadata Pengisian</h2>
+            <h2 style="font-size: 1rem; font-weight: 700; margin: 0 0 1rem;">{{ __('Metadata Pengisian') }}</h2>
             <div class="rse-dfs-meta-grid">
                 <div>
-                    <p style="font-size: 0.75rem; color: var(--rse-s-text-secondary); margin: 0;">Formulir</p>
+                    <p style="font-size: 0.75rem; color: var(--rse-s-text-secondary); margin: 0;">{{ __('Formulir') }}</p>
                     <p style="font-size: 0.875rem; font-weight: 700; margin: 0.125rem 0 0;">
                         {{ $submission->form?->title ?? '-' }}
                     </p>
                 </div>
                 <div>
-                    <p style="font-size: 0.75rem; color: var(--rse-s-text-secondary); margin: 0;">Mode & Versi</p>
+                    <p style="font-size: 0.75rem; color: var(--rse-s-text-secondary); margin: 0;">{{ __('Mode & Versi') }}</p>
                     <p style="font-size: 0.875rem; font-weight: 700; margin: 0.125rem 0 0;">
                         {{ $submission->form?->mode?->label() ?? '-' }} · v{{ $submission->version?->version_number ?? '?' }}
                     </p>
                 </div>
                 <div>
-                    <p style="font-size: 0.75rem; color: var(--rse-s-text-secondary); margin: 0;">Waktu Dikirim</p>
+                    <p style="font-size: 0.75rem; color: var(--rse-s-text-secondary); margin: 0;">{{ __('Waktu Dikirim') }}</p>
                     <p style="font-size: 0.875rem; font-weight: 700; margin: 0.125rem 0 0;">
                         {{ optional($submission->submitted_at)->format('d M Y, H:i') ?? '-' }}
                     </p>
                 </div>
                 <div>
-                    <p style="font-size: 0.75rem; color: var(--rse-s-text-secondary); margin: 0;">Bahasa / Sumber</p>
+                    <p style="font-size: 0.75rem; color: var(--rse-s-text-secondary); margin: 0;">{{ __('Bahasa / Sumber') }}</p>
                     <p style="font-size: 0.875rem; font-weight: 700; margin: 0.125rem 0 0;">
                         {{ strtoupper((string) $submission->locale) }} · {{ $submission->source }}
                     </p>
@@ -149,9 +149,9 @@
 
         @if ($renderedSections === [] && $orphanItems === [])
             <div class="rse-dfs-card" style="text-align: center; padding: 2rem;">
-                <p style="font-weight: 700; margin: 0 0 0.25rem;">Tidak ada jawaban tersimpan pada pengisian ini.</p>
+                <p style="font-weight: 700; margin: 0 0 0.25rem;">{{ __('Tidak ada jawaban tersimpan pada pengisian ini.') }}</p>
                 <p style="font-size: 0.875rem; color: var(--rse-s-text-secondary); margin: 0;">
-                    Data jawaban responden bersifat permanen dan tidak dapat diubah manual oleh staf.
+                    {{ __('Data jawaban responden bersifat permanen dan tidak dapat diubah manual oleh staf.') }}
                 </p>
             </div>
         @else
@@ -176,8 +176,8 @@
                                     <table class="rse-dfs-table">
                                         <thead>
                                             <tr>
-                                                <th>Butir</th>
-                                                <th>Jawaban</th>
+                                                <th>{{ __('Butir') }}</th>
+                                                <th>{{ __('Jawaban') }}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -204,16 +204,16 @@
                                                 <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;">
                                                     @if (! empty($fileItem['preview_url']))
                                                         <a class="rse-dfs-download-btn" href="{{ $fileItem['preview_url'] }}" target="_blank" rel="noopener noreferrer">
-                                                            Lihat
+                                                            {{ __('Lihat') }}
                                                         </a>
                                                     @endif
                                                     <a class="rse-dfs-download-btn" href="{{ $fileItem['download_url'] }}">
-                                                        Unduh Lampiran
+                                                        {{ __('Unduh Lampiran') }}
                                                     </a>
                                                 </div>
                                             @else
                                                 <span style="font-size: 0.75rem; color: var(--rse-s-text-secondary); font-weight: 600;">
-                                                    {{ $canDownload ? 'Berkas tidak tersedia' : 'Akses unduh terbatas' }}
+                                                    {{ $canDownload ? __('Berkas tidak tersedia') : __('Akses unduh terbatas') }}
                                                 </span>
                                             @endif
                                         </div>
@@ -231,7 +231,7 @@
 
             @if ($orphanItems !== [])
                 <div class="rse-dfs-card">
-                    <h2 style="font-size: 1rem; font-weight: 700; margin: 0 0 1rem;">Jawaban Tambahan (Kunci Arsip)</h2>
+                    <h2 style="font-size: 1rem; font-weight: 700; margin: 0 0 1rem;">{{ __('Jawaban Tambahan (Kunci Arsip)') }}</h2>
                     @foreach ($orphanItems as $item)
                         <div class="rse-dfs-item">
                             <p style="font-size: 0.875rem; font-weight: 700; margin: 0 0 0.375rem;">

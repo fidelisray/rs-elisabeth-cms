@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users;
 
+use App\Enums\AdminNavigationGroup;
 use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
@@ -21,17 +22,26 @@ class UserResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
 
-    protected static ?string $navigationLabel = 'User Management';
-
-    protected static ?string $pluralModelLabel = 'Users';
-
-    protected static ?string $modelLabel = 'User';
-
-    protected static string|\UnitEnum|null $navigationGroup = 'Access Control';
+    protected static string|\UnitEnum|null $navigationGroup = AdminNavigationGroup::AccessControl;
 
     protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getNavigationLabel(): string
+    {
+        return __('Manajemen Pengguna');
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('model.user');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('Pengguna');
+    }
 
     /**
      * Hanya Super Admin yang dapat melihat dan mengakses menu ini.

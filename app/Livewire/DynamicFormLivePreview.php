@@ -22,7 +22,7 @@ class DynamicFormLivePreview extends Component
 
     public string $formMode = 'questionnaire';
 
-    public string $sourceLabel = 'Draft Terbaru';
+    public string $sourceLabel = '';
 
     /**
      * @var array<string, mixed>
@@ -59,7 +59,7 @@ class DynamicFormLivePreview extends Component
         $form = DynamicForm::find($formId);
 
         if (! $form) {
-            $this->previewError = 'Formulir tidak ditemukan untuk pratinjau.';
+            $this->previewError = __('Formulir tidak ditemukan untuk pratinjau.');
 
             return;
         }
@@ -70,7 +70,7 @@ class DynamicFormLivePreview extends Component
 
         if ($customSchema !== null) {
             $this->schema = $customSchema;
-            $this->sourceLabel = 'Skema Editor';
+            $this->sourceLabel = __('Skema Editor');
             if (array_key_exists('description', $customSchema)) {
                 $this->formDescription = app(DynamicFormHtmlSanitizer::class)->sanitize($customSchema['description']);
             }
@@ -78,15 +78,15 @@ class DynamicFormLivePreview extends Component
             $version = $form->latestDraftVersion() ?? $form->publishedVersion()->first() ?? $form->latestVersion();
             if (! $version) {
                 $this->schema = ['sections' => []];
-                $this->sourceLabel = 'Belum Ada Versi';
+                $this->sourceLabel = __('Belum Ada Versi');
             } else {
                 $versionService = app(DynamicFormVersionService::class);
                 $this->schema = is_array($version->schema_snapshot) && ! empty($version->schema_snapshot['sections'])
                     ? $version->schema_snapshot
                     : $versionService->buildSchemaSnapshot($version);
                 $this->sourceLabel = $version->status === 'published'
-                    ? "Versi Terpublikasi v{$version->version_number}"
-                    : "Draf v{$version->version_number}";
+                    ? __('Versi Terpublikasi v:version', ['version' => $version->version_number])
+                    : __('Draf v:version', ['version' => $version->version_number]);
             }
         }
 
@@ -130,7 +130,7 @@ class DynamicFormLivePreview extends Component
 
         $targetIndex = $this->findSectionIndex($sections, $nextKey);
         if ($targetIndex === null || in_array($nextKey, $this->sectionHistory, true)) {
-            $this->previewError = "Target lompatan [{$nextKey}] tidak valid atau membentuk loop.";
+            $this->previewError = __('Target lompatan [:target] tidak valid atau membentuk loop.', ['target' => $nextKey]);
 
             return;
         }
@@ -171,7 +171,7 @@ class DynamicFormLivePreview extends Component
     {
         $form = DynamicForm::find($this->formId);
         if (! $form) {
-            $this->previewError = 'Formulir tidak ditemukan.';
+            $this->previewError = __('Formulir tidak ditemukan.');
 
             return;
         }

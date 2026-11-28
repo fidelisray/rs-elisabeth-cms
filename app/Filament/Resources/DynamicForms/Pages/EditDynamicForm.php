@@ -49,18 +49,21 @@ class EditDynamicForm extends EditRecord
         $published = $record->publishedVersion;
 
         if ($published && $draft) {
-            return "Menyunting Draf Versi v{$draft->version_number}. Responden publik saat ini tetap mengisi Versi Aktif v{$published->version_number} hingga Anda mempublikasikan draf ini.";
+            return __('Menyunting Draf Versi v:draft. Responden publik saat ini tetap mengisi Versi Aktif v:published hingga Anda mempublikasikan draf ini.', [
+                'draft' => $draft->version_number,
+                'published' => $published->version_number,
+            ]);
         }
 
         if ($published) {
             $hasSubmissions = $published->submissions()->withTrashed()->exists();
 
             return $hasSubmissions
-                ? "Versi Aktif saat ini: v{$published->version_number}. Karena sudah ada respons masuk, perubahan pertanyaan akan diterbitkan sebagai versi baru tanpa mengganggu data respons lama."
-                : "Versi Aktif saat ini: v{$published->version_number} (0 respons). Perubahan pertanyaan akan langsung memperbarui versi aktif ini saat disimpan.";
+                ? __('Versi Aktif saat ini: v:version. Karena sudah ada respons masuk, perubahan pertanyaan akan diterbitkan sebagai versi baru tanpa mengganggu data respons lama.', ['version' => $published->version_number])
+                : __('Versi Aktif saat ini: v:version (0 respons). Perubahan pertanyaan akan langsung memperbarui versi aktif ini saat disimpan.', ['version' => $published->version_number]);
         }
 
-        return 'Formulir masih berstatus Draf dan belum tampil pada Web Frontend.';
+        return __('Formulir masih berstatus Draf dan belum tampil pada Web Frontend.');
     }
 
     protected function getHeaderActions(): array
@@ -70,12 +73,12 @@ class EditDynamicForm extends EditRecord
                 ->record(fn (): DynamicForm => $this->getRecord()),
 
             Action::make('preview')
-                ->label('Pratinjau Interaktif')
+                ->label(__('Pratinjau Interaktif'))
                 ->icon(Heroicon::OutlinedEye)
                 ->visible(fn (): bool => ! $this->getRecord()->trashed())
-                ->modalHeading(fn (): string => 'Pratinjau: '.$this->getRecord()->title)
+                ->modalHeading(fn (): string => __('Pratinjau: :title', ['title' => $this->getRecord()->title]))
                 ->modalSubmitAction(false)
-                ->modalCancelActionLabel('Tutup Pratinjau')
+                ->modalCancelActionLabel(__('Tutup Pratinjau'))
                 ->modalContent(function (): HtmlString {
                     $state = $this->form->getRawState();
                     $versionService = app(DynamicFormVersionService::class);
@@ -95,13 +98,13 @@ class EditDynamicForm extends EditRecord
                 }),
 
             Action::make('analytics')
-                ->label('Ringkasan & Analitik')
+                ->label(__('Ringkasan & Analitik'))
                 ->icon(Heroicon::OutlinedChartBar)
                 ->visible(fn (): bool => ! $this->getRecord()->trashed())
                 ->url(fn (): string => DynamicFormResource::getUrl('analytics', ['record' => $this->getRecord()])),
 
             Action::make('publish')
-                ->label('Publikasikan Versi')
+                ->label(__('Publikasikan Versi'))
                 ->icon(Heroicon::OutlinedCheckCircle)
                 ->color('primary')
                 ->requiresConfirmation()
@@ -126,12 +129,12 @@ class EditDynamicForm extends EditRecord
                         }
                         $this->getRecord()->refresh();
                         Notification::make()
-                            ->title("Versi v{$version->version_number} berhasil dipublikasikan")
+                            ->title(__('Versi v:version berhasil dipublikasikan', ['version' => $version->version_number]))
                             ->success()
                             ->send();
                     } catch (ValidationException $e) {
                         Notification::make()
-                            ->title('Publikasi ditolak')
+                            ->title(__('Publikasi ditolak'))
                             ->body(collect($e->errors())->flatten()->implode(' '))
                             ->danger()
                             ->send();
@@ -170,7 +173,7 @@ class EditDynamicForm extends EditRecord
         if ($dupErrors !== []) {
             Notification::make()
                 ->danger()
-                ->title('Terdapat Kunci Duplikat pada Formulir')
+                ->title(__('Terdapat Kunci Duplikat pada Formulir'))
                 ->body(implode(' ', $dupErrors))
                 ->send();
 
@@ -189,7 +192,7 @@ class EditDynamicForm extends EditRecord
         if ($logicErrors !== []) {
             Notification::make()
                 ->danger()
-                ->title('Aturan Percabangan Logika Tidak Valid')
+                ->title(__('Aturan Percabangan Logika Tidak Valid'))
                 ->body(implode(' ', $logicErrors))
                 ->send();
 
